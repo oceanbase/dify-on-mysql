@@ -24,7 +24,7 @@
     "preinstall": "npx only-allow pnpm"
   },
   "dependencies": {
-    "@babel/runtime": "^7.22.3",
+    "@babel/runtime": "^7.26.10",
     "@dagrejs/dagre": "^1.1.4",
     "@emoji-mart/data": "^1.2.1",
     "@eslint/compat": "^1.2.4",
