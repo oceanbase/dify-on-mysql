@@ -173,7 +173,7 @@ class OBKVClient:
         self._client = client
 
     def lock(self, name: str, timeout: Optional[int] = None, **kwargs):
-        # 使用OceanBaseRedisLock实现
+        # Implementation using OceanBaseRedisLock
         return self._client.lock(name, timeout=timeout, lock_class=OceanBaseRedisLock, **kwargs)
 
     def pipeline(self, transaction=True, shard_hint=None) -> "Pipeline":
