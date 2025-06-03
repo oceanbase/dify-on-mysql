@@ -93,3 +93,8 @@ class RedisConfig(BaseSettings):
         description="Enable client side cache in redis",
         default=False,
     )
+
+    REDIS_USE_OBKV: bool = Field(
+        description="Use OBKV instead of Redis",
+        default=False,
+    )

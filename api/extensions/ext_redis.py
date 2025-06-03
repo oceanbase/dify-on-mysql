@@ -1,9 +1,13 @@
-from typing import Any, Union
+import logging
+from typing import Any, Optional, Union
 
 import redis
 from redis.cache import CacheConfig
+from redis.client import Pipeline
 from redis.cluster import ClusterNode, RedisCluster
 from redis.connection import Connection, SSLConnection
+from redis.exceptions import LockNotOwnedError
+from redis.lock import Lock
 from redis.sentinel import Sentinel
 
 from configs import dify_config
@@ -101,6 +105,22 @@ def init_app(app: DifyApp):
                 cache_config=clientside_cache_config,
             )
         )
+    elif dify_config.REDIS_USE_OBKV:
+        assert dify_config.REDIS_SERIALIZATION_PROTOCOL < 3, (
+            "OBKV does not support RESP version 3. "
+            "Please specify REDIS_SERIALIZATION_PROTOCOL=2 in the configuration file."
+        )
+        redis_params.update(
+            {
+                "host": dify_config.REDIS_HOST,
+                "port": dify_config.REDIS_PORT,
+                "username": dify_config.REDIS_USERNAME,
+                "password": dify_config.REDIS_PASSWORD,
+                "connection_class": connection_class,
+            }
+        )
+        pool = redis.ConnectionPool(**redis_params)
+        redis_client.initialize(OBKVClient(redis.Redis(connection_pool=pool)))
     else:
         redis_params.update(
             {
@@ -115,3 +135,51 @@ def init_app(app: DifyApp):
         redis_client.initialize(redis.Redis(connection_pool=pool))
 
     app.extensions["redis"] = redis_client
+
+
+class OceanBaseRedisLock(Lock):
+    def do_acquire(self, token: str) -> bool:
+        try:
+            result = self.redis.execute_command("SETNX", self.name, token)
+        except Exception as e:
+            logging.info(f"Failed to acquire redis lock {self.name}, error: {e}")
+            result = False
+        if result == 1:
+            self.redis.execute_command("EXPIRE", self.name, 60)
+            return True
+        else:
+            return False
+
+    def do_release(self, expected_token: str) -> None:
+        current_value = self.redis.get(self.name)
+        if current_value == expected_token:
+            redis_client.delete(self.name)
+            logging.info(f"Lock released: {self.name}")
+        else:
+            raise LockNotOwnedError(
+                "Cannot release a lock that's no longer owned",
+                lock_name=self.name,
+            )
+
+
+class OceanBasePipeLine(Pipeline):
+    def execute(self, raise_on_error=True):
+        """do nothing, OBKV cannot support redis pipeline"""
+        logging.info("executing pipeline: do nothing, OBKV cannot support redis pipeline")
+
+
+class OBKVClient:
+    def __init__(self, client: redis.Redis):
+        self._client = client
+
+    def lock(self, name: str, timeout: Optional[int] = None, **kwargs):
+        # 使用OceanBaseRedisLock实现
+        return self._client.lock(name, timeout=timeout, lock_class=OceanBaseRedisLock, **kwargs)
+
+    def pipeline(self, transaction=True, shard_hint=None) -> "Pipeline":
+        return OceanBasePipeLine(self.connection_pool, self.response_callbacks, transaction, shard_hint)
+
+    def __getattr__(self, item):
+        if self._client is None:
+            raise RuntimeError("Redis client is not initialized. Call init_app first.")
+        return getattr(self._client, item)
