@@ -43,6 +43,43 @@ services:
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
 
+
+  obkv_redis:
+    image: oceanbase/oceanbase-ce:4.2.5.3-103000022025033117
+    container_name: oceanbase
+    restart: always
+    environment:
+      OB_MEMORY_LIMIT: ${OCEANBASE_MEMORY_LIMIT:-6G}
+      OB_SYS_PASSWORD: ${OCEANBASE_VECTOR_PASSWORD:-difyai123456}
+      OB_TENANT_PASSWORD: ${OCEANBASE_VECTOR_PASSWORD:-difyai123456}
+      OB_CLUSTER_NAME: ${OCEANBASE_CLUSTER_NAME:-difyai}
+      MODE: MINI
+    volumes:
+      - ./volumes/oceanbase/obkv_redis/healthcheck.sh:/root/healthcheck.sh
+    ports:
+      - "${OCEANBASE_VECTOR_PORT:-2881}:2881"
+    healthcheck:
+      test: [ "CMD", "/root/healthcheck.sh" ]
+      interval: 10s
+      retries: 30
+      start_period: 30s
+      timeout: 10s
+
+  obproxy:
+    image: oceanbase/obproxy-ce:4.3.4.0-1
+    container_name: obproxy
+    environment:
+      APP_NAME: dify_obproxy
+      PROXYRO_PASSWORD: 123456
+      RS_LIST: ${OCEANBASE_IP}:${OCEANBASE_VECTOR_PORT:-2881}
+      OB_CLUSTER: ${OCEANBASE_CLUSTER_NAME:-difyai}
+    ports:
+      - "${OBPROXY_SQL_PORT:-2883}:2883"
+      - "${OBPROXY_RPC_PORT:-2885}:2885"
+    depends_on:
+      obkv_redis:
+        condition: service_healthy
+
   # The DifySandbox
   sandbox:
     image: langgenius/dify-sandbox:0.2.12
@@ -71,7 +108,7 @@ services:
 
   # plugin daemon
   plugin_daemon:
-    image: langgenius/dify-plugin-daemon:0.0.10-local
+    image: quay.io/oceanbase-devhub/dify-plugin-daemon:obkv-redis-0.1-local
     restart: always
     env_file:
       - ./middleware.env
@@ -120,6 +157,9 @@ services:
       - "${EXPOSE_PLUGIN_DEBUGGING_PORT:-5003}:${PLUGIN_DEBUGGING_PORT:-5003}"
     volumes:
       - ./volumes/plugin_daemon:/app/storage
+    depends_on:
+      obkv_redis:
+        condition: service_healthy
 
   # ssrf_proxy server
   # for more information, please refer to
