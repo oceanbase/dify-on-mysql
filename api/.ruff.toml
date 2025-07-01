@@ -1,5 +1,6 @@
 exclude = [
     "migrations/*",
+    "migrations-mysql/*",
 ]
 line-length = 120
 

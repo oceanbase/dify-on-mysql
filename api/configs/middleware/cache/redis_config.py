@@ -9,6 +9,11 @@ class RedisConfig(BaseSettings):
     Configuration settings for Redis connection
     """
 
+    CACHE_SCHEME: str = Field(
+        description="Cache scheme, can be 'mysql' or 'redis'",
+        default='redis',
+    )
+
     REDIS_HOST: str = Field(
         description="Hostname or IP address of the Redis server",
         default="localhost",

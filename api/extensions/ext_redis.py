@@ -49,6 +49,13 @@ redis_client = RedisClientWrapper()
 
 def init_app(app: DifyApp):
     global redis_client
+
+    if "mysql" in dify_config.SQLALCHEMY_DATABASE_URI_SCHEME and dify_config.CACHE_SCHEME == "mysql":
+        from extensions.ext_mysql_redis import MysqlRedisClient
+        redis_client.initialize(MysqlRedisClient())
+        app.extensions["redis"] = redis_client
+        return
+
     connection_class: type[Union[Connection, SSLConnection]] = Connection
     if dify_config.REDIS_USE_SSL:
         connection_class = SSLConnection

@@ -4,7 +4,7 @@ set -e
 
 if [[ "${MIGRATION_ENABLED}" == "true" ]]; then
   echo "Running migrations"
-  if [[ "${SQLALCHEMY_DATABASE_URI_SCHEME}" == "mysql+pymysql" ]]; then
+  if [[ "${SQLALCHEMY_DATABASE_URI_SCHEME}" == mysql* ]]; then
     flask upgrade-db --directory migrations-mysql
   else
     flask upgrade-db
