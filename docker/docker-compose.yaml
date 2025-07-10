@@ -74,7 +74,6 @@ x-shared-env: &shared-api-worker-env
   REDIS_SENTINEL_PASSWORD: ${REDIS_SENTINEL_PASSWORD:-}
   REDIS_SENTINEL_SOCKET_TIMEOUT: ${REDIS_SENTINEL_SOCKET_TIMEOUT:-0.1}
   REDIS_USE_CLUSTERS: ${REDIS_USE_CLUSTERS:-false}
-  REDIS_USE_OBKV: ${REDIS_USE_OBKV:-false}
   REDIS_CLUSTERS: ${REDIS_CLUSTERS:-}
   REDIS_CLUSTERS_PASSWORD: ${REDIS_CLUSTERS_PASSWORD:-}
   CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://:difyai123456@redis:6379/1}
@@ -942,46 +941,6 @@ services:
       retries: 30
       start_period: 30s
       timeout: 10s
-
-    obkv_redis:
-      image: oceanbase/oceanbase-ce:4.2.5.3-103000022025033117
-      container_name: oceanbase
-      profiles:
-        - oceanbase
-      restart: always
-      environment:
-        OB_MEMORY_LIMIT: ${OCEANBASE_MEMORY_LIMIT:-6G}
-        OB_SYS_PASSWORD: ${OCEANBASE_VECTOR_PASSWORD:-difyai123456}
-        OB_TENANT_PASSWORD: ${OCEANBASE_VECTOR_PASSWORD:-difyai123456}
-        OB_CLUSTER_NAME: ${OCEANBASE_CLUSTER_NAME:-difyai}
-        MODE: MINI
-      volumes:
-        - ./volumes/oceanbase/obkv_redis/healthcheck.sh:/root/healthcheck.sh
-      ports:
-        - "${OCEANBASE_VECTOR_PORT:-2881}:2881"
-      healthcheck:
-        test: [ "CMD", "/root/healthcheck.sh" ]
-        interval: 10s
-        retries: 30
-        start_period: 30s
-        timeout: 10s
-
-    obproxy:
-      image: oceanbase/obproxy-ce:4.3.4.0-1
-      container_name: obproxy
-      profiles:
-        - oceanbase
-      environment:
-        APP_NAME: dify_obproxy
-        PROXYRO_PASSWORD: 123456
-        RS_LIST: ${OCEANBASE_IP}:${OCEANBASE_VECTOR_PORT:-2881}
-        OB_CLUSTER: ${OCEANBASE_CLUSTER_NAME:-difyai}
-      ports:
-        - "${OBPROXY_SQL_PORT:-2883}:2883"
-        - "${OBPROXY_RPC_PORT:-2885}:2885"
-      depends_on:
-        obkv_redis:
-          condition: service_healthy
 
   # Oracle vector database
   oracle:
