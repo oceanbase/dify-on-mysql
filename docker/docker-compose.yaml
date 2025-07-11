@@ -53,6 +53,7 @@ x-shared-env: &shared-api-worker-env
   DB_PORT: ${DB_PORT:-5432}
   DB_DATABASE: ${DB_DATABASE:-dify}
   SQLALCHEMY_DATABASE_URI_SCHEME: ${SQLALCHEMY_DATABASE_URI_SCHEME:-postgresql}
+  CACHE_SCHEME: ${CACHE_SCHEME:-redis}
   SQLALCHEMY_POOL_SIZE: ${SQLALCHEMY_POOL_SIZE:-30}
   SQLALCHEMY_POOL_RECYCLE: ${SQLALCHEMY_POOL_RECYCLE:-3600}
   SQLALCHEMY_ECHO: ${SQLALCHEMY_ECHO:-false}
@@ -494,7 +495,9 @@ x-shared-env: &shared-api-worker-env
 services:
   # API service
   api:
-    image: quay.io/oceanbase-devhub/dify-api:1.4.0
+    build:
+      context: ../api
+      dockerfile: Dockerfile
     restart: always
     environment:
       # Use the shared environment variables.
@@ -523,7 +526,9 @@ services:
   # worker service
   # The Celery worker for processing the queue.
   worker:
-    image: quay.io/oceanbase-devhub/dify-api:1.4.0
+    build:
+      context: ../api
+      dockerfile: Dockerfile
     restart: always
     environment:
       # Use the shared environment variables.
