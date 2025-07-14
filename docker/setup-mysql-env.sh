@@ -141,6 +141,28 @@ update_env "COMPOSE_PROFILES" "$COMPOSE_PROFILES"
 update_env "VECTOR_STORE" "oceanbase"
 update_env "PIP_MIRROR_URL" "https://pypi.tuna.tsinghua.edu.cn/simple"
 
+# Redis configuration
+USE_REDIS=$(get_user_input "Use Redis for caching?  Y or N:" "N")
+
+if [ "$USE_REDIS" == "Y" ]; then
+    print_message "info" "Configuring Redis cache..."
+    print_message "success" "Redis cache configuration completed."
+    # Add redis profile for Docker Compose
+    if [[ "$COMPOSE_PROFILES" != *"redis"* ]]; then
+        COMPOSE_PROFILES="$COMPOSE_PROFILES,redis"
+    fi
+else
+    print_message "info" "Using MySQL cache as default."
+    update_env "CACHE_SCHEME" "mysql"
+    
+    # Update CELERY_BROKER_URL for MySQL cache with proper URL encoding
+    # URL encode the username to handle special characters like @
+    ENCODED_USERNAME=$(echo "$DB_USERNAME" | sed 's/@/%40/g')
+    CELERY_BROKER_URL="sqla+mysql+pymysql://${ENCODED_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}"
+    update_env "CELERY_BROKER_URL" "$CELERY_BROKER_URL"
+    print_message "success" "CELERY_BROKER_URL updated for MySQL cache."
+fi
+
 print_message "success" "\nDatabase parameters are written into .env successfully."
 
 print_message "success" "\nConnect to metadata database:"
