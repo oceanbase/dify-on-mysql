@@ -52,7 +52,9 @@ def init_app(app: DifyApp):
 
     if "mysql" in dify_config.SQLALCHEMY_DATABASE_URI_SCHEME and dify_config.CACHE_SCHEME == "mysql":
         from extensions.ext_mysql_redis import MysqlRedisClient
-        redis_client.initialize(MysqlRedisClient())
+        mysql_redis_client = MysqlRedisClient()
+        mysql_redis_client.set_app(app)  # Set Flask app reference
+        redis_client.initialize(mysql_redis_client)
         app.extensions["redis"] = redis_client
         return
 

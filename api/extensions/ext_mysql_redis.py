@@ -29,10 +29,15 @@ class Cache(Base):
 class MysqlRedisClient:
     def __init__(self, meta_db=None):
         self.db = meta_db or db
+        self._app = None  # Store Flask app reference
 
         self._cleanup_thread = None
         self._stop_cleanup = False
         self._start_cleanup_thread()
+
+    def set_app(self, app):
+        """Set Flask app reference for cleanup thread"""
+        self._app = app
 
     def cleanup_thread_is_alive(self) -> bool:
         """Check if the cleanup thread is alive"""
@@ -55,7 +60,16 @@ class MysqlRedisClient:
         time.sleep(60)
 
         while not self._stop_cleanup and self.db:
-            self.cleanup_expired()
+            try:
+                # Use Flask app context if available
+                if self._app:
+                    with self._app.app_context():
+                        self.cleanup_expired()
+                else:
+                    # Fallback without app context
+                    self.cleanup_expired()
+            except Exception as e:
+                logger.warning(f"Error during background cache cleanup: {e}")
 
             time.sleep(300)
 
@@ -75,7 +89,10 @@ class MysqlRedisClient:
             return expired_count
         except Exception as e:
             logger.warning(f"Error during manual cache cleanup: {e}")
-            self.db.session.rollback()
+            try:
+                self.db.session.rollback()
+            except Exception as rollback_error:
+                logger.warning(f"Error during rollback: {rollback_error}")
             return 0
 
     def stop_cleanup(self, sync: bool = True):
@@ -484,6 +501,7 @@ def main():
     # Create client within app context
     with app.app_context():
         client = MysqlRedisClient(test_db)
+        client.set_app(app) # Set app context for the client
 
         try:
             # Test 1: Database connection
