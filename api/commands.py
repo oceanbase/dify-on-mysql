@@ -31,6 +31,7 @@ from services.account_service import RegisterService, TenantService
 from services.clear_free_plan_tenant_expired_logs import ClearFreePlanTenantExpiredLogs
 from services.plugin.data_migration import PluginDataMigration
 from services.plugin.plugin_migration import PluginMigration
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 
 @click.command("reset-password", help="Reset the account password.")
@@ -665,10 +666,48 @@ def create_tenant(email: str, language: Optional[str] = None, name: Optional[str
     )
 
 
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
+def ensure_caches_table_exists():
+    """原子性地确保 caches 表存在，用于MySQL缓存模式，支持分布式部署"""
+    try:
+        # 使用 CREATE TABLE IF NOT EXISTS 的原子操作
+        create_caches_table_sql = """
+        CREATE TABLE IF NOT EXISTS caches (
+            id BIGINT AUTO_INCREMENT PRIMARY KEY,
+            cache_key VARCHAR(255) NOT NULL UNIQUE,
+            cache_value LONGBLOB NOT NULL,
+            expire_time DATETIME NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            INDEX caches_cache_key_idx (cache_key),
+            INDEX caches_expire_time_idx (expire_time)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        """
+        
+        with db.engine.begin() as conn:
+            conn.execute(db.text(create_caches_table_sql))
+            click.echo(click.style("Caches table ensured for MySQL cache mode.", fg="green"))
+                
+    except Exception as e:
+        click.echo(click.style(f"Error: Could not ensure caches table after 3 attempts: {e}", fg="red"))
+        # 抛出异常，停止迁移
+        raise Exception(f"Failed to create caches table after 3 attempts: {e}")
+
+
 @click.command("upgrade-db", help="Upgrade the database")
 @click.option("--directory", prompt=False, help="The target migration script directory.")
 def upgrade_db(directory: Optional[str] = None):
     click.echo("Preparing database migration...")
+    
+    # 1. 先确保 caches 表存在（原子操作）
+    # 这样在MySQL缓存模式下，分布式锁可以正常工作
+    try:
+        ensure_caches_table_exists()
+    except Exception as e:
+        click.echo(click.style(f"Error: Failed to ensure caches table: {e}", fg="red"))
+        click.echo(click.style("Migration stopped due to caches table creation failure.", fg="red"))
+        raise Exception(f"Migration failed: {e}")
+    
+    # 2. 然后使用分布式锁（现在可以安全使用了）
     lock = redis_client.lock(name="db_upgrade_lock", timeout=60)
     if lock.acquire(blocking=False):
         try:
