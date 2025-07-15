@@ -495,9 +495,10 @@ x-shared-env: &shared-api-worker-env
 services:
   # API service
   api:
-    build:
-      context: ../api
-      dockerfile: Dockerfile
+    #build:
+      # context: ../api
+      # dockerfile: Dockerfile
+    image: oceanbase/dify-api:cache-test
     restart: always
     environment:
       # Use the shared environment variables.
@@ -526,9 +527,7 @@ services:
   # worker service
   # The Celery worker for processing the queue.
   worker:
-    build:
-      context: ../api
-      dockerfile: Dockerfile
+    image: oceanbase/dify-api:cache-test
     restart: always
     environment:
       # Use the shared environment variables.
@@ -641,7 +640,7 @@ services:
 
   # plugin daemon
   plugin_daemon:
-    image: dify-plugin-daemon:test0711v3
+    image: oceanbase/dify-plugin-daemon:cache-test-local
     restart: always
     environment:
       # Use the shared environment variables.
