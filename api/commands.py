@@ -668,7 +668,7 @@ def create_tenant(email: str, language: Optional[str] = None, name: Optional[str
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
 def ensure_caches_table_exists():
-    """原子性地确保 caches 表存在，用于MySQL缓存模式，支持分布式部署"""
+    """原子性地确保 caches 表存在，用于MySQL缓存模式"""
     try:
         # 使用 CREATE TABLE IF NOT EXISTS 的原子操作
         create_caches_table_sql = """
@@ -707,7 +707,7 @@ def upgrade_db(directory: Optional[str] = None):
         click.echo(click.style("Migration stopped due to caches table creation failure.", fg="red"))
         raise Exception(f"Migration failed: {e}")
     
-    # 2. 然后使用分布式锁（现在可以安全使用了）
+    # 2. 然后使用分布式锁（可以安全使用了）
     lock = redis_client.lock(name="db_upgrade_lock", timeout=60)
     if lock.acquire(blocking=False):
         try:

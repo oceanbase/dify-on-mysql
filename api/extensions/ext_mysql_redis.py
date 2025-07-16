@@ -136,16 +136,22 @@ class MysqlRedisClient:
             expire_time = datetime.now() + expire
 
         try:
-            cache_item = self.db.session.query(Cache).filter(Cache.cache_key == name).first()
-            if cache_item:
-                cache_item.cache_value = value
-                cache_item.expire_time = expire_time
-            else:
-                cache_item = Cache()
-                cache_item.cache_key = name
-                cache_item.cache_value = value
-                cache_item.expire_time = expire_time
-                self.db.session.add(cache_item)
+            # 使用 INSERT ... ON DUPLICATE KEY UPDATE 避免竞态条件
+            sql = """
+            INSERT INTO caches (cache_key, cache_value, expire_time) 
+            VALUES (:cache_key, :cache_value, :expire_time)
+            ON DUPLICATE KEY UPDATE 
+            cache_value = VALUES(cache_value), 
+            expire_time = VALUES(expire_time)
+            """
+            self.db.session.execute(
+                db.text(sql),
+                {
+                    'cache_key': name,
+                    'cache_value': value,
+                    'expire_time': expire_time
+                }
+            )
             self.db.session.commit()
         except Exception as e:
             logger.warning("MySQLRedisClient.set " + str(name) + " got exception: " + str(e))
@@ -162,16 +168,22 @@ class MysqlRedisClient:
         expire_time = datetime.now() + expire
 
         try:
-            cache_item = self.db.session.query(Cache).filter(Cache.cache_key == name).first()
-            if cache_item:
-                cache_item.cache_value = value
-                cache_item.expire_time = expire_time
-            else:
-                cache_item = Cache()
-                cache_item.cache_key = name
-                cache_item.cache_value = value
-                cache_item.expire_time = expire_time
-                self.db.session.add(cache_item)
+            # 使用 INSERT ... ON DUPLICATE KEY UPDATE 避免竞态条件
+            sql = """
+            INSERT INTO caches (cache_key, cache_value, expire_time) 
+            VALUES (:cache_key, :cache_value, :expire_time)
+            ON DUPLICATE KEY UPDATE 
+            cache_value = VALUES(cache_value), 
+            expire_time = VALUES(expire_time)
+            """
+            self.db.session.execute(
+                db.text(sql),
+                {
+                    'cache_key': name,
+                    'cache_value': value,
+                    'expire_time': expire_time
+                }
+            )
             self.db.session.commit()
         except Exception as e:
             logger.warning("MySQLRedisClient.setex " + str(name) + " got exception: " + str(e))
@@ -185,15 +197,19 @@ class MysqlRedisClient:
             value = (str(value)).encode('utf-8')
 
         try:
-            cache_item = self.db.session.query(Cache).filter(Cache.cache_key == name).first()
-            if cache_item:
-                return
-
-            cache_item = Cache()
-            cache_item.cache_key = name
-            cache_item.cache_value = value
-            cache_item.expire_time = None
-            self.db.session.add(cache_item)
+            # 使用 INSERT IGNORE 避免竞态条件，仅在不存在时插入
+            sql = """
+            INSERT IGNORE INTO caches (cache_key, cache_value, expire_time) 
+            VALUES (:cache_key, :cache_value, :expire_time)
+            """
+            self.db.session.execute(
+                db.text(sql),
+                {
+                    'cache_key': name,
+                    'cache_value': value,
+                    'expire_time': None
+                }
+            )
             self.db.session.commit()
         except Exception as e:
             logger.warning("MySQLRedisClient.setnx " + str(name) + " got exception: " + str(e))
@@ -215,24 +231,34 @@ class MysqlRedisClient:
             return b'0'
 
         try:
-            cache_item = self.db.session.query(Cache).filter(Cache.cache_key == name).first()
-
-            if cache_item:
-                current_value = int(cache_item.cache_value.decode('utf-8'))
+            # 使用事务确保原子性，避免并发问题
+            with self.db.session.begin():
+                # 1. 获取当前值（在事务中）
+                current_item = self.db.session.query(Cache).filter(Cache.cache_key == name).first()
+                current_value = 0
+                if current_item:
+                    try:
+                        current_value = int(current_item.cache_value.decode('utf-8'))
+                    except (ValueError, UnicodeDecodeError):
+                        current_value = 0
+                
                 new_value = current_value + amount
-                cache_item.cache_value = str(new_value).encode('utf-8')
-            else:
-                cache_item = Cache()
-                cache_item.cache_key = name
-                cache_item.cache_value = str(amount).encode('utf-8')
-                cache_item.expire_time = None
-                self.db.session.add(cache_item)
-
-            self.db.session.commit()
-            return cache_item.cache_value
+                
+                # 2. 原子更新（在同一个事务中）
+                if current_item:
+                    current_item.cache_value = str(new_value).encode('utf-8')
+                else:
+                    cache_item = Cache()
+                    cache_item.cache_key = name
+                    cache_item.cache_value = str(new_value).encode('utf-8')
+                    cache_item.expire_time = None
+                    self.db.session.add(cache_item)
+                
+                # 3. 事务自动提交，返回结果
+                return str(new_value).encode('utf-8')
+                
         except Exception as e:
             logger.warning("MySQLRedisClient.incr " + str(name) + " got exception: " + str(e))
-            self.db.session.rollback()
             return b'0'
 
     def expire(self, name: str, time: int | timedelta) -> None:
@@ -243,10 +269,20 @@ class MysqlRedisClient:
         expire_time = datetime.now() + expire
 
         try:
-            cache_item = self.db.session.query(Cache).filter(Cache.cache_key == name).first()
-            if cache_item:
-                cache_item.expire_time = expire_time
-                self.db.session.commit()
+            # 使用 UPDATE 语句避免竞态条件
+            sql = """
+            UPDATE caches 
+            SET expire_time = :expire_time 
+            WHERE cache_key = :cache_key
+            """
+            result = self.db.session.execute(
+                db.text(sql),
+                {
+                    'cache_key': name,
+                    'expire_time': expire_time
+                }
+            )
+            self.db.session.commit()
         except Exception as e:
             logger.warning("MySQLRedisClient.expire " + str(name) + " got exception: " + str(e))
             self.db.session.rollback()
@@ -258,29 +294,32 @@ class MysqlRedisClient:
         try:
             import json
 
-            cache_item = self.db.session.query(Cache).filter(Cache.cache_key == name).first()
-
-            if cache_item:
-                try:
-                    existing_data = json.loads(cache_item.cache_value.decode('utf-8'))
-                    if not isinstance(existing_data, dict):
+            # 使用事务确保原子性，避免并发问题
+            with self.db.session.begin():
+                # 1. 在事务中获取现有数据
+                cache_item = self.db.session.query(Cache).filter(Cache.cache_key == name).first()
+                
+                if cache_item:
+                    try:
+                        existing_data = json.loads(cache_item.cache_value.decode('utf-8'))
+                        if not isinstance(existing_data, dict):
+                            existing_data = {}
+                    except (json.JSONDecodeError, UnicodeDecodeError):
                         existing_data = {}
-                except (json.JSONDecodeError, UnicodeDecodeError):
-                    existing_data = {}
-
-                existing_data.update(mapping)
-                cache_item.cache_value = json.dumps(existing_data).encode('utf-8')
-            else:
-                cache_item = Cache()
-                cache_item.cache_key = name
-                cache_item.cache_value = json.dumps(dict(mapping)).encode('utf-8')
-                cache_item.expire_time = None
-                self.db.session.add(cache_item)
-
-            self.db.session.commit()
+                    
+                    existing_data.update(mapping)
+                    cache_item.cache_value = json.dumps(existing_data).encode('utf-8')
+                else:
+                    cache_item = Cache()
+                    cache_item.cache_key = name
+                    cache_item.cache_value = json.dumps(dict(mapping)).encode('utf-8')
+                    cache_item.expire_time = None
+                    self.db.session.add(cache_item)
+                
+                # 2. 事务自动提交
+                
         except Exception as e:
             logger.warning("MySQLRedisClient.zadd " + str(name) + " got exception: " + str(e))
-            self.db.session.rollback()
 
     def zremrangebyscore(self, name: str, min: int | float | str, max: int | float | str):
         if not self.db:
@@ -289,39 +328,42 @@ class MysqlRedisClient:
         try:
             import json
 
-            cache_item = self.db.session.query(Cache).filter(Cache.cache_key == name).first()
-            if not cache_item:
-                return 0
-
-            try:
-                existing_data = json.loads(cache_item.cache_value.decode('utf-8'))
-                if not isinstance(existing_data, dict):
+            # 使用事务确保原子性，避免并发问题
+            with self.db.session.begin():
+                # 1. 在事务中获取现有数据
+                cache_item = self.db.session.query(Cache).filter(Cache.cache_key == name).first()
+                if not cache_item:
                     return 0
-            except (json.JSONDecodeError, UnicodeDecodeError):
-                return 0
 
-            min_score = float(min) if min != '-inf' else float('-inf')
-            max_score = float(max) if max != '+inf' else float('inf')
-
-            members_to_remove = []
-            for member, score in existing_data.items():
                 try:
-                    score_float = float(score)
-                    if min_score <= score_float <= max_score:
-                        members_to_remove.append(member)
-                except (ValueError, TypeError):
-                    continue
+                    existing_data = json.loads(cache_item.cache_value.decode('utf-8'))
+                    if not isinstance(existing_data, dict):
+                        return 0
+                except (json.JSONDecodeError, UnicodeDecodeError):
+                    return 0
 
-            for member in members_to_remove:
-                del existing_data[member]
+                min_score = float(min) if min != '-inf' else float('-inf')
+                max_score = float(max) if max != '+inf' else float('inf')
 
-            cache_item.cache_value = json.dumps(existing_data).encode('utf-8')
-            self.db.session.commit()
+                members_to_remove = []
+                for member, score in existing_data.items():
+                    try:
+                        score_float = float(score)
+                        if min_score <= score_float <= max_score:
+                            members_to_remove.append(member)
+                    except (ValueError, TypeError):
+                        continue
 
-            return len(members_to_remove)
+                for member in members_to_remove:
+                    del existing_data[member]
+
+                cache_item.cache_value = json.dumps(existing_data).encode('utf-8')
+                
+                # 2. 事务自动提交，返回结果
+                return len(members_to_remove)
+                
         except Exception as e:
             logger.warning("MySQLRedisClient.zremrangebyscore " + str(name) + " got exception: " + str(e))
-            self.db.session.rollback()
             return 0
 
     def zcard(self, name: str) -> int:
