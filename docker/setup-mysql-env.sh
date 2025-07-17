@@ -146,14 +146,33 @@ USE_REDIS=$(get_user_input "Use Redis for caching?  Y or N:" "N")
 
 if [ "$USE_REDIS" == "Y" ]; then
     print_message "info" "Configuring Redis cache..."
-    print_message "success" "Redis cache configuration completed."
-    # Add redis profile for Docker Compose
-    if [[ "$COMPOSE_PROFILES" != *"redis"* ]]; then
-        COMPOSE_PROFILES="$COMPOSE_PROFILES,redis"
+    
+    # Check if docker-compose-redis.yaml exists
+    if [ -f "docker-compose-redis.yaml" ]; then
+        print_message "info" "Found docker-compose-redis.yaml, copying to docker-compose.yaml"
+        cp docker-compose-redis.yaml docker-compose.yaml
+        
+        # Set environment to use Redis
+        update_env "CACHE_SCHEME" "redis"
+        update_env "CELERY_BROKER_URL" "redis://:difyai123456@redis:6379/1"
+        
+        print_message "success" "Redis cache configuration completed."
+        print_message "info" "Use 'docker-compose up -d' to start services with Redis."
+    else
+        print_message "error" "ERROR: docker-compose-redis.yaml not found!"
+        print_message "info" "Please create docker-compose-redis.yaml with Redis service configuration."
+        exit 1
     fi
 else
     print_message "info" "Using MySQL cache as default."
+    # Copy MySQL configuration to docker-compose.yaml
+    if [ -f "docker-compose-mysql.yaml" ]; then
+        print_message "info" "Found docker-compose-mysql.yaml, copying to docker-compose.yaml"
+        cp docker-compose-mysql.yaml docker-compose.yaml
+    fi
+    print_message "info" "Using MySQL cache as default."
     update_env "CACHE_SCHEME" "mysql"
+    update_env "OCEANBASE_CLUSTER_NAME" "difyai-redis"
     
     # Update CELERY_BROKER_URL for MySQL cache with proper URL encoding
     # URL encode the username to handle special characters like @

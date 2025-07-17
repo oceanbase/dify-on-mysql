@@ -6,9 +6,10 @@ on:
       - "main"
       - "deploy/dev"
       - "deploy/enterprise"
-      - "cache-test"
     tags:
       - "*"
+  release:
+    types: [published]
 
 concurrency:
   group: build-push-api-${{ github.head_ref || github.run_id }}
