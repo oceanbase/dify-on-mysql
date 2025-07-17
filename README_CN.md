@@ -2,7 +2,7 @@
 
 [English](README.md) | 简体中文
 
-这是一个 [https://github.com/langgenius/dify](https://github.com/langgenius/dify)  的 fork，我们基于原始的 Dify 项目进行了一些修改，使其能够使用 MySQL 作为基础数据库。
+这是一个 [https://github.com/langgenius/dify](https://github.com/langgenius/dify)  的 fork，我们基于原始的 Dify 项目进行了一些修改，使其能够使用 MySQL 作为基础数据库，同时可以使用mysql cache作为缓存。
 
 本分支基于历史版本 [https://github.com/oceanbase-devhub/dify](https://github.com/oceanbase-devhub/dify)，自 Dify 1.1.0 开始更新，后续将在官方社区加入 MySQL 适配前进行定期发布。
 
@@ -41,4 +41,3 @@ docker compose up -d
 ## License
 
 本仓库遵循 [Dify Open Source License](LICENSE) 开源协议，该许可证本质上是 Apache 2.0，但有一些额外的限制。
-# 0715
