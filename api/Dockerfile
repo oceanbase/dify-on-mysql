@@ -6,9 +6,8 @@ WORKDIR /app/api
 # Install uv
 ENV UV_VERSION=0.6.14
 
-# 2024-12-19: 修改为官方 PyPI 源，解决网络超时问题
-# 原配置: RUN pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple uv==${UV_VERSION}
-# 修改原因: 清华源和阿里云源都出现网络超时，改用官方源提高稳定性
+
+# RUN pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple uv==${UV_VERSION}
 RUN pip install --no-cache-dir uv==${UV_VERSION}
 
 
@@ -22,10 +21,7 @@ RUN apt-get update \
 
 # Install Python dependencies
 COPY pyproject.toml uv.lock ./
-# 2024-12-19: 修改为官方 PyPI 源，解决网络超时问题
 # RUN uv sync --index-url https://pypi.tuna.tsinghua.edu.cn/simple
-# 修改原因: 清华源和阿里云源都出现网络超时，改用官方源提高稳定性，本地build还是建议用镜像源
-# 使用官方源，uv sync 默认使用 https://pypi.org/simple/
 RUN uv sync
 
 # production stage
