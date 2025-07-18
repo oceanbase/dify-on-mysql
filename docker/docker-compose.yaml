@@ -5,8 +5,8 @@
 # ==================================================================
 
 # ==================================================================
-# ATTENTION: This file is used for Redis cache.
-# If you want to use MySQL cache, please use docker-compose-mysql.yaml.
+# ATTENTION: This file is used for MySQL cache.
+# If you want to use Redis cache, please use docker-compose-redis.yaml.
 # ==================================================================
 
 x-shared-env: &shared-api-worker-env
@@ -500,7 +500,7 @@ x-shared-env: &shared-api-worker-env
 services:
   # API service
   api:
-    image: oceanbase/dify-api:dify-for-mysql
+    image: oceanbase/dify-api:1.4.0
     restart: always
     environment:
       # Use the shared environment variables.
@@ -517,8 +517,8 @@ services:
     depends_on:
       oceanbase:
         condition: service_healthy
-      redis:
-        condition: service_started
+      # redis:
+      #   condition: service_started
     volumes:
       # Mount the storage directory to the container, for storing user files.
       - ./volumes/app/storage:/app/api/storage
@@ -529,7 +529,7 @@ services:
   # worker service
   # The Celery worker for processing the queue.
   worker:
-    image: oceanbase/dify-api:dify-for-mysql
+    image: oceanbase/dify-api:1.4.0
     restart: always
     environment:
       # Use the shared environment variables.
@@ -544,8 +544,8 @@ services:
     depends_on:
       oceanbase:
         condition: service_healthy
-      redis:
-        condition: service_started
+      # redis:
+      #   condition: service_started
     volumes:
       # Mount the storage directory to the container, for storing user files.
       - ./volumes/app/storage:/app/api/storage
@@ -602,19 +602,19 @@ services:
       timeout: 3s
       retries: 60
 
-  #The redis cache
-  redis:
-    image: redis:6-alpine
-    restart: always
-    environment:
-      REDISCLI_AUTH: ${REDIS_PASSWORD:-difyai123456}
-    volumes:
-      # Mount the redis data directory to the container.
-      - ./volumes/redis/data:/data
-    # Set the redis password when startup redis server.
-    command: redis-server --requirepass ${REDIS_PASSWORD:-difyai123456}
-    healthcheck:
-      test: [ 'CMD', 'redis-cli', 'ping' ]
+  # #The redis cache
+  # redis:
+  #   image: redis:6-alpine
+  #   restart: always
+  #   environment:
+  #     REDISCLI_AUTH: ${REDIS_PASSWORD:-difyai123456}
+  #   volumes:
+  #     # Mount the redis data directory to the container.
+  #     - ./volumes/redis/data:/data
+  #   # Set the redis password when startup redis server.
+  #   command: redis-server --requirepass ${REDIS_PASSWORD:-difyai123456}
+  #   healthcheck:
+  #     test: [ 'CMD', 'redis-cli', 'ping' ]
 
   # The DifySandbox
   sandbox:
