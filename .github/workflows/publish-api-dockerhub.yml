@@ -6,11 +6,10 @@ on:
       - "main"
       - "deploy/dev"
       - "deploy/enterprise"
-      - "dify-for-mysql"
     tags:
       - "*"
   release:
-    types: [published]
+    types: [published, edited]
 
 concurrency:
   group: build-push-api-${{ github.head_ref || github.run_id }}
