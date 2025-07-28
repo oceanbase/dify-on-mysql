@@ -398,17 +398,75 @@ class MysqlLock:
         self.name = name
         self.timeout = timeout
         self._locked = False
+        logger.info(f"MysqlLock created for {self.name}, timeout={timeout}")
+        
+    def _cleanup_expired_locks(self) -> None:
+        """Clean up expired locks (simple version)"""
+        try:
+            import json
+            import time
+            
+            current_time = time.time()
+            timeout = self.timeout or 60.0
+            expire_threshold = current_time - timeout
+            
+            # Get all lock records
+            lock_items = self.db.session.query(Cache).filter(Cache.cache_key.like('lock_%')).all()
+            
+            expired_items = []
+            for item in lock_items:
+                try:
+                    lock_data = json.loads(item.cache_value.decode('utf-8'))
+                    if lock_data.get('timestamp', 0) < expire_threshold:
+                        expired_items.append(item)
+                except (json.JSONDecodeError, UnicodeDecodeError):
+                    # Corrupted data, mark for deletion
+                    expired_items.append(item)
+            
+            # Delete expired locks
+            for item in expired_items:
+                self.db.session.delete(item)
+            
+            if expired_items:
+                self.db.session.commit()
+                logger.info(f"Cleaned up {len(expired_items)} expired locks")
+                
+        except Exception as e:
+            logger.warning(f"Failed to cleanup expired locks: {str(e)}")
+            try:
+                self.db.session.rollback()
+            except:
+                pass
 
     def acquire(self, blocking: bool = False) -> bool:
+        logger.info(f"acquire() called for lock {self.name}")
         if self._locked:
+            logger.info(f"Lock {self.name} already acquired, returning True")
             return True
 
         assert not blocking, "MysqlLock does not support blocking"
-        return self._try_acquire()
+        
+        # Occasionally clean up expired locks (10% chance to avoid performance impact)
+        import random
+        if random.random() < 0.1:
+            try:
+                self._cleanup_expired_locks()
+            except Exception as e:
+                logger.warning(f"Error during lock cleanup: {str(e)}")
+        
+        result = self._try_acquire()
+        if not result:
+            logger.warning(f"Failed to acquire lock {self.name}, timeout={self.timeout}")
+        else:
+            logger.info(f"Successfully acquired lock {self.name}")
+        return result
 
     def _try_acquire(self) -> bool:
         if not self.db:
+            logger.warning(f"Lock {self.name}: db is None")
             return False
+        
+        logger.info(f"Trying to acquire lock {self.name}")
 
         try:
             import json
@@ -426,14 +484,23 @@ class MysqlLock:
                 "timestamp": current_time
             }
 
+            # Set default timeout if not specified
+            timeout = self.timeout or 60.0
+
             cache_item = self.db.session.query(Cache).filter(Cache.cache_key == lock_key).first()
 
             if cache_item:
                 try:
                     existing_lock = json.loads(cache_item.cache_value.decode('utf-8'))
                     lock_timestamp = existing_lock.get("timestamp", 0)
+                    age = current_time - lock_timestamp
 
-                    if self.timeout and (current_time - lock_timestamp) > self.timeout:
+                    logger.info(f"Lock {self.name} exists, age={age:.2f}s, timeout={timeout}s")
+
+                    # Check if lock has expired
+                    if age > timeout:
+                        logger.info(f"Lock {self.name} has expired, trying to acquire")
+                        # Lock has expired, try to acquire it atomically
                         result = self.db.session.query(Cache).filter(
                             Cache.cache_key == lock_key,
                             Cache.cache_value == cache_item.cache_value
@@ -443,15 +510,22 @@ class MysqlLock:
                         self.db.session.commit()
 
                         if result > 0:
+                            logger.info(f"Successfully acquired expired lock {self.name}")
                             self._locked = True
                             return True
                         else:
+                            # Another process updated the lock, try again
+                            logger.info(f"Failed to acquire expired lock {self.name}, another process got it")
                             return False
                     else:
+                        # Lock is still valid
+                        logger.info(f"Lock {self.name} is still valid, cannot acquire")
                         return False
                 except (json.JSONDecodeError, UnicodeDecodeError):
+                    # Corrupted lock data, try to fix it
                     result = self.db.session.query(Cache).filter(
-                        Cache.cache_key == lock_key
+                        Cache.cache_key == lock_key,
+                        Cache.cache_value == cache_item.cache_value
                     ).update({
                         "cache_value": json.dumps(lock_value).encode('utf-8')
                     })
@@ -463,6 +537,7 @@ class MysqlLock:
                     else:
                         return False
             else:
+                logger.info(f"No existing lock for {self.name}, creating new one")
                 try:
                     cache_item = Cache()
                     cache_item.cache_key = lock_key
@@ -470,16 +545,21 @@ class MysqlLock:
                     cache_item.expire_time = None
                     self.db.session.add(cache_item)
                     self.db.session.commit()
+                    logger.info(f"Successfully created new lock {self.name}")
                     self._locked = True
                     return True
-                except Exception:
+                except Exception as e:
                     # Another process created the lock simultaneously
+                    logger.info(f"Failed to create lock {self.name}: {str(e)}")
                     self.db.session.rollback()
                     return False
 
         except Exception as e:
-            logger.warning("MysqlLock._try_acquire " + str(self.name) + " got exception: " + str(e))
-            self.db.session.rollback()
+            logger.error(f"MysqlLock._try_acquire {self.name} got exception: {str(e)}", exc_info=True)
+            try:
+                self.db.session.rollback()
+            except Exception as rollback_e:
+                logger.error(f"Failed to rollback transaction: {str(rollback_e)}")
             return False
 
     def release(self) -> None:
@@ -504,8 +584,14 @@ class MysqlLock:
                         lock_data.get("thread_id") == thread_id):
                         self.db.session.delete(cache_item)
                         self.db.session.commit()
+                        logger.info(f"Successfully released lock {self.name}")
+                    else:
+                        logger.warning(f"Lock {self.name} is owned by another process/thread")
                 except (json.JSONDecodeError, UnicodeDecodeError):
-                    pass
+                    # Corrupted lock data, delete it anyway if it's our lock key
+                    logger.warning(f"Corrupted lock data for {self.name}, deleting anyway")
+                    self.db.session.delete(cache_item)
+                    self.db.session.commit()
 
             self._locked = False
         except Exception as e:
