@@ -113,11 +113,10 @@ class OceanBaseVector(BaseVector):
                 )
                 
                 if self._hybrid_search_enabled:
-                    # Use Thai tokenizer if enabled, otherwise use default ik parser
-                    parser_name = dify_config.OCEANBASE_THAI_PARSER_NAME if dify_config.OCEANBASE_ENABLE_THAI_TOKENIZER else "ik"
+                    # Use default ik parser for fulltext search
                     try:
                         self._client.perform_raw_text_sql(f"""ALTER TABLE {self._collection_name}
-                        ADD FULLTEXT INDEX fulltext_index_for_col_text (text) WITH PARSER {parser_name}""")
+                        ADD FULLTEXT INDEX fulltext_index_for_col_text (text) WITH PARSER ik""")
                     except Exception as e:
                         raise Exception(
                             "Failed to add fulltext index to the target table, your OceanBase version must be 4.3.5.1 or above "
