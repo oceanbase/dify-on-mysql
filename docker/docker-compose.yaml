@@ -529,9 +529,6 @@ services:
   # worker service
   # The Celery worker for processing the queue.
   worker:
-    # build:
-    #   context: ../api
-    #   dockerfile: Dockerfile
     image: oceanbase/dify-api:1.4.0
     restart: always
     environment:
@@ -934,9 +931,7 @@ services:
     volumes:
       - ./volumes/oceanbase/data:/root/ob
       - ./volumes/oceanbase/conf:/root/.obd/cluster
-      - ./volumes/oceanbase/conf/observer-template.yaml:/root/templates/observer-template.yaml
       - ./volumes/oceanbase/init.d:/root/boot/init.d
-      - ./volumes/oceanbase/plugins:/root/ob/observer/plugin_dir
     environment:
       OB_MEMORY_LIMIT: ${OCEANBASE_MEMORY_LIMIT:-6G}
       OB_SYS_PASSWORD: ${OCEANBASE_VECTOR_PASSWORD:-difyai123456}
@@ -944,8 +939,6 @@ services:
       OB_CLUSTER_NAME: ${OCEANBASE_CLUSTER_NAME:-difyai}
       OB_SERVER_IP: 127.0.0.1
       MODE: MINI
-      PLUGINS_LOAD: ${PLUGINS_LOAD:-libthai_tokenizer.so:on}
-
     ports:
       - "${OCEANBASE_VECTOR_PORT:-2881}:2881"
     healthcheck:

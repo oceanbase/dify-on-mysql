@@ -21,8 +21,8 @@ RUN apt-get update \
 
 # Install Python dependencies
 COPY pyproject.toml uv.lock ./
-RUN uv sync --index-url https://pypi.tuna.tsinghua.edu.cn/simple --group storage --group tools --group vdb
-# RUN uv sync
+# RUN uv sync --index-url https://pypi.tuna.tsinghua.edu.cn/simple --group storage --group tools --group vdb
+RUN uv sync
 
 # production stage
 FROM base AS production
