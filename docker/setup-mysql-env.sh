@@ -163,6 +163,7 @@ if [ "$USE_REDIS" == "Y" ]; then
         print_message "info" "Please create docker-compose-redis.yaml with Redis service configuration."
         exit 1
     fi
+    update_env "OCEANBASE_CLUSTER_NAME" "difyai-redis"
 else
     print_message "info" "Using MySQL cache as default."
     # Copy MySQL configuration to docker-compose.yaml
@@ -172,7 +173,7 @@ else
     fi
     print_message "info" "Using MySQL cache as default."
     update_env "CACHE_SCHEME" "mysql"
-    update_env "OCEANBASE_CLUSTER_NAME" "difyai-redis"
+    
     
     # Update CELERY_BROKER_URL for MySQL cache with proper URL encoding
     # URL encode the username to handle special characters like @
