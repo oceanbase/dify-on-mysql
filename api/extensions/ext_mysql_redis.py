@@ -33,11 +33,13 @@ class MysqlRedisClient:
 
         self._cleanup_thread = None
         self._stop_cleanup = False
-        self._start_cleanup_thread()
+        # 不在初始化时启动清理线程，等待set_app()调用后再启动
 
     def set_app(self, app):
         """Set Flask app reference for cleanup thread"""
         self._app = app
+        # 现在启动清理线程，确保有正确的应用上下文
+        self._start_cleanup_thread()
 
     def cleanup_thread_is_alive(self) -> bool:
         """Check if the cleanup thread is alive"""
@@ -439,7 +441,27 @@ class MysqlLock:
                 "timestamp": current_time
             }
 
+            # 先尝试清理过期的同名锁，避免等待后台清理线程
             try:
+                self.db.session.query(Cache).filter(
+                    Cache.cache_key == lock_key,
+                    Cache.expire_time.isnot(None),
+                    Cache.expire_time < datetime.now()
+                ).delete()
+                self.db.session.commit()
+            except Exception:
+                try:
+                    self.db.session.rollback()
+                except Exception:
+                    pass
+
+            try:
+                # 设置锁的过期时间，防止死锁
+                if self.timeout:
+                    lock_expire_time = datetime.now() + timedelta(seconds=self.timeout)
+                else:
+                    lock_expire_time = datetime.now() + timedelta(seconds=300)  # 默认5分钟
+
                 sql = """
                 INSERT INTO caches (cache_key, cache_value, expire_time)
                 VALUES (:cache_key, :cache_value, :expire_time)
@@ -449,7 +471,7 @@ class MysqlLock:
                     {
                         'cache_key': lock_key,
                         'cache_value': json.dumps(lock_value).encode('utf-8'),
-                        'expire_time': None
+                        'expire_time': lock_expire_time
                     }
                 )
                 self.db.session.commit()
@@ -460,7 +482,10 @@ class MysqlLock:
                 else:
                     return False
             except Exception as e:
-                self.db.session.rollback()
+                try:
+                    self.db.session.rollback()
+                except Exception:
+                    pass
                 logger.debug(f"Lock insert failed for {lock_key}: {e}")
                 return False
 
@@ -500,7 +525,10 @@ class MysqlLock:
             self._locked = False
         except Exception as e:
             logger.warning("MysqlLock.release " + str(self.name) + " got exception: " + str(e))
-            self.db.session.rollback()
+            try:
+                self.db.session.rollback()
+            except Exception:
+                pass
 
     def __enter__(self):
         if not self.acquire():
