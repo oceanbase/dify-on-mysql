@@ -62,6 +62,7 @@ const translation = {
       uninstalledTitle: 'Narzędzie nie jest zainstalowane',
       paramsTip2: 'Gdy opcja "Automatycznie" jest wyłączona, używana jest wartość domyślna.',
       toolLabel: 'Narzędzie',
+      toolSetting: 'Ustawienia narzędzi',
     },
     strategyNum: '{{liczba}} {{strategia}} ZAWARTE',
     endpointsEmpty: 'Kliknij przycisk "+", aby dodać punkt końcowy',
@@ -136,6 +137,7 @@ const translation = {
     readyToInstallPackage: 'Informacje o instalacji następującej wtyczki',
     uploadingPackage: 'Przesyłanie {{packageName}}...',
     installedSuccessfully: 'Instalacja powiodła się',
+    installWarning: 'Ten plugin nie może być zainstalowany.',
   },
   installFromGitHub: {
     installPlugin: 'Zainstaluj wtyczkę z GitHub',
@@ -205,11 +207,12 @@ const translation = {
   fromMarketplace: 'Z Marketplace',
   searchPlugins: 'Wtyczki wyszukiwania',
   searchTools: 'Narzędzia wyszukiwania...',
-  submitPlugin: 'Prześlij wtyczkę',
   metadata: {
     title: 'Wtyczki',
   },
   difyVersionNotCompatible: 'Obecna wersja Dify nie jest kompatybilna z tym wtyczką, proszę zaktualizować do minimalnej wymaganej wersji: {{minimalDifyVersion}}',
+  requestAPlugin: 'Poproś o wtyczkę',
+  publishPlugins: 'Publikowanie wtyczek',
 }
 
 export default translation

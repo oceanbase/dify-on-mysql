@@ -4,11 +4,11 @@ FROM python:3.12-slim-bookworm AS base
 WORKDIR /app/api
 
 # Install uv
-ENV UV_VERSION=0.6.14
+ENV UV_VERSION=0.7.11
 
 
-# RUN pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple uv==${UV_VERSION}
-RUN pip install --no-cache-dir uv==${UV_VERSION}
+RUN pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple uv==${UV_VERSION}
+# RUN pip install --no-cache-dir uv==${UV_VERSION}
 
 
 FROM base AS packages
@@ -21,8 +21,8 @@ RUN apt-get update \
 
 # Install Python dependencies
 COPY pyproject.toml uv.lock ./
-# RUN uv sync --index-url https://pypi.tuna.tsinghua.edu.cn/simple
-RUN uv sync
+RUN uv sync --index-url https://pypi.tuna.tsinghua.edu.cn/simple
+# RUN uv sync
 
 # production stage
 FROM base AS production
@@ -41,6 +41,8 @@ EXPOSE 5001
 ENV TZ=UTC
 
 WORKDIR /app/api
+
+RUN sed -i 's@deb.debian.org@mirrors.aliyun.com@g' /etc/apt/sources.list.d/debian.sources
 
 RUN \
     apt-get update \

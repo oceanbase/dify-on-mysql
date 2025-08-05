@@ -1,5 +1,6 @@
 import json
 import re
+import uuid
 from collections.abc import Mapping
 from datetime import datetime
 from enum import Enum, StrEnum
@@ -8,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, cast
 from core.plugin.entities.plugin import GenericProviderID
 from core.tools.entities.tool_entities import ToolProviderType
 from core.tools.signature import sign_tool_file
-from services.plugin.plugin_service import PluginService
+from core.workflow.entities.workflow_execution import WorkflowExecutionStatus
 
 if TYPE_CHECKING:
     from models.workflow import Workflow
@@ -28,9 +29,8 @@ from libs.helper import generate_string
 from .account import Account, Tenant
 from .base import Base
 from .engine import db
-from .enums import CreatedByRole
+from .enums import CreatorUserRole
 from .types import StringUUID, no_length_string, text_default, uuid_default, varchar_default, adjusted_text
-from .workflow import WorkflowRunStatus
 
 if TYPE_CHECKING:
     from .workflow import Workflow
@@ -168,6 +168,7 @@ class App(Base):
     @property
     def deleted_tools(self) -> list:
         from core.tools.tool_manager import ToolManager
+        from services.plugin.plugin_service import PluginService
 
         # get agent mode tools
         app_model_config = self.app_model_config
@@ -292,6 +293,15 @@ class App(Base):
         )
 
         return tags or []
+
+    @property
+    def author_name(self):
+        if self.created_by:
+            account = db.session.query(Account).filter(Account.id == self.created_by).first()
+            if account:
+                return account.name
+
+        return None
 
 
 class AppModelConfig(Base):
@@ -601,6 +611,14 @@ class InstalledApp(Base):
         return tenant
 
 
+class ConversationSource(StrEnum):
+    """This enumeration is designed for use with `Conversation.from_source`."""
+
+    # NOTE(QuantumGhost): The enumeration members may not cover all possible cases.
+    API = "api"
+    CONSOLE = "console"
+
+
 class Conversation(Base):
     __tablename__ = "conversations"
     __table_args__ = (
@@ -622,7 +640,14 @@ class Conversation(Base):
     system_instruction = db.Column(adjusted_text())
     system_instruction_tokens = db.Column(db.Integer, nullable=False, server_default=db.text("0"))
     status = db.Column(db.String(255), nullable=False)
+
+    # The `invoke_from` records how the conversation is created.
+    #
+    # Its value corresponds to the members of `InvokeFrom`.
+    # (api/core/app/entities/app_invoke_entities.py)
     invoke_from = db.Column(db.String(255), nullable=True)
+
+    # ref: ConversationSource.
     from_source = db.Column(db.String(255), nullable=False)
     from_end_user_id = db.Column(StringUUID)
     from_account_id = db.Column(StringUUID)
@@ -784,22 +809,22 @@ class Conversation(Base):
     def status_count(self):
         messages = db.session.query(Message).filter(Message.conversation_id == self.id).all()
         status_counts = {
-            WorkflowRunStatus.RUNNING: 0,
-            WorkflowRunStatus.SUCCEEDED: 0,
-            WorkflowRunStatus.FAILED: 0,
-            WorkflowRunStatus.STOPPED: 0,
-            WorkflowRunStatus.PARTIAL_SUCCEEDED: 0,
+            WorkflowExecutionStatus.RUNNING: 0,
+            WorkflowExecutionStatus.SUCCEEDED: 0,
+            WorkflowExecutionStatus.FAILED: 0,
+            WorkflowExecutionStatus.STOPPED: 0,
+            WorkflowExecutionStatus.PARTIAL_SUCCEEDED: 0,
         }
 
         for message in messages:
             if message.workflow_run:
-                status_counts[WorkflowRunStatus(message.workflow_run.status)] += 1
+                status_counts[WorkflowExecutionStatus(message.workflow_run.status)] += 1
 
         return (
             {
-                "success": status_counts[WorkflowRunStatus.SUCCEEDED],
-                "failed": status_counts[WorkflowRunStatus.FAILED],
-                "partial_success": status_counts[WorkflowRunStatus.PARTIAL_SUCCEEDED],
+                "success": status_counts[WorkflowExecutionStatus.SUCCEEDED],
+                "failed": status_counts[WorkflowExecutionStatus.FAILED],
+                "partial_success": status_counts[WorkflowExecutionStatus.PARTIAL_SUCCEEDED],
             }
             if messages
             else None
@@ -807,7 +832,12 @@ class Conversation(Base):
 
     @property
     def first_message(self):
-        return db.session.query(Message).filter(Message.conversation_id == self.id).first()
+        return (
+            db.session.query(Message)
+            .filter(Message.conversation_id == self.id)
+            .order_by(Message.created_at.asc())
+            .first()
+        )
 
     @property
     def app(self):
@@ -884,11 +914,11 @@ class Message(Base):
     _inputs: Mapped[dict] = mapped_column("inputs", db.JSON)
     query: Mapped[str] = db.Column(adjusted_text(), nullable=False)
     message = db.Column(db.JSON, nullable=False)
-    message_tokens = db.Column(db.Integer, nullable=False, server_default=db.text("0"))
+    message_tokens: Mapped[int] = db.Column(db.Integer, nullable=False, server_default=db.text("0"))
     message_unit_price = db.Column(db.Numeric(10, 4), nullable=False)
     message_price_unit = db.Column(db.Numeric(10, 7), nullable=False, server_default=db.text("0.001"))
     answer: Mapped[str] = db.Column(adjusted_text(), nullable=False)
-    answer_tokens = db.Column(db.Integer, nullable=False, server_default=db.text("0"))
+    answer_tokens: Mapped[int] = db.Column(db.Integer, nullable=False, server_default=db.text("0"))
     answer_unit_price = db.Column(db.Numeric(10, 4), nullable=False)
     answer_price_unit = db.Column(db.Numeric(10, 7), nullable=False, server_default=db.text("0.001"))
     parent_message_id = db.Column(StringUUID, nullable=True)
@@ -1269,7 +1299,7 @@ class MessageFile(Base):
         url: str | None = None,
         belongs_to: Literal["user", "assistant"] | None = None,
         upload_file_id: str | None = None,
-        created_by_role: CreatedByRole,
+        created_by_role: CreatorUserRole,
         created_by: str,
     ):
         self.message_id = message_id
@@ -1416,7 +1446,7 @@ class EndUser(Base, UserMixin):
     )
 
     id = db.Column(StringUUID, **uuid_default())
-    tenant_id = db.Column(StringUUID, nullable=False)
+    tenant_id: Mapped[str] = db.Column(StringUUID, nullable=False)
     app_id = db.Column(StringUUID, nullable=True)
     type = db.Column(db.String(255), nullable=False)
     external_user_id = db.Column(db.String(255), nullable=True)
@@ -1544,7 +1574,7 @@ class UploadFile(Base):
         size: int,
         extension: str,
         mime_type: str,
-        created_by_role: CreatedByRole,
+        created_by_role: CreatorUserRole,
         created_by: str,
         created_at: datetime,
         used: bool,

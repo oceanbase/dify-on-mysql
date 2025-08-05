@@ -12,10 +12,11 @@ from core.tools.entities.tool_entities import ToolInvokeMessage, ToolParameter
 from core.tools.errors import ToolInvokeError
 from core.tools.tool_engine import ToolEngine
 from core.tools.utils.message_transformer import ToolFileMessageTransformer
-from core.variables.segments import ArrayAnySegment
+from core.variables.segments import ArrayAnySegment, ArrayFileSegment
 from core.variables.variables import ArrayAnyVariable
-from core.workflow.entities.node_entities import NodeRunMetadataKey, NodeRunResult
+from core.workflow.entities.node_entities import NodeRunResult
 from core.workflow.entities.variable_pool import VariablePool
+from core.workflow.entities.workflow_node_execution import WorkflowNodeExecutionMetadataKey, WorkflowNodeExecutionStatus
 from core.workflow.enums import SystemVariableKey
 from core.workflow.graph_engine.entities.event import AgentLogEvent
 from core.workflow.nodes.base import BaseNode
@@ -25,7 +26,6 @@ from core.workflow.utils.variable_template_parser import VariableTemplateParser
 from extensions.ext_database import db
 from factories import file_factory
 from models import ToolFile
-from models.workflow import WorkflowNodeExecutionStatus
 from services.tools.builtin_tools_manage_service import BuiltinToolManageService
 
 from .entities import ToolNodeData
@@ -43,6 +43,10 @@ class ToolNode(BaseNode[ToolNodeData]):
 
     _node_data_cls = ToolNodeData
     _node_type = NodeType.TOOL
+
+    @classmethod
+    def version(cls) -> str:
+        return "1"
 
     def _run(self) -> Generator:
         """
@@ -70,7 +74,7 @@ class ToolNode(BaseNode[ToolNodeData]):
                 run_result=NodeRunResult(
                     status=WorkflowNodeExecutionStatus.FAILED,
                     inputs={},
-                    metadata={NodeRunMetadataKey.TOOL_INFO: tool_info},
+                    metadata={WorkflowNodeExecutionMetadataKey.TOOL_INFO: tool_info},
                     error=f"Failed to get tool runtime: {str(e)}",
                     error_type=type(e).__name__,
                 )
@@ -110,7 +114,7 @@ class ToolNode(BaseNode[ToolNodeData]):
                 run_result=NodeRunResult(
                     status=WorkflowNodeExecutionStatus.FAILED,
                     inputs=parameters_for_log,
-                    metadata={NodeRunMetadataKey.TOOL_INFO: tool_info},
+                    metadata={WorkflowNodeExecutionMetadataKey.TOOL_INFO: tool_info},
                     error=f"Failed to invoke tool: {str(e)}",
                     error_type=type(e).__name__,
                 )
@@ -125,7 +129,7 @@ class ToolNode(BaseNode[ToolNodeData]):
                 run_result=NodeRunResult(
                     status=WorkflowNodeExecutionStatus.FAILED,
                     inputs=parameters_for_log,
-                    metadata={NodeRunMetadataKey.TOOL_INFO: tool_info},
+                    metadata={WorkflowNodeExecutionMetadataKey.TOOL_INFO: tool_info},
                     error=f"Failed to transform tool message: {str(e)}",
                     error_type=type(e).__name__,
                 )
@@ -201,7 +205,7 @@ class ToolNode(BaseNode[ToolNodeData]):
         json: list[dict] = []
 
         agent_logs: list[AgentLogEvent] = []
-        agent_execution_metadata: Mapping[NodeRunMetadataKey, Any] = {}
+        agent_execution_metadata: Mapping[WorkflowNodeExecutionMetadataKey, Any] = {}
 
         variables: dict[str, Any] = {}
 
@@ -274,7 +278,7 @@ class ToolNode(BaseNode[ToolNodeData]):
                     agent_execution_metadata = {
                         key: value
                         for key, value in msg_metadata.items()
-                        if key in NodeRunMetadataKey.__members__.values()
+                        if key in WorkflowNodeExecutionMetadataKey.__members__.values()
                     }
                 json.append(message.message.json_object)
             elif message.type == ToolInvokeMessage.MessageType.LINK:
@@ -300,6 +304,7 @@ class ToolNode(BaseNode[ToolNodeData]):
                     variables[variable_name] = variable_value
             elif message.type == ToolInvokeMessage.MessageType.FILE:
                 assert message.meta is not None
+                assert isinstance(message.meta, File)
                 files.append(message.meta["file"])
             elif message.type == ToolInvokeMessage.MessageType.LOG:
                 assert isinstance(message.message, ToolInvokeMessage.LogMessage)
@@ -363,11 +368,11 @@ class ToolNode(BaseNode[ToolNodeData]):
         yield RunCompletedEvent(
             run_result=NodeRunResult(
                 status=WorkflowNodeExecutionStatus.SUCCEEDED,
-                outputs={"text": text, "files": files, "json": json, **variables},
+                outputs={"text": text, "files": ArrayFileSegment(value=files), "json": json, **variables},
                 metadata={
                     **agent_execution_metadata,
-                    NodeRunMetadataKey.TOOL_INFO: tool_info,
-                    NodeRunMetadataKey.AGENT_LOG: agent_logs,
+                    WorkflowNodeExecutionMetadataKey.TOOL_INFO: tool_info,
+                    WorkflowNodeExecutionMetadataKey.AGENT_LOG: agent_logs,
                 },
                 inputs=parameters_for_log,
             )

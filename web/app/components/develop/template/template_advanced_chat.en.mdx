@@ -59,7 +59,7 @@ Chat applications support session persistence, allowing previous chat history to
       </Property>
       <Property name='user' type='string' key='user'>
           User identifier, used to define the identity of the end-user for retrieval and statistics.
-          Should be uniquely defined by the developer within the application.
+          Should be uniquely defined by the developer within the application. The Service API does not share conversations created by the WebApp.
       </Property>
       <Property name='conversation_id' type='string' key='conversation_id'>
       Conversation ID, to continue the conversation based on previous chat records, it is necessary to pass the previous message's conversation_id.
@@ -152,7 +152,6 @@ Chat applications support session persistence, allowing previous chat history to
       - `data` (object) detail
         - `id` (string) Unique ID of workflow execution
         - `workflow_id` (string) ID of related workflow
-        - `sequence_number` (int) Self-increasing serial number, self-increasing in the App, starting from 1
         - `created_at` (timestamp) Creation timestamp, e.g., 1705395332
     - `event: node_started` node execution started
       - `task_id` (string) Task ID, used for request tracking and the below Stop Generate API
@@ -287,7 +286,7 @@ Chat applications support session persistence, allowing previous chat history to
     ### Streaming Mode
     <CodeGroup title="Response">
     ```streaming {{ title: 'Response' }}
-      data: {"event": "workflow_started", "task_id": "5ad4cb98-f0c7-4085-b384-88c403be6290", "workflow_run_id": "5ad498-f0c7-4085-b384-88cbe6290", "data": {"id": "5ad498-f0c7-4085-b384-88cbe6290", "workflow_id": "dfjasklfjdslag", "sequence_number": 1, "created_at": 1679586595}}
+      data: {"event": "workflow_started", "task_id": "5ad4cb98-f0c7-4085-b384-88c403be6290", "workflow_run_id": "5ad498-f0c7-4085-b384-88cbe6290", "data": {"id": "5ad498-f0c7-4085-b384-88cbe6290", "workflow_id": "dfjasklfjdslag", "created_at": 1679586595}}
       data: {"event": "node_started", "task_id": "5ad4cb98-f0c7-4085-b384-88c403be6290", "workflow_run_id": "5ad498-f0c7-4085-b384-88cbe6290", "data": {"id": "5ad498-f0c7-4085-b384-88cbe6290", "node_id": "dfjasklfjdslag", "node_type": "start", "title": "Start", "index": 0, "predecessor_node_id": "fdljewklfklgejlglsd", "inputs": {}, "created_at": 1679586595}}
       data: {"event": "node_finished", "task_id": "5ad4cb98-f0c7-4085-b384-88c403be6290", "workflow_run_id": "5ad498-f0c7-4085-b384-88cbe6290", "data": {"id": "5ad498-f0c7-4085-b384-88cbe6290", "node_id": "dfjasklfjdslag", "node_type": "start", "title": "Start", "index": 0, "predecessor_node_id": "fdljewklfklgejlglsd", "inputs": {}, "outputs": {}, "status": "succeeded", "elapsed_time": 0.324, "execution_metadata": {"total_tokens": 63127864, "total_price": 2.378, "currency": "USD"},  "created_at": 1679586595}}
       data: {"event": "workflow_finished", "task_id": "5ad4cb98-f0c7-4085-b384-88c403be6290", "workflow_run_id": "5ad498-f0c7-4085-b384-88cbe6290", "data": {"id": "5ad498-f0c7-4085-b384-88cbe6290", "workflow_id": "dfjasklfjdslag", "outputs": {}, "status": "succeeded", "elapsed_time": 0.324, "total_tokens": 63127864, "total_steps": "1", "created_at": 1679586595, "finished_at": 1679976595}}
@@ -324,7 +323,7 @@ Chat applications support session persistence, allowing previous chat history to
   - `file` (File) Required
     The file to be uploaded.
   - `user` (string) Required
-    User identifier, defined by the developer's rules, must be unique within the application.
+    User identifier, defined by the developer's rules, must be unique within the application. The Service API does not share conversations created by the WebApp.
 
   ### Response
   After a successful upload, the server will return the file's ID and related information.
@@ -352,7 +351,7 @@ Chat applications support session persistence, allowing previous chat history to
   </Col>
   <Col sticky>
   ### Request Example
-  <CodeGroup title="Request" tag="POST" label="/files/upload" targetCode={`curl -X POST '${props.appDetail.api_base_url}/files/upload' \\\n--header 'Authorization: Bearer {api_key}' \\\n--form 'file=@localfile;type=image/[png|jpeg|jpg|webp|gif] \\\n--form 'user=abc-123'`}>
+  <CodeGroup title="Request" tag="POST" label="/files/upload" targetCode={`curl -X POST '${props.appDetail.api_base_url}/files/upload' \\\n--header 'Authorization: Bearer {api_key}' \\\n--form 'file=@localfile;type=image/[png|jpeg|jpg|webp|gif]' \\\n--form 'user=abc-123'`}>
 
     ```bash {{ title: 'cURL' }}
     curl -X POST '${props.appDetail.api_base_url}/files/upload' \
@@ -394,7 +393,7 @@ Chat applications support session persistence, allowing previous chat history to
   - `task_id` (string) Task ID, can be obtained from the streaming chunk return
   ### Request Body
   - `user` (string) Required
-    User identifier, used to define the identity of the end-user, must be consistent with the user passed in the send message interface.
+    User identifier, used to define the identity of the end-user, must be consistent with the user passed in the message sending interface. The Service API does not share conversations created by the WebApp.
   ### Response
   - `result` (string) Always returns "success"
   </Col>
@@ -448,7 +447,7 @@ Chat applications support session persistence, allowing previous chat history to
         Upvote as `like`, downvote as `dislike`, revoke upvote as `null`
       </Property>
       <Property name='user' type='string' key='user'>
-        User identifier, defined by the developer's rules, must be unique within the application.
+        User identifier, defined by the developer's rules, must be unique within the application. The Service API does not share conversations created by the WebApp.
       </Property>
       <Property name='content' type='string' key='content'>
         The specific content of message feedback.
@@ -635,22 +634,22 @@ Chat applications support session persistence, allowing previous chat history to
 
     ### Response
     - `data` (array[object]) Message list
-    - `id` (string) Message ID
-    - `conversation_id` (string) Conversation ID
-    - `inputs` (object) User input parameters.
-    - `query` (string) User input / question content.
-    - `message_files` (array[object]) Message files
-      - `id` (string) ID
-      - `type` (string) File type, image for images
-      - `url` (string) Preview image URL
-      - `belongs_to` (string) belongs to，user orassistant
-    - `answer` (string) Response message content
-    - `created_at` (timestamp) Creation timestamp, e.g., 1705395332
-    - `feedback` (object) Feedback information
-      - `rating` (string) Upvote as `like` / Downvote as `dislike`
-    - `retriever_resources` (array[RetrieverResource]) Citation and Attribution List
-  - `has_more` (bool) Whether there is a next page
-  - `limit` (int) Number of returned items, if input exceeds system limit, returns system limit amount
+      - `id` (string) Message ID
+      - `conversation_id` (string) Conversation ID
+      - `inputs` (object) User input parameters.
+      - `query` (string) User input / question content.
+      - `message_files` (array[object]) Message files
+        - `id` (string) ID
+        - `type` (string) File type, image for images
+        - `url` (string) Preview image URL
+        - `belongs_to` (string) belongs to，user orassistant
+      - `answer` (string) Response message content
+      - `created_at` (timestamp) Creation timestamp, e.g., 1705395332
+      - `feedback` (object) Feedback information
+        - `rating` (string) Upvote as `like` / Downvote as `dislike`
+      - `retriever_resources` (array[RetrieverResource]) Citation and Attribution List
+    - `has_more` (bool) Whether there is a next page
+    - `limit` (int) Number of returned items, if input exceeds system limit, returns system limit amount
 
   </Col>
   <Col sticky>
@@ -1123,6 +1122,8 @@ Chat applications support session persistence, allowing previous chat history to
   - `name` (string) application name
   - `description` (string) application description
   - `tags` (array[string]) application tags
+  - `mode` (string) application mode
+  - `author_name` (string) application author name
   </Col>
   <Col>
     <CodeGroup title="Request" tag="GET" label="/info" targetCode={`curl -X GET '${props.appDetail.api_base_url}/info' \\\n-H 'Authorization: Bearer {api_key}'`}>
@@ -1139,7 +1140,9 @@ Chat applications support session persistence, allowing previous chat history to
       "tags": [
         "tag1",
         "tag2"
-      ]
+      ],
+      "mode": "advanced-chat",
+      "author_name": "Dify"
     }
     ```
     </CodeGroup>
@@ -1165,6 +1168,13 @@ Chat applications support session persistence, allowing previous chat history to
       - `enabled` (bool) Whether it is enabled
     - `speech_to_text` (object) Speech to text
       - `enabled` (bool) Whether it is enabled
+    - `text_to_speech` (object) Text to speech
+      - `enabled` (bool) Whether it is enabled
+      - `voice` (string) Voice type
+      - `language` (string) Language
+      - `autoPlay` (string) Auto play
+        - `enabled`   Enabled
+        - `disabled`  Disabled
     - `retriever_resource` (object) Citation and Attribution
       - `enabled` (bool) Whether it is enabled
     - `annotation_reply` (object) Annotation reply
@@ -1219,6 +1229,12 @@ Chat applications support session persistence, allowing previous chat history to
       },
       "speech_to_text": {
           "enabled": true
+      },
+      "text_to_speech": {
+          "enabled": true,
+          "voice": "sambert-zhinan-v1",
+          "language": "zh-Hans",
+          "autoPlay": "disabled"
       },
       "retriever_resource": {
           "enabled": true

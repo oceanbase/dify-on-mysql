@@ -4,7 +4,7 @@ import uuid
 from collections.abc import Generator, Mapping
 from typing import Any, Literal, Union, overload
 
-from flask import Flask, current_app
+from flask import Flask, copy_current_request_context, current_app
 from pydantic import ValidationError
 
 from configs import dify_config
@@ -115,6 +115,11 @@ class ChatAppGenerator(MessageBasedAppGenerator):
             override_model_config_dict["retriever_resource"] = {"enabled": True}
 
         # parse files
+        # TODO(QuantumGhost): Move file parsing logic to the API controller layer
+        # for better separation of concerns.
+        #
+        # For implementation reference, see the `_parse_file` function and
+        # `DraftWorkflowNodeRunApi` class which handle this properly.
         files = args["files"] if args.get("files") else []
         file_extra_config = FileUploadConfigManager.convert(override_model_config_dict or app_model_config.to_dict())
         if file_extra_config:
@@ -170,17 +175,18 @@ class ChatAppGenerator(MessageBasedAppGenerator):
             message_id=message.id,
         )
 
-        # new thread
-        worker_thread = threading.Thread(
-            target=self._generate_worker,
-            kwargs={
-                "flask_app": current_app._get_current_object(),  # type: ignore
-                "application_generate_entity": application_generate_entity,
-                "queue_manager": queue_manager,
-                "conversation_id": conversation.id,
-                "message_id": message.id,
-            },
-        )
+        # new thread with request context
+        @copy_current_request_context
+        def worker_with_context():
+            return self._generate_worker(
+                flask_app=current_app._get_current_object(),  # type: ignore
+                application_generate_entity=application_generate_entity,
+                queue_manager=queue_manager,
+                conversation_id=conversation.id,
+                message_id=message.id,
+            )
+
+        worker_thread = threading.Thread(target=worker_with_context)
 
         worker_thread.start()
 

@@ -1,7 +1,6 @@
 import base64
 import json
 import logging
-import random
 import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
@@ -49,7 +48,7 @@ from services.errors.account import (
     RoleAlreadyAssignedError,
     TenantNotFoundError,
 )
-from services.errors.workspace import WorkSpaceNotAllowedCreateError
+from services.errors.workspace import WorkSpaceNotAllowedCreateError, WorkspacesLimitExceededError
 from services.feature_service import FeatureService
 from tasks.delete_account_task import delete_account_task
 from tasks.mail_account_deletion_task import send_account_deletion_verification_code
@@ -261,7 +260,7 @@ class AccountService:
 
     @staticmethod
     def generate_account_deletion_verification_code(account: Account) -> tuple[str, str]:
-        code = "".join([str(random.randint(0, 9)) for _ in range(6)])
+        code = "".join([str(secrets.randbelow(exclusive_upper_bound=10)) for _ in range(6)])
         token = TokenManager.generate_token(
             account=account, token_type="account_deletion", additional_data={"code": code}
         )
@@ -429,7 +428,7 @@ class AccountService:
         additional_data: dict[str, Any] = {},
     ):
         if not code:
-            code = "".join([str(random.randint(0, 9)) for _ in range(6)])
+            code = "".join([str(secrets.randbelow(exclusive_upper_bound=10)) for _ in range(6)])
         additional_data["code"] = code
         token = TokenManager.generate_token(
             account=account, email=email, token_type="reset_password", additional_data=additional_data
@@ -456,7 +455,7 @@ class AccountService:
 
             raise EmailCodeLoginRateLimitExceededError()
 
-        code = "".join([str(random.randint(0, 9)) for _ in range(6)])
+        code = "".join([str(secrets.randbelow(exclusive_upper_bound=10)) for _ in range(6)])
         token = TokenManager.generate_token(
             account=account, email=email, token_type="email_code_login", additional_data={"code": code}
         )
@@ -627,6 +626,10 @@ class TenantService:
         """Create owner tenant if not exist"""
         if not FeatureService.get_system_features().is_allow_create_workspace and not is_setup:
             raise WorkSpaceNotAllowedCreateError()
+
+        workspaces = FeatureService.get_system_features().license.workspaces
+        if not workspaces.is_available():
+            raise WorkspacesLimitExceededError()
 
         if name:
             tenant = TenantService.create_tenant(name=name, is_setup=is_setup)
@@ -928,7 +931,11 @@ class RegisterService:
             if open_id is not None and provider is not None:
                 AccountService.link_account_integrate(provider, open_id, account)
 
-            if FeatureService.get_system_features().is_allow_create_workspace and create_workspace_required:
+            if (
+                FeatureService.get_system_features().is_allow_create_workspace
+                and create_workspace_required
+                and FeatureService.get_system_features().license.workspaces.is_available()
+            ):
                 tenant = TenantService.create_tenant(f"{account.name}'s Workspace")
                 TenantService.create_tenant_member(tenant, account, role="owner")
                 account.current_tenant = tenant

@@ -82,9 +82,9 @@ Chat applications support session persistence, allowing previous chat history to
 
     ### ChatCompletionResponse
     Returns the complete App result, `Content-Type` is `application/json`.
-    - `event` (string) 事件类型，固定为 `message`
-    - `task_id` (string) 任务 ID，用于请求跟踪和下方的停止响应接口
-    - `id` (string) 唯一ID
+    - `event` (string) Event type, always `message` in blocking mode.
+    - `task_id` (string) Task ID, used for request tracking and the below Stop Generate API
+    - `id` (string) Unique ID, same as `message_id`
     - `message_id` (string) Unique message ID
     - `conversation_id` (string) Conversation ID
     - `mode` (string) App mode, fixed as `chat`
@@ -287,7 +287,7 @@ Chat applications support session persistence, allowing previous chat history to
   - `file` (File) Required
     The file to be uploaded.
   - `user` (string) Required
-    User identifier, defined by the developer's rules, must be unique within the application.
+    User identifier, defined by the developer's rules, must be unique within the application. The Service API does not share conversations created by the WebApp.
 
   ### Response
   After a successful upload, the server will return the file's ID and related information.
@@ -315,7 +315,7 @@ Chat applications support session persistence, allowing previous chat history to
   </Col>
   <Col sticky>
   ### Request Example
-  <CodeGroup title="Request" tag="POST" label="/files/upload" targetCode={`curl -X POST '${props.appDetail.api_base_url}/files/upload' \\\n--header 'Authorization: Bearer {api_key}' \\\n--form 'file=@localfile;type=image/[png|jpeg|jpg|webp|gif] \\\n--form 'user=abc-123'`}>
+  <CodeGroup title="Request" tag="POST" label="/files/upload" targetCode={`curl -X POST '${props.appDetail.api_base_url}/files/upload' \\\n--header 'Authorization: Bearer {api_key}' \\\n--form 'file=@localfile;type=image/[png|jpeg|jpg|webp|gif]' \\\n--form 'user=abc-123'`}>
 
     ```bash {{ title: 'cURL' }}
     curl -X POST '${props.appDetail.api_base_url}/files/upload' \
@@ -357,7 +357,7 @@ Chat applications support session persistence, allowing previous chat history to
   - `task_id` (string) Task ID, can be obtained from the streaming chunk return
   ### Request Body
   - `user` (string) Required
-    User identifier, used to define the identity of the end-user, must be consistent with the user passed in the send message interface.
+    User identifier, used to define the identity of the end-user, must be consistent with the user passed in the message sending interface. The Service API does not share conversations created by the WebApp.
   ### Response
   - `result` (string) Always returns "success"
   </Col>
@@ -598,33 +598,33 @@ Chat applications support session persistence, allowing previous chat history to
 
     ### Response
     - `data` (array[object]) Message list
-    - `id` (string) Message ID
-    - `conversation_id` (string) Conversation ID
-    - `inputs` (object) User input parameters.
-    - `query` (string) User input / question content.
-    - `message_files` (array[object]) Message files
-      - `id` (string) ID
-      - `type` (string) File type, image for images
-      - `url` (string) Preview image URL
-      - `belongs_to` (string) belongs to，user or assistant
-    - `agent_thoughts` (array[object]) Agent thought（Empty if it's a Basic Assistant）
-      - `id` (string) Agent thought ID, every iteration has a unique agent thought ID
-      - `message_id` (string) Unique message ID
-      - `position` (int) Position of current agent thought, each message may have multiple thoughts in order.
-      - `thought` (string) What LLM is thinking about
-      - `observation` (string) Response from tool calls
-      - `tool` (string) A list of tools represents which tools are called，split by ;
-      - `tool_input` (string) Input of tools in JSON format. Like: `{"dalle3": {"prompt": "a cute cat"}}`.
-      - `created_at` (int) Creation timestamp, e.g., 1705395332
-      - `message_files` (array[string])  Refer to message_file event
-        - `file_id` (string) File ID
-    - `answer` (string) Response message content
-    - `created_at` (timestamp) Creation timestamp, e.g., 1705395332
-    - `feedback` (object) Feedback information
-      - `rating` (string) Upvote as `like` / Downvote as `dislike`
-    - `retriever_resources` (array[RetrieverResource]) Citation and Attribution List
-  - `has_more` (bool) Whether there is a next page
-  - `limit` (int) Number of returned items, if input exceeds system limit, returns system limit amount
+      - `id` (string) Message ID
+      - `conversation_id` (string) Conversation ID
+      - `inputs` (object) User input parameters.
+      - `query` (string) User input / question content.
+      - `message_files` (array[object]) Message files
+        - `id` (string) ID
+        - `type` (string) File type, image for images
+        - `url` (string) Preview image URL
+        - `belongs_to` (string) belongs to，user or assistant
+      - `agent_thoughts` (array[object]) Agent thought（Empty if it's a Basic Assistant）
+        - `id` (string) Agent thought ID, every iteration has a unique agent thought ID
+        - `message_id` (string) Unique message ID
+        - `position` (int) Position of current agent thought, each message may have multiple thoughts in order.
+        - `thought` (string) What LLM is thinking about
+        - `observation` (string) Response from tool calls
+        - `tool` (string) A list of tools represents which tools are called，split by ;
+        - `tool_input` (string) Input of tools in JSON format. Like: `{"dalle3": {"prompt": "a cute cat"}}`.
+        - `created_at` (int) Creation timestamp, e.g., 1705395332
+        - `message_files` (array[string])  Refer to message_file event
+          - `file_id` (string) File ID
+      - `answer` (string) Response message content
+      - `created_at` (timestamp) Creation timestamp, e.g., 1705395332
+      - `feedback` (object) Feedback information
+        - `rating` (string) Upvote as `like` / Downvote as `dislike`
+      - `retriever_resources` (array[RetrieverResource]) Citation and Attribution List
+    - `has_more` (bool) Whether there is a next page
+    - `limit` (int) Number of returned items, if input exceeds system limit, returns system limit amount
 
   </Col>
   <Col sticky>
@@ -1151,6 +1151,8 @@ Chat applications support session persistence, allowing previous chat history to
   - `name` (string) application name
   - `description` (string) application description
   - `tags` (array[string]) application tags
+  - `mode` (string) application mode
+  - `author_name` (string) application author name
   </Col>
   <Col>
     <CodeGroup title="Request" tag="GET" label="/info" targetCode={`curl -X GET '${props.appDetail.api_base_url}/info' \\\n-H 'Authorization: Bearer {api_key}'`}>
@@ -1167,7 +1169,9 @@ Chat applications support session persistence, allowing previous chat history to
       "tags": [
         "tag1",
         "tag2"
-      ]
+      ],
+      "mode": "advanced-chat",
+      "author_name": "Dify"
     }
     ```
     </CodeGroup>
@@ -1201,6 +1205,13 @@ Chat applications support session persistence, allowing previous chat history to
       - `enabled` (bool) Whether it is enabled
     - `speech_to_text` (object) Speech to text
       - `enabled` (bool) Whether it is enabled
+    - `text_to_speech` (object) Text to speech
+      - `enabled` (bool) Whether it is enabled
+      - `voice` (string) Voice type
+      - `language` (string) Language
+      - `autoPlay` (string) Auto play
+        - `enabled`   Enabled
+        - `disabled`  Disabled
     - `retriever_resource` (object) Citation and Attribution
       - `enabled` (bool) Whether it is enabled
     - `annotation_reply` (object) Annotation reply
@@ -1255,6 +1266,12 @@ Chat applications support session persistence, allowing previous chat history to
       },
       "speech_to_text": {
           "enabled": true
+      },
+      "text_to_speech": {
+          "enabled": true,
+          "voice": "sambert-zhinan-v1",
+          "language": "zh-Hans",
+          "autoPlay": "disabled"
       },
       "retriever_resource": {
           "enabled": true
