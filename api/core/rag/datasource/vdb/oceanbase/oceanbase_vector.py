@@ -69,74 +69,64 @@ class OceanBaseVector(BaseVector):
         self.add_texts(texts, embeddings)
 
     def _create_collection(self) -> None:
-        collection_exist_cache_key = "vector_indexing_" + self._collection_name
-        
-        # Check cache first
-        if redis_client.get(collection_exist_cache_key):
-            return
-
-        # Check if table already exists
-        if self._client.check_table_exists(self._collection_name):
-            redis_client.set(collection_exist_cache_key, 1, ex=3600)  # Cache for 1 hour
-            return
-
-        # Try to acquire lock and create table
         lock_name = "vector_indexing_lock_" + self._collection_name
-        try:
-            with redis_client.lock(lock_name, timeout=120):
-                # Double check after acquiring lock
-                if self._client.check_table_exists(self._collection_name):
-                    redis_client.set(collection_exist_cache_key, 1, ex=3600)
-                    return
+        with redis_client.lock(lock_name, timeout=20):
+            collection_exist_cache_key = "vector_indexing_" + self._collection_name
+            if redis_client.get(collection_exist_cache_key):
+                return
 
-                self.delete()
+            if self._client.check_table_exists(self._collection_name):
+                return
 
-                cols = [
-                    Column("id", String(36), primary_key=True, autoincrement=False),
-                    Column("vector", VECTOR(self._vec_dim)),
-                    Column("text", LONGTEXT),
-                    Column("metadata", JSON),
-                ]
-                vidx_params = self._client.prepare_index_params()
-                vidx_params.add_index(
-                    field_name="vector",
-                    index_type=OCEANBASE_SUPPORTED_VECTOR_INDEX_TYPE,
-                    index_name="vector_index",
-                    metric_type=DEFAULT_OCEANBASE_VECTOR_METRIC_TYPE,
-                    params=DEFAULT_OCEANBASE_HNSW_BUILD_PARAM,
-                )
+            self.delete()
 
-                self._client.create_table_with_index_params(
-                    table_name=self._collection_name,
-                    columns=cols,
-                    vidxs=vidx_params,
-                )
-                
+            cols = [
+                Column("id", String(36), primary_key=True, autoincrement=False),
+                Column("vector", VECTOR(self._vec_dim)),
+                Column("text", LONGTEXT),
+                Column("metadata", JSON),
+            ]
+            vidx_params = self._client.prepare_index_params()
+            vidx_params.add_index(
+                field_name="vector",
+                index_type=OCEANBASE_SUPPORTED_VECTOR_INDEX_TYPE,
+                index_name="vector_index",
+                metric_type=DEFAULT_OCEANBASE_VECTOR_METRIC_TYPE,
+                params=DEFAULT_OCEANBASE_HNSW_BUILD_PARAM,
+            )
+
+            self._client.create_table_with_index_params(
+                table_name=self._collection_name,
+                columns=cols,
+                vidxs=vidx_params,
+            )
+            try:
                 if self._hybrid_search_enabled:
-                    # Use default ik parser for fulltext search
-                    try:
-                        self._client.perform_raw_text_sql(f"""ALTER TABLE {self._collection_name}
-                        ADD FULLTEXT INDEX fulltext_index_for_col_text (text) WITH PARSER ik""")
-                    except Exception as e:
-                        raise Exception(
-                            "Failed to add fulltext index to the target table, your OceanBase version must be 4.3.5.1 or above "
-                            + "to support fulltext index and vector index in the same table",
-                            e,
-                        )
-
-                redis_client.set(collection_exist_cache_key, 1, ex=3600)
-                
-        except RuntimeError as e:
-            if "Failed to acquire lock" in str(e):
-                # If we can't get the lock, check if table was created by another process
-                if self._client.check_table_exists(self._collection_name):
-                    redis_client.set(collection_exist_cache_key, 1, ex=3600)
-                    return
-                else:
-                    # Re-raise the error if table still doesn't exist
-                    raise
-            else:
-                raise
+                    self._client.perform_raw_text_sql(f"""ALTER TABLE {self._collection_name}
+                    ADD FULLTEXT INDEX fulltext_index_for_col_text (text) WITH PARSER ik""")
+            except Exception as e:
+                raise Exception(
+                    "Failed to add fulltext index to the target table, your OceanBase version must be 4.3.5.1 or above "
+                    + "to support fulltext index and vector index in the same table",
+                    e,
+                )
+            vals = []
+            params = self._client.perform_raw_text_sql("SHOW PARAMETERS LIKE '%ob_vector_memory_limit_percentage%'")
+            for row in params:
+                val = int(row[6])
+                vals.append(val)
+            if len(vals) == 0:
+                raise ValueError("ob_vector_memory_limit_percentage not found in parameters.")
+            if any(val == 0 for val in vals):
+                try:
+                    self._client.perform_raw_text_sql("ALTER SYSTEM SET ob_vector_memory_limit_percentage = 30")
+                except Exception as e:
+                    raise Exception(
+                        "Failed to set ob_vector_memory_limit_percentage. "
+                        + "Maybe the database user has insufficient privilege.",
+                        e,
+                    )
+            redis_client.set(collection_exist_cache_key, 1, ex=3600)
 
     def _check_hybrid_search_support(self) -> bool:
         """
