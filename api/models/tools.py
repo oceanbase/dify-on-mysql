@@ -206,13 +206,13 @@ class MCPToolProvider(Base):
         db.UniqueConstraint("tenant_id", "server_identifier", name="unique_mcp_provider_server_identifier"),
     )
 
-    id: Mapped[str] = mapped_column(StringUUID, server_default=db.text("uuid_generate_v4()"))
+    id: Mapped[str] = mapped_column(StringUUID, **uuid_default())
     # name of the mcp provider
     name: Mapped[str] = mapped_column(db.String(40), nullable=False)
     # server identifier of the mcp provider
     server_identifier: Mapped[str] = mapped_column(db.String(24), nullable=False)
     # encrypted url of the mcp provider
-    server_url: Mapped[str] = mapped_column(db.Text, nullable=False)
+    server_url: Mapped[str] = mapped_column(adjusted_text(), nullable=False)
     # hash of server_url for uniqueness check
     server_url_hash: Mapped[str] = mapped_column(db.String(64), nullable=False)
     # icon of the mcp provider
@@ -222,11 +222,11 @@ class MCPToolProvider(Base):
     # who created this tool
     user_id: Mapped[str] = mapped_column(StringUUID, nullable=False)
     # encrypted credentials
-    encrypted_credentials: Mapped[str] = mapped_column(db.Text, nullable=True)
+    encrypted_credentials: Mapped[str] = mapped_column(adjusted_text(), nullable=True)
     # authed
     authed: Mapped[bool] = mapped_column(db.Boolean, nullable=False, default=False)
     # tools
-    tools: Mapped[str] = mapped_column(db.Text, nullable=False, default="[]")
+    tools: Mapped[str] = mapped_column(adjusted_text(), nullable=False, default="[]")
     created_at: Mapped[datetime] = mapped_column(
         db.DateTime, nullable=False, server_default=db.text("CURRENT_TIMESTAMP(0)")
     )

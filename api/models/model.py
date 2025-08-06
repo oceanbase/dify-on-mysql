@@ -1463,14 +1463,14 @@ class AppMCPServer(Base):
         db.UniqueConstraint("tenant_id", "app_id", name="unique_app_mcp_server_tenant_app_id"),
         db.UniqueConstraint("server_code", name="unique_app_mcp_server_server_code"),
     )
-    id = db.Column(StringUUID, server_default=db.text("uuid_generate_v4()"))
+    id = db.Column(StringUUID, **uuid_default())
     tenant_id = db.Column(StringUUID, nullable=False)
     app_id = db.Column(StringUUID, nullable=False)
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.String(255), nullable=False)
     server_code = db.Column(db.String(255), nullable=False)
-    status = db.Column(db.String(255), nullable=False, server_default=db.text("'normal'::character varying"))
-    parameters = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(255), nullable=False, **varchar_default("normal"))
+    parameters = db.Column(adjusted_text(), nullable=False)
 
     created_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
     updated_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())

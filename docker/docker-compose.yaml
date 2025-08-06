@@ -502,7 +502,7 @@ x-shared-env: &shared-api-worker-env
 services:
   # API service
   api:
-    image: dify-on-mysql:upgradeto1.6.0
+    image: dify-on-mysql:shiver-1.6.0
     restart: always
     environment:
       # Use the shared environment variables.
@@ -531,7 +531,7 @@ services:
   # worker service
   # The Celery worker for processing the queue.
   worker:
-    image: dify-on-mysql:upgradeto1.6.0
+    image: dify-on-mysql:shiver-1.6.0
     restart: always
     environment:
       # Use the shared environment variables.
