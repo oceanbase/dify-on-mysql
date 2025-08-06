@@ -443,7 +443,7 @@ def _batch_upsert_draft_varaible(
     # insert operations instead of the ORM layer.
     stmt = insert(WorkflowDraftVariable).values([_model_to_insertion_dict(v) for v in draft_vars])
     if policy == _UpsertPolicy.OVERWRITE:
-        stmt = stmt.on_conflict_do_update(
+        stmt = stmt.on_conflict_do_update( # TODO: Suit mysql statement
             index_elements=WorkflowDraftVariable.unique_app_id_node_id_name(),
             set_={
                 # Refresh creation timestamp to ensure updated variables
