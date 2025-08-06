@@ -69,6 +69,7 @@ class WorkflowEntry:
             raise ValueError("Max workflow call depth {} reached.".format(workflow_call_max_depth))
 
         # init workflow run state
+        graph_runtime_state = GraphRuntimeState(variable_pool=variable_pool, start_at=time.perf_counter())
         self.graph_engine = GraphEngine(
             tenant_id=tenant_id,
             app_id=app_id,
@@ -80,7 +81,7 @@ class WorkflowEntry:
             call_depth=call_depth,
             graph=graph,
             graph_config=graph_config,
-            variable_pool=variable_pool,
+            graph_runtime_state=graph_runtime_state,
             max_execution_steps=dify_config.WORKFLOW_MAX_EXECUTION_STEPS,
             max_execution_time=dify_config.WORKFLOW_MAX_EXECUTION_TIME,
             thread_pool_id=thread_pool_id,
@@ -300,7 +301,7 @@ class WorkflowEntry:
             return node_instance, generator
         except Exception as e:
             logger.exception(
-                "error while running node_instance, workflow_id=%s, node_id=%s, type=%s, version=%s",
+                "error while running node_instance, node_id=%s, type=%s, version=%s",
                 node_instance.id,
                 node_instance.node_type,
                 node_instance.version(),

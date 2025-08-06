@@ -8,7 +8,7 @@ import VarReferencePicker from './var-reference-picker'
 import Input from '@/app/components/base/input'
 import type { ValueSelector, Var, Variable } from '@/app/components/workflow/types'
 import { VarType as VarKindType } from '@/app/components/workflow/nodes/tool/types'
-import { checkKeys } from '@/utils/var'
+import { checkKeys, replaceSpaceWithUnderscreInVarNameInput } from '@/utils/var'
 import Toast from '@/app/components/base/toast'
 
 type Props = {
@@ -38,6 +38,8 @@ const VarList: FC<Props> = ({
 
   const handleVarNameChange = useCallback((index: number) => {
     return (e: React.ChangeEvent<HTMLInputElement>) => {
+      replaceSpaceWithUnderscreInVarNameInput(e.target)
+
       const newKey = e.target.value
       const { isValid, errorKey, errorMessageKey } = checkKeys([newKey], true)
       if (!isValid) {
@@ -65,15 +67,24 @@ const VarList: FC<Props> = ({
   }, [list, onVarNameChange, onChange])
 
   const handleVarReferenceChange = useCallback((index: number) => {
-    return (value: ValueSelector | string, varKindType: VarKindType) => {
+    return (value: ValueSelector | string, varKindType: VarKindType, varInfo?: Var) => {
       const newList = produce(list, (draft) => {
         if (!isSupportConstantValue || varKindType === VarKindType.variable) {
           draft[index].value_selector = value as ValueSelector
+          draft[index].value_type = varInfo?.type
           if (isSupportConstantValue)
             draft[index].variable_type = VarKindType.variable
 
-          if (!draft[index].variable)
-            draft[index].variable = value[value.length - 1]
+          if (!draft[index].variable) {
+            const variables = draft.map(v => v.variable)
+            let newVarName = value[value.length - 1]
+            let count = 1
+            while (variables.includes(newVarName)) {
+              newVarName = `${value[value.length - 1]}_${count}`
+              count++
+            }
+            draft[index].variable = newVarName
+          }
         }
         else {
           draft[index].variable_type = VarKindType.constant
