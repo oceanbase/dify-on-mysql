@@ -7,9 +7,11 @@ from typing import Any, ClassVar
 
 from sqlalchemy import Engine, orm, select
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.dialects.mysql import insert as mysql_insert
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import and_, or_
 
+from configs import dify_config
 from core.app.entities.app_invoke_entities import InvokeFrom
 from core.file.models import File
 from core.variables import Segment, StringSegment, Variable
@@ -441,30 +443,54 @@ def _batch_upsert_draft_varaible(
     #
     # For these reasons, we use the SQLAlchemy query builder and rely on dialect-specific
     # insert operations instead of the ORM layer.
-    stmt = insert(WorkflowDraftVariable).values([_model_to_insertion_dict(v) for v in draft_vars])
-    if policy == _UpsertPolicy.OVERWRITE:
-        stmt = stmt.on_conflict_do_update( # TODO: Suit mysql statement
-            index_elements=WorkflowDraftVariable.unique_app_id_node_id_name(),
-            set_={
-                # Refresh creation timestamp to ensure updated variables
-                # appear first in chronologically sorted result sets.
-                "created_at": stmt.excluded.created_at,
-                "updated_at": stmt.excluded.updated_at,
-                "last_edited_at": stmt.excluded.last_edited_at,
-                "description": stmt.excluded.description,
-                "value_type": stmt.excluded.value_type,
-                "value": stmt.excluded.value,
-                "visible": stmt.excluded.visible,
-                "editable": stmt.excluded.editable,
-                "node_execution_id": stmt.excluded.node_execution_id,
-            },
-        )
-    elif _UpsertPolicy.IGNORE:
-        stmt = stmt.on_conflict_do_nothing(index_elements=WorkflowDraftVariable.unique_app_id_node_id_name())
+    if dify_config.SQLALCHEMY_DATABASE_URI_SCHEME == "postgresql":
+        stmt = insert(WorkflowDraftVariable).values([_model_to_insertion_dict(v) for v in draft_vars])
+        if policy == _UpsertPolicy.OVERWRITE:
+            stmt = stmt.on_conflict_do_update(
+                index_elements=WorkflowDraftVariable.unique_app_id_node_id_name(),
+                set_={
+                    # Refresh creation timestamp to ensure updated variables
+                    # appear first in chronologically sorted result sets.
+                    "created_at": stmt.excluded.created_at,
+                    "updated_at": stmt.excluded.updated_at,
+                    "last_edited_at": stmt.excluded.last_edited_at,
+                    "description": stmt.excluded.description,
+                    "value_type": stmt.excluded.value_type,
+                    "value": stmt.excluded.value,
+                    "visible": stmt.excluded.visible,
+                    "editable": stmt.excluded.editable,
+                    "node_execution_id": stmt.excluded.node_execution_id,
+                },
+            )
+        elif _UpsertPolicy.IGNORE:
+            stmt = stmt.on_conflict_do_nothing(index_elements=WorkflowDraftVariable.unique_app_id_node_id_name())
+        else:
+            raise Exception("Invalid value for update policy.")
+    elif dify_config.SQLALCHEMY_DATABASE_URI_SCHEME == "mysql+pymysql":
+        stmt = mysql_insert(WorkflowDraftVariable).values([_model_to_insertion_dict(v) for v in draft_vars])
+        if policy == _UpsertPolicy.OVERWRITE:
+            # Index_elements needn't to be specified in mysql dialect. Conflict was determined 
+            # by unique_key.
+            stmt = stmt.on_duplicate_key_update(
+                # 更新字段为“要插入的新值”
+                created_at=stmt.inserted.created_at,
+                updated_at=stmt.inserted.updated_at,
+                last_edited_at=stmt.inserted.last_edited_at,
+                description=stmt.inserted.description,
+                value_type=stmt.inserted.value_type,
+                value=stmt.inserted.value,
+                visible=stmt.inserted.visible,
+                editable=stmt.inserted.editable,
+                node_execution_id=stmt.inserted.node_execution_id,
+            )
+        elif policy == _UpsertPolicy.IGNORE:
+            # MySQL: INSERT IGNORE（忽略冲突，不报错）
+            stmt = stmt.prefix_with("IGNORE")
+        else:
+            raise Exception("Invalid value for update policy.")
     else:
-        raise Exception("Invalid value for update policy.")
+        raise Exception(f"Invalid SQLALCHEMY_DATABASE_URI_SCHEME: {dify_config.SQLALCHEMY_DATABASE_URI_SCHEME}")
     session.execute(stmt)
-
 
 def _model_to_insertion_dict(model: WorkflowDraftVariable) -> dict[str, Any]:
     d: dict[str, Any] = {
