@@ -7,6 +7,7 @@ import psycopg2.extras  # type: ignore
 import psycopg2.pool  # type: ignore
 from pydantic import BaseModel, model_validator
 
+from configs import dify_config
 from core.rag.models.document import Document
 from extensions.ext_redis import redis_client
 
@@ -146,7 +147,10 @@ class AnalyticdbVectorBySql:
                             f"WITH(dim='{embedding_dimension}', distancemeasure='{self.config.metrics}', "
                             f"pq_enable=0, external_storage=0)"
                         )
-                        cur.execute(f"CREATE INDEX ON {self.table_name} USING gin(to_tsvector)")
+
+                        # MySQL don't support gin index (up to date)
+                        if dify_config.SQLALCHEMY_DATABASE_URI_SCHEME == "postgresql":
+                            cur.execute(f"CREATE INDEX ON {self.table_name} USING gin(to_tsvector)")
                     except Exception as e:
                         if "already exists" not in str(e):
                             raise e

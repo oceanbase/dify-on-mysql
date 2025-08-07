@@ -112,13 +112,13 @@ class MCPServerStreamableHTTPRequestHandler:
     def initialize(self):
         request = cast(types.InitializeRequest, self.request.root)
         client_info = request.params.clientInfo
-        clinet_name = f"{client_info.name}@{client_info.version}"
+        client_name = f"{client_info.name}@{client_info.version}"
         if not self.end_user:
             end_user = EndUser(
                 tenant_id=self.app.tenant_id,
                 app_id=self.app.id,
                 type="mcp",
-                name=clinet_name,
+                name=client_name,
                 session_id=generate_session_id(),
                 external_user_id=self.mcp_server.id,
             )
@@ -148,9 +148,7 @@ class MCPServerStreamableHTTPRequestHandler:
         if not self.end_user:
             raise ValueError("User not found")
         request = cast(types.CallToolRequest, self.request.root)
-        args = request.params.arguments
-        if not args:
-            raise ValueError("No arguments provided")
+        args = request.params.arguments or {}
         if self.app.mode in {AppMode.WORKFLOW.value}:
             args = {"inputs": args}
         elif self.app.mode in {AppMode.COMPLETION.value}:

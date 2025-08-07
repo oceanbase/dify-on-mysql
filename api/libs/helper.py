@@ -13,6 +13,7 @@ from hashlib import sha256
 from typing import TYPE_CHECKING, Any, Optional, Union, cast
 from zoneinfo import available_timezones
 
+import sqlalchemy as sa
 from flask import Response, stream_with_context
 from flask_restful import fields
 from pydantic import BaseModel
@@ -142,25 +143,6 @@ class StrLen:
         if length > self.max_length:
             error = "Invalid {arg}: {val}. {arg} cannot exceed length {length}".format(
                 arg=self.argument, val=value, length=self.max_length
-            )
-            raise ValueError(error)
-
-        return value
-
-
-class FloatRange:
-    """Restrict input to an float in a range (inclusive)"""
-
-    def __init__(self, low, high, argument="argument"):
-        self.low = low
-        self.high = high
-        self.argument = argument
-
-    def __call__(self, value):
-        value = _get_float(value)
-        if value < self.low or value > self.high:
-            error = "Invalid {arg}: {val}. {arg} must be within the range {lo} - {hi}".format(
-                arg=self.argument, val=value, lo=self.low, hi=self.high
             )
             raise ValueError(error)
 
@@ -398,5 +380,22 @@ def convert_datetime_to_date(field, target_timezone: str = ":tz"):
         return f"DATE(DATE_TRUNC('day', {field} AT TIME ZONE 'UTC' AT TIME ZONE {target_timezone}))"
     elif "mysql" in dify_config.SQLALCHEMY_DATABASE_URI_SCHEME:
         return f"DATE(CONVERT_TZ({field}, 'UTC', {target_timezone}))"
+    else:
+        raise NotImplementedError(f"Unsupported database URI scheme: {dify_config.SQLALCHEMY_DATABASE_URI_SCHEME}")
+
+
+def convert_datetime_to_date_func(field, target_timezone: str = ":tz"):
+    """
+        Helper function to make MySQL compatible. This function shouldn't be exposed to 
+        user considering implic SQL injection risks.
+    """
+    if dify_config.SQLALCHEMY_DATABASE_URI_SCHEME == "postgresql":
+        return sa.func.date(
+            sa.func.date_trunc("day", sa.text(f"{field} AT TIME ZONE 'UTC' AT TIME ZONE {target_timezone}"))
+        ).label("date")
+    elif "mysql" in dify_config.SQLALCHEMY_DATABASE_URI_SCHEME:
+        return sa.func.date(
+            sa.func.convert_tz(field, "UTC", target_timezone)
+        ).label("date")
     else:
         raise NotImplementedError(f"Unsupported database URI scheme: {dify_config.SQLALCHEMY_DATABASE_URI_SCHEME}")
