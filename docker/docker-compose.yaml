@@ -582,7 +582,7 @@ services:
   # worker_beat service
   # Celery beat for scheduling periodic tasks.
   worker_beat:
-    image: langgenius/dify-api:1.7.0
+    image: dify-on-mysql:shiver-1.7.0
     restart: always
     environment:
       # Use the shared environment variables.
@@ -590,7 +590,7 @@ services:
       # Startup mode, 'worker_beat' starts the Celery beat for scheduling periodic tasks.
       MODE: beat
     depends_on:
-      db:
+      oceanbase:
         condition: service_healthy
       redis:
         condition: service_started
