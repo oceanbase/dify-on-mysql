@@ -609,12 +609,27 @@ class ToolManager:
         """
         # according to multi credentials, select the one with is_default=True first, then created_at oldest
         # for compatibility with old version
-        sql = """
-                SELECT DISTINCT ON (tenant_id, provider) id
-                FROM tool_builtin_providers
-                WHERE tenant_id = :tenant_id
-                ORDER BY tenant_id, provider, is_default DESC, created_at DESC
-                """
+        if dify_config.SQLALCHEMY_DATABASE_URI_SCHEME == "postgresql":
+            sql = """
+                    SELECT DISTINCT ON (tenant_id, provider) id
+                    FROM tool_builtin_providers
+                    WHERE tenant_id = :tenant_id
+                    ORDER BY tenant_id, provider, is_default DESC, created_at DESC
+                    """
+        else:
+            sql = """
+                    SELECT id
+                    FROM (
+                            SELECT  id,
+                                    ROW_NUMBER() OVER (
+                                        PARTITION BY tenant_id, provider
+                                        ORDER BY is_default DESC, created_at DESC
+                                    ) AS rn
+                            FROM tool_builtin_providers
+                            WHERE tenant_id = :tenant_id
+                    ) AS t
+                    WHERE rn = 1
+                    """
         ids = [row.id for row in db.session.execute(db.text(sql), {"tenant_id": tenant_id}).all()]
         return db.session.query(BuiltinToolProvider).filter(BuiltinToolProvider.id.in_(ids)).all()
 

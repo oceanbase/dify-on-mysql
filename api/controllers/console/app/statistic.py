@@ -95,9 +95,6 @@ class DailyConversationStatistic(Resource):
         stmt = (
             sa.select(
                 convert_datetime_to_date_func("created_at"),
-                sa.func.date(
-                    sa.func.date_trunc("day", sa.text("created_at AT TIME ZONE 'UTC' AT TIME ZONE :tz"))
-                ).label("date"),
                 sa.func.count(sa.distinct(Message.conversation_id)).label("conversation_count"),
             )
             .select_from(Message)
