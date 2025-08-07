@@ -34,6 +34,14 @@ class StringUUID(TypeDecorator):
         return str(value)
 
 
+def adjusted_array(type):
+    if dify_config.SQLALCHEMY_DATABASE_URI_SCHEME == "postgresql":
+        return db.ARRAY(type)
+    else:
+        # Vanilla MySQL don't support array, we adapt it to JSON
+        return JSON
+
+
 def adjusted_jsonb():
     if dify_config.SQLALCHEMY_DATABASE_URI_SCHEME == "postgresql":
         return postgresql.JSONB

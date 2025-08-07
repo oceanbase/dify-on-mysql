@@ -566,7 +566,7 @@ class RecommendedApp(Base):
     description = mapped_column(db.JSON, nullable=False)
     copyright = mapped_column(db.String(255), nullable=False)
     privacy_policy = mapped_column(db.String(255), nullable=False)
-    custom_disclaimer: Mapped[str] = mapped_column(sa.TEXT, default="")
+    custom_disclaimer: Mapped[str] = mapped_column(adjusted_text(), default="")
     category = mapped_column(db.String(255), nullable=False)
     position = mapped_column(db.Integer, nullable=False, default=0)
     is_listed = mapped_column(db.Boolean, nullable=False, default=True)
@@ -900,7 +900,7 @@ class Message(Base):
     model_provider = mapped_column(db.String(255), nullable=True)
     model_id = mapped_column(db.String(255), nullable=True)
     override_model_configs = mapped_column(adjusted_text())
-    conversation_id = mapped_column(StringUUID, db.ForeignKey("conversations.id"), nullable=False)
+    conversation_id = mapped_column(StringUUID, db.ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False)
     _inputs: Mapped[dict] = mapped_column("inputs", db.JSON)
     query: Mapped[str] = mapped_column(adjusted_text(), nullable=False)
     message = mapped_column(db.JSON, nullable=False)
@@ -1324,7 +1324,7 @@ class MessageAnnotation(Base):
 
     id: Mapped[str] = mapped_column(StringUUID, **uuid_default())
     app_id: Mapped[str] = mapped_column(StringUUID)
-    conversation_id: Mapped[Optional[str]] = mapped_column(StringUUID, db.ForeignKey("conversations.id"))
+    conversation_id: Mapped[Optional[str]] = mapped_column(StringUUID, db.ForeignKey("conversations.id", ondelete="CASCADE"))
     message_id: Mapped[Optional[str]] = mapped_column(StringUUID)
     question = db.Column(adjusted_text(), nullable=True)
     content = mapped_column(adjusted_text(), nullable=False)
@@ -1442,7 +1442,7 @@ class EndUser(Base, UserMixin):
     external_user_id = mapped_column(db.String(255), nullable=True)
     name = mapped_column(db.String(255))
     is_anonymous = mapped_column(db.Boolean, nullable=False, server_default=db.text("true"))
-    session_id: Mapped[str] = mapped_column()
+    session_id: Mapped[str] = mapped_column(db.String(255), nullable=False)
     created_at = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
     updated_at = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
 
@@ -1502,7 +1502,7 @@ class Site(Base):
     privacy_policy = mapped_column(db.String(255))
     show_workflow_steps = mapped_column(db.Boolean, nullable=False, server_default=db.text("true"))
     use_icon_as_answer_icon = mapped_column(db.Boolean, nullable=False, server_default=db.text("false"))
-    _custom_disclaimer: Mapped[str] = mapped_column("custom_disclaimer", sa.TEXT, default="")
+    _custom_disclaimer: Mapped[str] = mapped_column("custom_disclaimer", adjusted_text(), default="")
     customize_domain = mapped_column(db.String(255))
     customize_token_strategy = mapped_column(db.String(255), nullable=False)
     prompt_public = mapped_column(db.Boolean, nullable=False, server_default=db.text("false"))
@@ -1587,7 +1587,7 @@ class UploadFile(Base):
     used_by: Mapped[str | None] = mapped_column(StringUUID, nullable=True)
     used_at: Mapped[datetime | None] = mapped_column(db.DateTime, nullable=True)
     hash: Mapped[str | None] = mapped_column(db.String(255), nullable=True)
-    source_url: Mapped[str] = mapped_column(sa.TEXT, default="")
+    source_url: Mapped[str] = mapped_column(adjusted_text(), default="")
 
     def __init__(
         self,
@@ -1688,9 +1688,9 @@ class MessageAgentThought(Base):
     answer_price_unit = mapped_column(db.Numeric(10, 7), nullable=False, server_default=db.text("0.001"))
     tokens = mapped_column(db.Integer, nullable=True)
     total_price = mapped_column(db.Numeric, nullable=True)
-    currency = mapped_column(db.String, nullable=True)
+    currency = mapped_column(no_length_string(), nullable=True)
     latency = mapped_column(db.Float, nullable=True)
-    created_by_role = mapped_column(db.String, nullable=False)
+    created_by_role = mapped_column(no_length_string(), nullable=False)
     created_by = mapped_column(StringUUID, nullable=False)
     created_at = mapped_column(db.DateTime, nullable=False, server_default=db.func.current_timestamp())
 

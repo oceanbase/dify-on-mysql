@@ -22,7 +22,7 @@ class DataSourceOauthBinding(Base):
     tenant_id = mapped_column(StringUUID, nullable=False)
     access_token = mapped_column(db.String(255), nullable=False)
     provider = mapped_column(db.String(255), nullable=False)
-    source_info = mapped_column(adjusted_jsonb, nullable=False)
+    source_info = mapped_column(adjusted_jsonb(), nullable=False)
     created_at = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
     updated_at = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
     disabled = mapped_column(db.Boolean, nullable=True, server_default=db.text("false"))

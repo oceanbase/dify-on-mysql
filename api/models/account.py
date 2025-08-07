@@ -10,7 +10,7 @@ from sqlalchemy.orm import Mapped, mapped_column, reconstructor
 from models.base import Base
 
 from .engine import db
-from .types import StringUUID, adjusted_text, uuid_default, varchar_default
+from .types import StringUUID, adjusted_text, uuid_default, varchar_default, adjusted_array
 
 
 class TenantAccountRole(enum.StrEnum):
@@ -321,16 +321,16 @@ class TenantPluginAutoUpgradeStrategy(Base):
         db.UniqueConstraint("tenant_id", name="unique_tenant_plugin_auto_upgrade_strategy"),
     )
 
-    id: Mapped[str] = mapped_column(StringUUID, **uuid_default)
+    id: Mapped[str] = mapped_column(StringUUID, **uuid_default())
     tenant_id: Mapped[str] = mapped_column(StringUUID, nullable=False)
     strategy_setting: Mapped[StrategySetting] = mapped_column(db.String(16), nullable=False, server_default="fix_only")
     upgrade_time_of_day: Mapped[int] = mapped_column(db.Integer, nullable=False, default=0)  # seconds of the day
     upgrade_mode: Mapped[UpgradeMode] = mapped_column(db.String(16), nullable=False, server_default="exclude")
     exclude_plugins: Mapped[list[str]] = mapped_column(
-        db.ARRAY(db.String(255)), nullable=False
+        adjusted_array(db.String(255)), nullable=False
     )  # plugin_id (author/name)
     include_plugins: Mapped[list[str]] = mapped_column(
-        db.ARRAY(db.String(255)), nullable=False
+        adjusted_array(db.String(255)), nullable=False
     )  # plugin_id (author/name)
     created_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
     updated_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())

@@ -509,7 +509,7 @@ class WorkflowRun(Base):
     graph: Mapped[Optional[str]] = mapped_column(adjusted_text())
     inputs: Mapped[Optional[str]] = mapped_column(adjusted_text())
     status: Mapped[str] = mapped_column(db.String(255))  # running, succeeded, failed, stopped, partial-succeeded
-    outputs: Mapped[Optional[str]] = mapped_column(sa.Text, default="{}")
+    outputs: Mapped[Optional[str]] = mapped_column(adjusted_text(), default="{}")
     error: Mapped[Optional[str]] = mapped_column(adjusted_text())
     elapsed_time: Mapped[float] = mapped_column(db.Float, nullable=False, server_default=sa.text("0"))
     total_tokens: Mapped[int] = mapped_column(sa.BigInteger, server_default=sa.text("0"))
@@ -995,7 +995,7 @@ class WorkflowDraftVariable(Base):
     value_type: Mapped[SegmentType] = mapped_column(EnumText(SegmentType, length=20))
 
     # The variable's value serialized as a JSON string
-    value: Mapped[str] = mapped_column(sa.Text, nullable=False, name="value")
+    value: Mapped[str] = mapped_column(adjusted_text(), nullable=False, name="value")
 
     # Controls whether the variable should be displayed in the variable inspection panel
     visible: Mapped[bool] = mapped_column(sa.Boolean, nullable=False, default=True)

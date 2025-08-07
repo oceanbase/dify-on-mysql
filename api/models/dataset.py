@@ -874,7 +874,7 @@ class DatasetQuery(Base):
     content = mapped_column(adjusted_text(), nullable=False)
     source = mapped_column(db.String(255), nullable=False)
     source_app_id = mapped_column(StringUUID, nullable=True)
-    created_by_role = mapped_column(db.String, nullable=False)
+    created_by_role = mapped_column(no_length_string(), nullable=False)
     created_by = mapped_column(StringUUID, nullable=False)
     created_at = mapped_column(db.DateTime, nullable=False, server_default=db.func.current_timestamp())
 
@@ -1071,7 +1071,7 @@ class ExternalKnowledgeBindings(Base):
         db.PrimaryKeyConstraint("id", name="external_knowledge_bindings_pkey"),
         db.Index("external_knowledge_bindings_tenant_idx", "tenant_id"),
         db.Index("external_knowledge_bindings_dataset_idx", "dataset_id"),
-        db.Index("external_knowledge_bindings_external_knowledge_idx", "external_knowledge_id"),
+        # db.Index("external_knowledge_bindings_external_knowledge_idx", "external_knowledge_id"), # TODO (shiver): MySQL version can't use column without a key length as index. 
         db.Index("external_knowledge_bindings_external_knowledge_api_idx", "external_knowledge_api_id"),
     )
 

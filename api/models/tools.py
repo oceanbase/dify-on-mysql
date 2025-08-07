@@ -47,7 +47,7 @@ class ToolOAuthTenantClient(Base):
     id: Mapped[str] = mapped_column(StringUUID, **uuid_default())
     # tenant id
     tenant_id: Mapped[str] = mapped_column(StringUUID, nullable=False)
-    plugin_id: Mapped[str] = mapped_column(db.String(512), nullable=False)
+    plugin_id: Mapped[str] = mapped_column(db.String(255), nullable=False) # TODO (shiver): should use db.String(512). We reduce it to 255 temporarily
     provider: Mapped[str] = mapped_column(db.String(255), nullable=False)
     enabled: Mapped[bool] = mapped_column(db.Boolean, nullable=False, server_default=db.text("true"))
     # oauth params of the tool provider
@@ -132,7 +132,7 @@ class ApiToolProvider(Base):
     # privacy policy
     privacy_policy = mapped_column(db.String(255), nullable=True)
     # custom_disclaimer
-    custom_disclaimer: Mapped[str] = mapped_column(sa.TEXT, default="")
+    custom_disclaimer: Mapped[str] = mapped_column(adjusted_text(), default="")
 
     created_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
     updated_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
@@ -454,7 +454,7 @@ class DeprecatedPublishedAppTool(Base):
 
     id = mapped_column(StringUUID, **uuid_default())
     # id of the app
-    app_id = mapped_column(StringUUID, ForeignKey("apps.id"), nullable=False)
+    app_id = mapped_column(StringUUID, ForeignKey("apps.id", ondelete="CASCADE"), nullable=False)
 
     user_id: Mapped[str] = mapped_column(StringUUID, nullable=False)
     # who published this tool
