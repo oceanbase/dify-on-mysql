@@ -4,28 +4,42 @@ import re
 import time
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
-from typing import Any, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 from sqlalchemy import Float, and_, func, or_, text
 from sqlalchemy import cast as sqlalchemy_cast
+from sqlalchemy.orm import Session
 
 from core.app.app_config.entities import DatasetRetrieveConfigEntity
 from core.app.entities.app_invoke_entities import ModelConfigWithCredentialsEntity
 from core.entities.agent_entities import PlanningStrategy
 from core.entities.model_entities import ModelStatus
 from core.model_manager import ModelInstance, ModelManager
-from core.model_runtime.entities.message_entities import PromptMessageRole
-from core.model_runtime.entities.model_entities import ModelFeature, ModelType
+from core.model_runtime.entities.message_entities import (
+    PromptMessageRole,
+)
+from core.model_runtime.entities.model_entities import (
+    ModelFeature,
+    ModelType,
+)
 from core.model_runtime.model_providers.__base.large_language_model import LargeLanguageModel
 from core.prompt.simple_prompt_transform import ModelMode
 from core.rag.datasource.retrieval_service import RetrievalService
 from core.rag.entities.metadata_entities import Condition, MetadataCondition
 from core.rag.retrieval.dataset_retrieval import DatasetRetrieval
 from core.rag.retrieval.retrieval_methods import RetrievalMethod
-from core.variables import StringSegment
+from core.variables import (
+    StringSegment,
+)
+from core.variables.segments import ArrayObjectSegment
 from core.workflow.entities.node_entities import NodeRunResult
-from core.workflow.nodes.enums import NodeType
-from core.workflow.nodes.event.event import ModelInvokeCompletedEvent
+from core.workflow.entities.workflow_node_execution import WorkflowNodeExecutionStatus
+from core.workflow.nodes.base import BaseNode
+from core.workflow.nodes.base.entities import BaseNodeData, RetryConfig
+from core.workflow.nodes.enums import ErrorStrategy, NodeType
+from core.workflow.nodes.event import (
+    ModelInvokeCompletedEvent,
+)
 from core.workflow.nodes.knowledge_retrieval.template_prompts import (
     METADATA_FILTER_ASSISTANT_PROMPT_1,
     METADATA_FILTER_ASSISTANT_PROMPT_2,
@@ -35,16 +49,16 @@ from core.workflow.nodes.knowledge_retrieval.template_prompts import (
     METADATA_FILTER_USER_PROMPT_2,
     METADATA_FILTER_USER_PROMPT_3,
 )
-from core.workflow.nodes.llm.entities import LLMNodeChatModelMessage, LLMNodeCompletionModelPromptTemplate
+from core.workflow.nodes.llm.entities import LLMNodeChatModelMessage, LLMNodeCompletionModelPromptTemplate, ModelConfig
+from core.workflow.nodes.llm.file_saver import FileSaverImpl, LLMFileSaver
 from core.workflow.nodes.llm.node import LLMNode
 from extensions.ext_database import db
 from extensions.ext_redis import redis_client
 from libs.json_in_md_parser import parse_and_check_json_markdown
 from models.dataset import Dataset, DatasetMetadata, Document, RateLimitLog
-from models.workflow import WorkflowNodeExecutionStatus
 from services.feature_service import FeatureService
 
-from .entities import KnowledgeRetrievalNodeData, ModelConfig
+from .entities import KnowledgeRetrievalNodeData
 from .exc import (
     InvalidModelTypeError,
     KnowledgeRetrievalNodeError,
@@ -53,6 +67,10 @@ from .exc import (
     ModelNotSupportedError,
     ModelQuotaExceededError,
 )
+
+if TYPE_CHECKING:
+    from core.file.models import File
+    from core.workflow.graph_engine import Graph, GraphInitParams, GraphRuntimeState
 
 logger = logging.getLogger(__name__)
 
@@ -65,14 +83,76 @@ default_retrieval_model = {
 }
 
 
-class KnowledgeRetrievalNode(LLMNode):
-    _node_data_cls = KnowledgeRetrievalNodeData  # type: ignore
+class KnowledgeRetrievalNode(BaseNode):
     _node_type = NodeType.KNOWLEDGE_RETRIEVAL
 
+    _node_data: KnowledgeRetrievalNodeData
+
+    # Instance attributes specific to LLMNode.
+    # Output variable for file
+    _file_outputs: list["File"]
+
+    _llm_file_saver: LLMFileSaver
+
+    def __init__(
+        self,
+        id: str,
+        config: Mapping[str, Any],
+        graph_init_params: "GraphInitParams",
+        graph: "Graph",
+        graph_runtime_state: "GraphRuntimeState",
+        previous_node_id: Optional[str] = None,
+        thread_pool_id: Optional[str] = None,
+        *,
+        llm_file_saver: LLMFileSaver | None = None,
+    ) -> None:
+        super().__init__(
+            id=id,
+            config=config,
+            graph_init_params=graph_init_params,
+            graph=graph,
+            graph_runtime_state=graph_runtime_state,
+            previous_node_id=previous_node_id,
+            thread_pool_id=thread_pool_id,
+        )
+        # LLM file outputs, used for MultiModal outputs.
+        self._file_outputs: list[File] = []
+
+        if llm_file_saver is None:
+            llm_file_saver = FileSaverImpl(
+                user_id=graph_init_params.user_id,
+                tenant_id=graph_init_params.tenant_id,
+            )
+        self._llm_file_saver = llm_file_saver
+
+    def init_node_data(self, data: Mapping[str, Any]) -> None:
+        self._node_data = KnowledgeRetrievalNodeData.model_validate(data)
+
+    def _get_error_strategy(self) -> Optional[ErrorStrategy]:
+        return self._node_data.error_strategy
+
+    def _get_retry_config(self) -> RetryConfig:
+        return self._node_data.retry_config
+
+    def _get_title(self) -> str:
+        return self._node_data.title
+
+    def _get_description(self) -> Optional[str]:
+        return self._node_data.desc
+
+    def _get_default_value_dict(self) -> dict[str, Any]:
+        return self._node_data.default_value_dict
+
+    def get_base_node_data(self) -> BaseNodeData:
+        return self._node_data
+
+    @classmethod
+    def version(cls):
+        return "1"
+
     def _run(self) -> NodeRunResult:  # type: ignore
-        node_data = cast(KnowledgeRetrievalNodeData, self.node_data)
         # extract variables
-        variable = self.graph_runtime_state.variable_pool.get(node_data.query_variable_selector)
+        variable = self.graph_runtime_state.variable_pool.get(self._node_data.query_variable_selector)
         if not isinstance(variable, StringSegment):
             return NodeRunResult(
                 status=WorkflowNodeExecutionStatus.FAILED,
@@ -85,37 +165,41 @@ class KnowledgeRetrievalNode(LLMNode):
             return NodeRunResult(
                 status=WorkflowNodeExecutionStatus.FAILED, inputs=variables, error="Query is required."
             )
+        # TODO(-LAN-): Move this check outside.
         # check rate limit
-        if self.tenant_id:
-            knowledge_rate_limit = FeatureService.get_knowledge_rate_limit(self.tenant_id)
-            if knowledge_rate_limit.enabled:
-                current_time = int(time.time() * 1000)
-                key = f"rate_limit_{self.tenant_id}"
-                redis_client.zadd(key, {current_time: current_time})
-                redis_client.zremrangebyscore(key, 0, current_time - 60000)
-                request_count = redis_client.zcard(key)
-                if request_count > knowledge_rate_limit.limit:
+        knowledge_rate_limit = FeatureService.get_knowledge_rate_limit(self.tenant_id)
+        if knowledge_rate_limit.enabled:
+            current_time = int(time.time() * 1000)
+            key = f"rate_limit_{self.tenant_id}"
+            redis_client.zadd(key, {current_time: current_time})
+            redis_client.zremrangebyscore(key, 0, current_time - 60000)
+            request_count = redis_client.zcard(key)
+            if request_count > knowledge_rate_limit.limit:
+                with Session(db.engine) as session:
                     # add ratelimit record
                     rate_limit_log = RateLimitLog(
                         tenant_id=self.tenant_id,
                         subscription_plan=knowledge_rate_limit.subscription_plan,
                         operation="knowledge",
                     )
-                    db.session.add(rate_limit_log)
-                    db.session.commit()
-                    return NodeRunResult(
-                        status=WorkflowNodeExecutionStatus.FAILED,
-                        inputs=variables,
-                        error="Sorry, you have reached the knowledge base request rate limit of your subscription.",
-                        error_type="RateLimitExceeded",
-                    )
+                    session.add(rate_limit_log)
+                    session.commit()
+                return NodeRunResult(
+                    status=WorkflowNodeExecutionStatus.FAILED,
+                    inputs=variables,
+                    error="Sorry, you have reached the knowledge base request rate limit of your subscription.",
+                    error_type="RateLimitExceeded",
+                )
 
         # retrieve knowledge
         try:
-            results = self._fetch_dataset_retriever(node_data=node_data, query=query)
-            outputs = {"result": results}
+            results = self._fetch_dataset_retriever(node_data=self._node_data, query=query)
+            outputs = {"result": ArrayObjectSegment(value=results)}
             return NodeRunResult(
-                status=WorkflowNodeExecutionStatus.SUCCEEDED, inputs=variables, process_data=None, outputs=outputs
+                status=WorkflowNodeExecutionStatus.SUCCEEDED,
+                inputs=variables,
+                process_data=None,
+                outputs=outputs,  # type: ignore
             )
 
         except KnowledgeRetrievalNodeError as e:
@@ -134,6 +218,8 @@ class KnowledgeRetrievalNode(LLMNode):
                 error=str(e),
                 error_type=type(e).__name__,
             )
+        finally:
+            db.session.close()
 
     def _fetch_dataset_retriever(self, node_data: KnowledgeRetrievalNodeData, query: str) -> list[dict[str, Any]]:
         available_datasets = []
@@ -161,6 +247,9 @@ class KnowledgeRetrievalNode(LLMNode):
             .all()
         )
 
+        # avoid blocking at retrieval
+        db.session.close()
+
         for dataset in results:
             # pass if dataset is not available
             if not dataset:
@@ -173,7 +262,9 @@ class KnowledgeRetrievalNode(LLMNode):
         dataset_retrieval = DatasetRetrieval()
         if node_data.retrieval_mode == DatasetRetrieveConfigEntity.RetrieveStrategy.SINGLE.value:
             # fetch model config
-            model_instance, model_config = self._fetch_model_config(node_data.single_retrieval_config.model)  # type: ignore
+            if node_data.single_retrieval_config is None:
+                raise ValueError("single_retrieval_config is required")
+            model_instance, model_config = self.get_model_config(node_data.single_retrieval_config.model)
             # check model is support tool calling
             model_type_instance = model_config.provider_model_bundle.model_type_instance
             model_type_instance = cast(LargeLanguageModel, model_type_instance)
@@ -371,7 +462,7 @@ class KnowledgeRetrievalNode(LLMNode):
                                 expected_value = self.graph_runtime_state.variable_pool.convert_template(
                                     expected_value
                                 ).value[0]
-                                if expected_value.value_type == "number":  # type: ignore
+                                if expected_value.value_type in {"number", "integer", "float"}:  # type: ignore
                                     expected_value = expected_value.value  # type: ignore
                                 elif expected_value.value_type == "string":  # type: ignore
                                     expected_value = re.sub(r"[\r\n\t]+", " ", expected_value.text).strip()  # type: ignore
@@ -418,20 +509,17 @@ class KnowledgeRetrievalNode(LLMNode):
         # get all metadata field
         metadata_fields = db.session.query(DatasetMetadata).filter(DatasetMetadata.dataset_id.in_(dataset_ids)).all()
         all_metadata_fields = [metadata_field.name for metadata_field in metadata_fields]
-        # get metadata model config
-        metadata_model_config = node_data.metadata_model_config
-        if metadata_model_config is None:
+        if node_data.metadata_model_config is None:
             raise ValueError("metadata_model_config is required")
-        # get metadata model instance
-        # fetch model config
-        model_instance, model_config = self._fetch_model_config(node_data.metadata_model_config)  # type: ignore
+        # get metadata model instance and fetch model config
+        model_instance, model_config = self.get_model_config(node_data.metadata_model_config)
         # fetch prompt messages
         prompt_template = self._get_prompt_template(
             node_data=node_data,
             metadata_fields=all_metadata_fields,
             query=query or "",
         )
-        prompt_messages, stop = self._fetch_prompt_messages(
+        prompt_messages, stop = LLMNode.fetch_prompt_messages(
             prompt_template=prompt_template,
             sys_query=query,
             memory=None,
@@ -441,16 +529,23 @@ class KnowledgeRetrievalNode(LLMNode):
             vision_detail=node_data.vision.configs.detail,
             variable_pool=self.graph_runtime_state.variable_pool,
             jinja2_variables=[],
+            tenant_id=self.tenant_id,
         )
 
         result_text = ""
         try:
             # handle invoke result
-            generator = self._invoke_llm(
-                node_data_model=node_data.metadata_model_config,  # type: ignore
+            generator = LLMNode.invoke_llm(
+                node_data_model=node_data.metadata_model_config,
                 model_instance=model_instance,
                 prompt_messages=prompt_messages,
                 stop=stop,
+                user_id=self.user_id,
+                structured_output_enabled=self._node_data.structured_output_enabled,
+                structured_output=None,
+                file_saver=self._llm_file_saver,
+                file_outputs=self._file_outputs,
+                node_id=self.node_id,
             )
 
             for event in generator:
@@ -478,6 +573,9 @@ class KnowledgeRetrievalNode(LLMNode):
     def _process_metadata_filter_func(
         self, sequence: int, condition: str, metadata_name: str, value: Optional[Any], filters: list
     ):
+        if value is None:
+            return
+
         key = f"{metadata_name}_{sequence}"
         key_value = f"{metadata_name}_{sequence}_value"
         match condition:
@@ -537,27 +635,16 @@ class KnowledgeRetrievalNode(LLMNode):
         *,
         graph_config: Mapping[str, Any],
         node_id: str,
-        node_data: KnowledgeRetrievalNodeData,  # type: ignore
+        node_data: Mapping[str, Any],
     ) -> Mapping[str, Sequence[str]]:
-        """
-        Extract variable selector to variable mapping
-        :param graph_config: graph config
-        :param node_id: node id
-        :param node_data: node data
-        :return:
-        """
+        # Create typed NodeData from dict
+        typed_node_data = KnowledgeRetrievalNodeData.model_validate(node_data)
+
         variable_mapping = {}
-        variable_mapping[node_id + ".query"] = node_data.query_variable_selector
+        variable_mapping[node_id + ".query"] = typed_node_data.query_variable_selector
         return variable_mapping
 
-    def _fetch_model_config(self, model: ModelConfig) -> tuple[ModelInstance, ModelConfigWithCredentialsEntity]:  # type: ignore
-        """
-        Fetch model config
-        :param model: model
-        :return:
-        """
-        if model is None:
-            raise ValueError("model is required")
+    def get_model_config(self, model: ModelConfig) -> tuple[ModelInstance, ModelConfigWithCredentialsEntity]:
         model_name = model.name
         provider_name = model.provider
 
@@ -616,7 +703,7 @@ class KnowledgeRetrievalNode(LLMNode):
         )
 
     def _get_prompt_template(self, node_data: KnowledgeRetrievalNodeData, metadata_fields: list, query: str):
-        model_mode = ModelMode.value_of(node_data.metadata_model_config.mode)  # type: ignore
+        model_mode = ModelMode(node_data.metadata_model_config.mode)  # type: ignore
         input_text = query
 
         prompt_messages: list[LLMNodeChatModelMessage] = []

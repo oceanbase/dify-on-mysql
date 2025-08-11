@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+import logging
 from typing import Any
 
 from flask import request
@@ -12,9 +12,15 @@ from controllers.console.explore.wraps import InstalledAppResource
 from controllers.console.wraps import account_initialization_required, cloud_edition_billing_resource_check
 from extensions.ext_database import db
 from fields.installed_app_fields import installed_app_list_fields
+from libs.datetime_utils import naive_utc_now
 from libs.login import login_required
 from models import App, InstalledApp, RecommendedApp
 from services.account_service import TenantService
+from services.app_service import AppService
+from services.enterprise.enterprise_service import EnterpriseService
+from services.feature_service import FeatureService
+
+logger = logging.getLogger(__name__)
 
 
 class InstalledAppsListApi(Resource):
@@ -48,6 +54,28 @@ class InstalledAppsListApi(Resource):
             for installed_app in installed_apps
             if installed_app.app is not None
         ]
+
+        # filter out apps that user doesn't have access to
+        if FeatureService.get_system_features().webapp_auth.enabled:
+            user_id = current_user.id
+            res = []
+            app_ids = [installed_app["app"].id for installed_app in installed_app_list]
+            webapp_settings = EnterpriseService.WebAppAuth.batch_get_app_access_mode_by_id(app_ids)
+            for installed_app in installed_app_list:
+                webapp_setting = webapp_settings.get(installed_app["app"].id)
+                if not webapp_setting:
+                    continue
+                if webapp_setting.access_mode == "sso_verified":
+                    continue
+                app_code = AppService.get_app_code_by_id(str(installed_app["app"].id))
+                if EnterpriseService.WebAppAuth.is_user_allowed_to_access_webapp(
+                    user_id=user_id,
+                    app_code=app_code,
+                ):
+                    res.append(installed_app)
+            installed_app_list = res
+            logger.debug(f"installed_app_list: {installed_app_list}, user_id: {user_id}")
+
         installed_app_list.sort(
             key=lambda app: (
                 -app["is_pinned"],
@@ -94,7 +122,7 @@ class InstalledAppsListApi(Resource):
                 tenant_id=current_tenant_id,
                 app_owner_tenant_id=app.tenant_id,
                 is_pinned=False,
-                last_used_at=datetime.now(UTC).replace(tzinfo=None),
+                last_used_at=naive_utc_now(),
             )
             db.session.add(new_installed_app)
             db.session.commit()

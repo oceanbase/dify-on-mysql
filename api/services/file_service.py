@@ -18,8 +18,9 @@ from core.file import helpers as file_helpers
 from core.rag.extractor.extract_processor import ExtractProcessor
 from extensions.ext_database import db
 from extensions.ext_storage import storage
+from libs.helper import extract_tenant_id
 from models.account import Account
-from models.enums import CreatedByRole
+from models.enums import CreatorUserRole
 from models.model import EndUser, UploadFile
 
 from .errors.file import FileTooLargeError, UnsupportedFileTypeError
@@ -61,11 +62,7 @@ class FileService:
         # generate file key
         file_uuid = str(uuid.uuid4())
 
-        if isinstance(user, Account):
-            current_tenant_id = user.current_tenant_id
-        else:
-            # end_user
-            current_tenant_id = user.tenant_id
+        current_tenant_id = extract_tenant_id(user)
 
         file_key = "upload_files/" + (current_tenant_id or "") + "/" + file_uuid + "." + extension
 
@@ -81,7 +78,7 @@ class FileService:
             size=file_size,
             extension=extension,
             mime_type=mimetype,
-            created_by_role=(CreatedByRole.ACCOUNT if isinstance(user, Account) else CreatedByRole.END_USER),
+            created_by_role=(CreatorUserRole.ACCOUNT if isinstance(user, Account) else CreatorUserRole.END_USER),
             created_by=user.id,
             created_at=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
             used=False,
@@ -133,7 +130,7 @@ class FileService:
             extension="txt",
             mime_type="text/plain",
             created_by=current_user.id,
-            created_by_role=CreatedByRole.ACCOUNT,
+            created_by_role=CreatorUserRole.ACCOUNT,
             created_at=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
             used=True,
             used_by=current_user.id,
