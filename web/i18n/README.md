@@ -28,7 +28,7 @@ This directory contains the internationalization (i18n) files for this project.
 │   ├── [  52]  layout.ts
 │   ├── [2.3K]  login.ts
 │   ├── [  52]  register.ts
-│   ├── [2.5K]  share-app.ts
+│   ├── [2.5K]  share.ts
 │   └── [2.8K]  tools.ts
 ├── [1.6K]  i18next-config.ts
 ├── [ 634]  index.ts
@@ -115,13 +115,13 @@ export const languages = [
   },
   {
     value: 'ja-JP',
-    name: '日本語(日本)',
+    name: '日本語 (日本)',
     example: 'こんにちは、Dify!',
     supported: false,
   },
   {
     value: 'ko-KR',
-    name: '한국어(대한민국)',
+    name: '한국어 (대한민국)',
     example: '안녕, Dify!',
     supported: true,
   },

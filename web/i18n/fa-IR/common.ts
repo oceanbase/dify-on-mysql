@@ -58,6 +58,8 @@ const translation = {
     more: 'بیشتر',
     format: 'قالب',
     downloadSuccess: 'دانلود کامل شد.',
+    selectAll: 'انتخاب همه',
+    deSelectAll: 'همه را انتخاب نکنید',
   },
   errorMsg: {
     fieldRequired: '{{field}} الزامی است',
@@ -149,6 +151,8 @@ const translation = {
     newDataset: 'ایجاد دانش',
     tools: 'ابزارها',
     exploreMarketplace: 'بازار را کاوش کنید',
+    appDetail: 'جزئیات برنامه',
+    account: 'حساب',
   },
   userProfile: {
     settings: 'تنظیمات',
@@ -216,6 +220,28 @@ const translation = {
     editWorkspaceInfo: 'ویرایش اطلاعات فضای کار',
     workspaceName: 'نام فضای کاری',
     workspaceIcon: 'آیکون محیط کار',
+    changeEmail: {
+      changeTo: 'تغییر به {{email}}',
+      resendTip: 'کدی دریافت نکردید؟',
+      codeLabel: 'کد تأیید',
+      resend: 'دوباره ارسال کنید',
+      emailLabel: 'ایمیل جدید',
+      title: 'تغییر ایمیل',
+      verifyNew: 'ایمیل جدید خود را تأیید کنید',
+      sendVerifyCode: 'کد تأیید را ارسال کنید',
+      newEmail: 'یک آدرس ایمیل جدید راه‌اندازی کنید',
+      emailPlaceholder: 'یک ایمیل جدید وارد کنید',
+      codePlaceholder: 'کد ۶ رقمی را وارد کنید',
+      existingEmail: 'کاربری با این ایمیل از قبل وجود دارد.',
+      content2: 'ایمیل فعلی شما <email>{{email}}</email> است. کد تأیید به این آدرس ایمیل ارسال شده است.',
+      resendCount: 'دوباره ارسال کنید در {{count}} ثانیه',
+      continue: 'ادامه دهید',
+      verifyEmail: 'ایمیل فعلی خود را تأیید کنید',
+      content4: 'ما یک کد تأیید موقت برای شما به <email>{{email}}</email> ارسال کردیم.',
+      content1: 'اگر ادامه دهید، ما یک کد تأیید به <email>{{email}}</email> برای بازگشایی مجدد ارسال خواهیم کرد.',
+      content3: 'یک ایمیل جدید وارد کنید و ما یک کد تأیید برای شما ارسال خواهیم کرد.',
+      authTip: 'زمانی که ایمیل شما تغییر کند، حساب‌های گوگل یا گیت‌هاب مرتبط با ایمیل قدیمی شما دیگر قادر به ورود به این حساب نخواهند بود.',
+    },
   },
   members: {
     team: 'تیم',
@@ -257,6 +283,26 @@ const translation = {
     disInvite: 'لغو دعوت',
     deleteMember: 'حذف عضو',
     you: '(شما)',
+    transferModal: {
+      resendTip: 'کدی دریافت نکردید؟',
+      resend: 'دوباره ارسال کنید',
+      continue: 'ادامه دهید',
+      codeLabel: 'کد تأیید',
+      sendVerifyCode: 'کد تأیید را ارسال کنید',
+      title: 'انتقال مالکیت فضای کاری',
+      verifyContent: 'ایمیل فعلی شما <email>{{email}}</email> است.',
+      transfer: 'انتقال مالکیت فضای کاری',
+      warning: 'شما در حال انتقال مالکیت "{{workspace}}" هستید. این بلافاصله اجرایی می‌شود و قابل بازگشت نیست.',
+      resendCount: 'دوباره ارسال کنید در {{count}} ثانیه',
+      warningTip: 'شما به یک عضو مدیر تبدیل خواهید شد و مالک جدید کنترل کامل خواهد داشت.',
+      transferLabel: 'مالکیت فضای کار را به منتقل کنید',
+      verifyEmail: 'ایمیل فعلی خود را تأیید کنید',
+      sendTip: 'اگر ادامه دهید، ما یک کد تأیید به <email>{{email}}</email> برای بازگشایی مجدد ارسال خواهیم کرد.',
+      codePlaceholder: 'کد ۶ رقمی را وارد کنید',
+      transferPlaceholder: 'یک عضو از فضای کاری را انتخاب کنید…',
+      verifyContent2: 'ما یک کد تأیید موقت به این ایمیل برای تأیید مجدد ارسال خواهیم کرد.',
+    },
+    transferOwnership: 'انتقال مالکیت',
   },
   integrations: {
     connected: 'متصل شده',
@@ -449,6 +495,7 @@ const translation = {
         addPages: 'افزودن صفحات',
         preview: 'پیش‌نمایش',
       },
+      integratedAlert: 'نوشته به طور داخلی از طریق اعتبارنامه یکپارچه شده است، نیازی به دوباره مجاز کردن نیست.',
     },
     website: {
       title: 'وب‌سایت',
@@ -469,7 +516,6 @@ const translation = {
   apiBasedExtension: {
     title: 'افزونه‌های مبتنی بر API مدیریت متمرکز API را فراهم می‌کنند و پیکربندی را برای استفاده آسان در برنامه‌های Dify ساده می‌کنند.',
     link: 'نحوه توسعه افزونه API خود را بیاموزید.',
-    linkUrl: 'https://docs.dify.ai/en/guides/extension/api-based-extension/README',
     add: 'افزودن افزونه API',
     selector: {
       title: 'افزونه API',
@@ -644,6 +690,7 @@ const translation = {
   license: {
     expiring_plural: 'انقضا در {{count}} روز',
     expiring: 'انقضا در یک روز',
+    unlimited: 'نامحدود',
   },
   pagination: {
     perPage: 'موارد در هر صفحه',
@@ -667,6 +714,7 @@ const translation = {
     supportedFormats: 'از فرمت‌های PNG، JPG، JPEG، WEBP و GIF پشتیبانی می‌کند',
     browse: 'مرورگر',
   },
+  you: 'تو',
 }
 
 export default translation

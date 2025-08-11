@@ -58,6 +58,8 @@ const translation = {
     downloadFailed: 'Échec du téléchargement. Veuillez réessayer plus tard.',
     more: 'Plus',
     downloadSuccess: 'Téléchargement terminé.',
+    deSelectAll: 'Désélectionner tout',
+    selectAll: 'Sélectionner tout',
   },
   placeholder: {
     input: 'Veuillez entrer',
@@ -145,6 +147,8 @@ const translation = {
     newDataset: 'Créer des Connaissances',
     tools: 'Outils',
     exploreMarketplace: 'Explorer Marketplace',
+    appDetail: 'Détails de l\'application',
+    account: 'Compte',
   },
   userProfile: {
     settings: 'Paramètres',
@@ -212,6 +216,28 @@ const translation = {
     workspaceName: 'Nom de l\'espace de travail',
     workspaceIcon: 'Icône de l\'espace de travail',
     editWorkspaceInfo: 'Modifier les informations de l\'espace de travail',
+    changeEmail: {
+      codePlaceholder: 'Collez le code à 6 chiffres',
+      emailLabel: 'Nouveau courriel',
+      newEmail: 'Créez une nouvelle adresse email',
+      verifyNew: 'Vérifiez votre nouvel e-mail',
+      existingEmail: 'Un utilisateur avec cet email existe déjà.',
+      title: 'Changer l\'email',
+      resendTip: 'Vous n\'avez pas reçu de code ?',
+      emailPlaceholder: 'Entrez un nouvel e-mail',
+      sendVerifyCode: 'Envoyer le code de vérification',
+      continue: 'Continuer',
+      changeTo: 'Changer pour {{email}}',
+      authTip: 'Une fois que votre email est changé, les comptes Google ou GitHub liés à votre ancien email ne pourront plus se connecter à ce compte.',
+      content3: 'Entrez un nouvel e-mail et nous vous enverrons un code de vérification.',
+      resendCount: 'Renvoyer dans {{count}}s',
+      content4: 'Nous vous avons juste envoyé un code de vérification temporaire à <email>{{email}}</email>.',
+      resend: 'Renvoyer',
+      verifyEmail: 'Vérifiez votre adresse e-mail actuelle',
+      content2: 'Votre adresse e-mail actuelle est <email>{{email}}</email>. Un code de vérification a été envoyé à cette adresse e-mail.',
+      codeLabel: 'Code de vérification',
+      content1: 'Si vous continuez, nous enverrons un code de vérification à <email>{{email}}</email> pour une nouvelle authentification.',
+    },
   },
   members: {
     team: 'Équipe',
@@ -253,6 +279,26 @@ const translation = {
     datasetOperator: 'Administrateur des connaissances',
     setBuilder: 'Définir en tant que constructeur',
     builderTip: 'Peut créer et modifier ses propres applications',
+    transferModal: {
+      resend: 'Renvoyer',
+      continue: 'Continuer',
+      verifyEmail: 'Vérifiez votre adresse e-mail actuelle',
+      resendCount: 'Renvoyer dans {{count}}s',
+      verifyContent2: 'Nous enverrons un code de vérification temporaire à cet email pour la ré-authentification.',
+      codePlaceholder: 'Collez le code à 6 chiffres',
+      transfer: 'Transférer la propriété de l\'espace de travail',
+      sendVerifyCode: 'Envoyer le code de vérification',
+      title: 'Transférer la propriété de l\'espace de travail',
+      codeLabel: 'Code de vérification',
+      transferLabel: 'Transférer la propriété de l\'espace de travail à',
+      verifyContent: 'Votre adresse e-mail actuelle est <email>{{email}}</email>.',
+      transferPlaceholder: 'Sélectionnez un membre de l\'espace de travail…',
+      warningTip: 'Vous deviendrez membre administrateur, et le nouveau propriétaire aura le contrôle total.',
+      resendTip: 'Vous n\'avez pas reçu de code ?',
+      sendTip: 'Si vous continuez, nous enverrons un code de vérification à <email>{{email}}</email> pour la ré-authentification.',
+      warning: 'Vous êtes sur le point de transférer la propriété de « {{workspace}} ». Cela prend effet immédiatement et ne peut pas être annulé.',
+    },
+    transferOwnership: 'Transférer la propriété',
   },
   integrations: {
     connected: 'Connecté',
@@ -444,6 +490,7 @@ const translation = {
         addPages: 'Ajouter des pages',
         preview: 'APERÇU',
       },
+      integratedAlert: 'Notion est intégré via des identifiants internes, aucune autorisation supplémentaire n\'est nécessaire.',
     },
     website: {
       configuredCrawlers: 'Robots d’exploration configurés',
@@ -465,7 +512,6 @@ const translation = {
   apiBasedExtension: {
     title: 'Les extensions API fournissent une gestion centralisée des API, simplifiant la configuration pour une utilisation facile à travers les applications de Dify.',
     link: 'Apprenez comment développer votre propre Extension API.',
-    linkUrl: 'https://docs.dify.ai/fonctionnalites/extension/extension_basee_sur_api',
     add: 'Ajouter l\'extension API',
     selector: {
       title: 'Extension de l\'API',
@@ -550,7 +596,7 @@ const translation = {
       vectorHash: 'Hachage vectoriel:',
       hitScore: 'Score de Récupération:',
     },
-    inputPlaceholder: 'Parler au bot',
+    inputPlaceholder: 'Parler au {{botName}}',
     thinking: 'Pensée...',
     thought: 'Pensée',
     resend: 'Renvoyer',
@@ -644,6 +690,7 @@ const translation = {
   license: {
     expiring: 'Expirant dans un jour',
     expiring_plural: 'Expirant dans {{count}} jours',
+    unlimited: 'Illimité',
   },
   pagination: {
     perPage: 'Articles par page',
@@ -667,6 +714,7 @@ const translation = {
     dropImageHere: 'Déposez votre image ici, ou',
     supportedFormats: 'Prend en charge PNG, JPG, JPEG, WEBP et GIF',
   },
+  you: 'Vous',
 }
 
 export default translation

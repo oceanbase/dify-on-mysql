@@ -3,23 +3,23 @@ import time
 
 import click
 from celery import shared_task  # type: ignore
-from flask import render_template
 
 from configs import dify_config
 from extensions.ext_mail import mail
+from libs.email_i18n import EmailType, get_email_i18n_service
 
 
 @shared_task(queue="mail")
-def send_invite_member_mail_task(language: str, to: str, token: str, inviter_name: str, workspace_name: str):
+def send_invite_member_mail_task(language: str, to: str, token: str, inviter_name: str, workspace_name: str) -> None:
     """
-    Async Send invite member mail
-    :param language
-    :param to
-    :param token
-    :param inviter_name
-    :param workspace_name
+    Send invite member email with internationalization support.
 
-    Usage: send_invite_member_mail_task.delay(language, to, token, inviter_name, workspace_name)
+    Args:
+        language: Language code for email localization
+        to: Recipient email address
+        token: Invitation token
+        inviter_name: Name of the person sending the invitation
+        workspace_name: Name of the workspace
     """
     if not mail.is_inited():
         return
@@ -29,27 +29,20 @@ def send_invite_member_mail_task(language: str, to: str, token: str, inviter_nam
     )
     start_at = time.perf_counter()
 
-    # send invite member mail using different languages
     try:
         url = f"{dify_config.CONSOLE_WEB_URL}/activate?token={token}"
-        if language == "zh-Hans":
-            html_content = render_template(
-                "invite_member_mail_template_zh-CN.html",
-                to=to,
-                inviter_name=inviter_name,
-                workspace_name=workspace_name,
-                url=url,
-            )
-            mail.send(to=to, subject="立即加入 Dify 工作空间", html=html_content)
-        else:
-            html_content = render_template(
-                "invite_member_mail_template_en-US.html",
-                to=to,
-                inviter_name=inviter_name,
-                workspace_name=workspace_name,
-                url=url,
-            )
-            mail.send(to=to, subject="Join Dify Workspace Now", html=html_content)
+        email_service = get_email_i18n_service()
+        email_service.send_email(
+            email_type=EmailType.INVITE_MEMBER,
+            language_code=language,
+            to=to,
+            template_context={
+                "to": to,
+                "inviter_name": inviter_name,
+                "workspace_name": workspace_name,
+                "url": url,
+            },
+        )
 
         end_at = time.perf_counter()
         logging.info(

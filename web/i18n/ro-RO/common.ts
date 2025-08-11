@@ -58,6 +58,8 @@ const translation = {
     format: 'Format',
     downloadSuccess: 'Descărcarea a fost finalizată.',
     more: 'Mai mult',
+    deSelectAll: 'Deselectați tot',
+    selectAll: 'Selectați tot',
   },
   placeholder: {
     input: 'Vă rugăm să introduceți',
@@ -145,6 +147,8 @@ const translation = {
     newDataset: 'Creează Cunoștințe',
     tools: 'Instrumente',
     exploreMarketplace: 'Explorați Marketplace',
+    appDetail: 'Detalii aplicație',
+    account: 'Cont',
   },
   userProfile: {
     settings: 'Setări',
@@ -212,6 +216,28 @@ const translation = {
     workspaceName: 'Numele spațiului de lucru',
     editWorkspaceInfo: 'Editează informațiile spațiului de lucru',
     workspaceIcon: 'Iconița de spațiu de lucru',
+    changeEmail: {
+      continue: 'Continuați',
+      newEmail: 'Creează o nouă adresă de email',
+      verifyEmail: 'Verifică-ți adresa de email curentă',
+      verifyNew: 'Verifică-ți noul email',
+      codePlaceholder: 'Introduceți codul de 6 cifre',
+      resendTip: 'Nu ai primit un cod?',
+      codeLabel: 'Cod de verificare',
+      resendCount: 'Reexpediază în {{count}}s',
+      resend: 'Retrimite',
+      title: 'Schimbă emailul',
+      changeTo: 'Schimbă la {{email}}',
+      existingEmail: 'Un utilizator cu acest email există deja.',
+      emailPlaceholder: 'Introduceți un email nou',
+      content3: 'Introduceți un nou email și vă vom trimite un cod de verificare.',
+      sendVerifyCode: 'Trimite codul de verificare',
+      content1: 'Dacă continui, vom trimite un cod de verificare la <email>{{email}}</email> pentru reautentificare.',
+      authTip: 'Odată ce adresa ta de email este schimbată, conturile Google sau GitHub legate de vechea ta adresă de email nu vor mai putea să se conecteze la acest cont.',
+      content4: 'Tocmai ți-am trimis un cod de verificare temporar la <email>{{email}}</email>.',
+      content2: 'Adresa ta de email curentă este <email>{{email}}</email>. Codul de verificare a fost trimis la această adresă de email.',
+      emailLabel: 'Email nou',
+    },
   },
   members: {
     team: 'Echipă',
@@ -253,6 +279,26 @@ const translation = {
     datasetOperator: 'Administrator de cunoștințe',
     setBuilder: 'Setare ca constructor',
     builderTip: 'Poate construi și edita propriile aplicații',
+    transferModal: {
+      resendTip: 'Nu ai primit un cod?',
+      title: 'Transferați proprietatea spațiului de lucru',
+      warningTip: 'Vei deveni membru administrator, iar noul proprietar va avea control total.',
+      resendCount: 'Reexpediază în {{count}}s',
+      transferLabel: 'Transferați proprietatea spațiului de lucru către',
+      resend: 'Retrimite',
+      transfer: 'Transferați proprietatea spațiului de lucru',
+      transferPlaceholder: 'Selectați un membru al spațiului de lucru…',
+      continue: 'Continuați',
+      codeLabel: 'Cod de verificare',
+      verifyContent2: 'Îți vom trimite un cod temporar de verificare pe acest email pentru reautentificare.',
+      sendTip: 'Dacă continui, vom trimite un cod de verificare la <email>{{email}}</email> pentru reautentificare.',
+      verifyContent: 'Adresa ta de email curentă este <email>{{email}}</email>.',
+      warning: 'Ești pe cale să transferi proprietatea „{{workspace}}”. Acest lucru va avea efect imediat și nu poate fi desfăcut.',
+      sendVerifyCode: 'Trimite codul de verificare',
+      verifyEmail: 'Verifică-ți adresa de email curentă',
+      codePlaceholder: 'Introduceți codul de 6 cifre',
+    },
+    transferOwnership: 'Transferați proprietatea',
   },
   integrations: {
     connected: 'Conectat',
@@ -444,6 +490,7 @@ const translation = {
         addPages: 'Adăugați pagini',
         preview: 'PREVIZUALIZARE',
       },
+      integratedAlert: 'Notion este integrat prin credențiale interne, nu este nevoie să re-autorizăm.',
     },
     website: {
       inactive: 'Inactiv',
@@ -465,7 +512,6 @@ const translation = {
   apiBasedExtension: {
     title: 'Extensiile bazate pe API oferă o gestionare centralizată a API-urilor, simplificând configurația pentru o utilizare ușoară în aplicațiile Dify.',
     link: 'Aflați cum să dezvoltați propria extensie bazată pe API.',
-    linkUrl: 'https://docs.dify.ai/en/guides/extension/api-based-extension/README',
     add: 'Adăugați extensie API',
     selector: {
       title: 'Extensie API',
@@ -550,7 +596,7 @@ const translation = {
       vectorHash: 'Hash vector:',
       hitScore: 'Scor de recuperare:',
     },
-    inputPlaceholder: 'Vorbește cu Bot',
+    inputPlaceholder: 'Vorbește cu {{botName}}',
     thinking: 'Gândire...',
     thought: 'Gând',
     resend: 'Reexpediați',
@@ -644,6 +690,7 @@ const translation = {
   license: {
     expiring: 'Expiră într-o zi',
     expiring_plural: 'Expiră în {{count}} zile',
+    unlimited: 'Nelimitat',
   },
   pagination: {
     perPage: 'Articole pe pagină',
@@ -667,6 +714,7 @@ const translation = {
     browse: 'naviga',
     dropImageHere: 'Trageți imaginea aici sau',
   },
+  you: 'Tu',
 }
 
 export default translation

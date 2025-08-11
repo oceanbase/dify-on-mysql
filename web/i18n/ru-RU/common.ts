@@ -58,6 +58,8 @@ const translation = {
     more: 'Больше',
     downloadFailed: 'Скачивание не удалось. Пожалуйста, попробуйте еще раз позже.',
     downloadSuccess: 'Загрузка завершена.',
+    selectAll: 'Выбрать все',
+    deSelectAll: 'Снять выделение со всех',
   },
   errorMsg: {
     fieldRequired: '{{field}} обязательно',
@@ -149,6 +151,8 @@ const translation = {
     newDataset: 'Создать знания',
     tools: 'Инструменты',
     exploreMarketplace: 'Подробнее о Marketplace',
+    appDetail: 'Детали приложения',
+    account: 'Учетная запись',
   },
   userProfile: {
     settings: 'Настройки',
@@ -216,6 +220,28 @@ const translation = {
     workspaceIcon: 'Иконка рабочего пространства',
     workspaceName: 'Название рабочего пространства',
     editWorkspaceInfo: 'Редактировать информацию о рабочем пространстве',
+    changeEmail: {
+      resendTip: 'Не получили код?',
+      codePlaceholder: 'Вставьте 6-значный код',
+      emailLabel: 'Новое письмо',
+      codeLabel: 'Код подтверждения',
+      resend: 'Переслать',
+      continue: 'Продолжайте',
+      emailPlaceholder: 'Введите новый адрес электронной почты',
+      resendCount: 'Отправьте снова через {{count}}с',
+      newEmail: 'Создайте новый адрес электронной почты',
+      sendVerifyCode: 'Отправить код проверки',
+      title: 'Сменить электронную почту',
+      changeTo: 'Изменить на {{email}}',
+      existingEmail: 'Пользователь с этим адресом электронной почты уже существует.',
+      verifyNew: 'Подтвердите ваш новый адрес электронной почты',
+      verifyEmail: 'Подтвердите ваш текущий адрес электронной почты',
+      content2: 'Ваш текущий электронный адрес: <email>{{email}}</email>. Код подтверждения был отправлен на этот адрес электронной почты.',
+      content4: 'Мы только что отправили вам временный код подтверждения на <email>{{email}}</email>.',
+      content3: 'Введите новый адрес электронной почты, и мы отправим вам код подтверждения.',
+      content1: 'Если вы продолжите, мы отправим код подтверждения на <email>{{email}}</email> для повторной аутентификации.',
+      authTip: 'После изменения вашего адреса электронной почты учетные записи Google или GitHub, связанные с вашим старым адресом, больше не смогут войти в эту учетную запись.',
+    },
   },
   members: {
     team: 'Команда',
@@ -257,6 +283,26 @@ const translation = {
     disInvite: 'Отменить приглашение',
     deleteMember: 'Удалить участника',
     you: '(Вы)',
+    transferModal: {
+      sendVerifyCode: 'Отправить код проверки',
+      transferPlaceholder: 'Выберите участника рабочего пространства…',
+      resendCount: 'Отправьте снова через {{count}}с',
+      resend: 'Переслать',
+      codePlaceholder: 'Вставьте 6-значный код',
+      resendTip: 'Не получили код?',
+      continue: 'Продолжайте',
+      transfer: 'Передать права собственности на рабочую область',
+      warningTip: 'Вы станете администратором, и новый владелец получит полный контроль.',
+      transferLabel: 'Передать право собственности на рабочее пространство на',
+      codeLabel: 'Код подтверждения',
+      verifyContent2: 'Мы отправим временный код для проверки на этот электронный адрес для повторной аутентификации.',
+      verifyEmail: 'Подтвердите ваш текущий адрес электронной почты',
+      verifyContent: 'Ваш текущий адрес электронной почты: <email>{{email}}</email>.',
+      title: 'Передать права собственности на рабочую область',
+      warning: 'Вы собираетесь передать право собственности на «{{workspace}}». Это вступает в силу немедленно и не может быть отменено.',
+      sendTip: 'Если вы продолжите, мы отправим код подтверждения на <email>{{email}}</email> для повторной аутентификации.',
+    },
+    transferOwnership: 'Передать право собственности',
   },
   integrations: {
     connected: 'Подключено',
@@ -449,6 +495,7 @@ const translation = {
         addPages: 'Добавить страницы',
         preview: 'ПРЕДПРОСМОТР',
       },
+      integratedAlert: 'Notion интегрирован через внутренние учетные данные, нет необходимости повторной авторизации.',
     },
     website: {
       title: 'Веб-сайт',
@@ -469,7 +516,6 @@ const translation = {
   apiBasedExtension: {
     title: 'API-расширения обеспечивают централизованное управление API, упрощая настройку для удобного использования в приложениях Dify.',
     link: 'Узнайте, как разработать собственное API-расширение.',
-    linkUrl: 'https://docs.dify.ai/en/guides/extension/api-based-extension/README',
     add: 'Добавить API Extension',
     selector: {
       title: 'API Extension',
@@ -644,6 +690,7 @@ const translation = {
   license: {
     expiring: 'Срок действия истекает за один день',
     expiring_plural: 'Срок действия истекает через {{count}} дней',
+    unlimited: 'Неограниченный',
   },
   pagination: {
     perPage: 'Элементов на странице',
@@ -667,6 +714,7 @@ const translation = {
     dropImageHere: 'Перетащите ваше изображение сюда или',
     supportedFormats: 'Поддерживает PNG, JPG, JPEG, WEBP и GIF',
   },
+  you: 'Ты',
 }
 
 export default translation
