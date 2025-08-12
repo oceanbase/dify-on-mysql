@@ -32,27 +32,6 @@ After running, you can access the Dify dashboard in your browser at [http://loca
 
 For more information on using Dify, please refer to [https://dify.ai](https://dify.ai).
 
-## Known inconsistency with upstream
-- `api/models/dataset.py:1074` : MySQL can't use attribute without specific length as index key.
-- `api/models/tools.py:51`: Different string length.
-
 ## License
 
 This repository is available under the [Dify Open Source License](LICENSE), which is essentially Apache 2.0 with a few additional restrictions.
-
-# Development 
-
-## Database Migration
-```
-cd api
-```
-
-For revision: 
-```
-uv run flask db migrate -d migrations-mysql -m "your message"
-```
-
-For upgrade
-```
-uv run flask db upgrade -d migrations-mysql 
-```
