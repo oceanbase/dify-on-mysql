@@ -18,9 +18,7 @@ class SavedMessage(Base):
     id = mapped_column(StringUUID, **uuid_default())
     app_id = mapped_column(StringUUID, nullable=False)
     message_id = mapped_column(StringUUID, nullable=False)
-    created_by_role = mapped_column(
-        db.String(255), nullable=False, **varchar_default("end_user")
-    )
+    created_by_role = mapped_column(db.String(255), nullable=False, **varchar_default("end_user"))
     created_by = mapped_column(StringUUID, nullable=False)
     created_at = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
 
@@ -39,8 +37,6 @@ class PinnedConversation(Base):
     id = mapped_column(StringUUID, **uuid_default())
     app_id = mapped_column(StringUUID, nullable=False)
     conversation_id: Mapped[str] = mapped_column(StringUUID)
-    created_by_role = mapped_column(
-        db.String(255), nullable=False, **varchar_default("end_user")
-    )
+    created_by_role = mapped_column(db.String(255), nullable=False, **varchar_default("end_user"))
     created_by = mapped_column(StringUUID, nullable=False)
     created_at = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())

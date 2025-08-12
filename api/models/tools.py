@@ -3,7 +3,6 @@ from datetime import datetime
 from typing import Any, cast
 from urllib.parse import urlparse
 
-import sqlalchemy as sa
 from deprecated import deprecated
 from sqlalchemy import ForeignKey, func
 from sqlalchemy.orm import Mapped, mapped_column
@@ -18,7 +17,7 @@ from models.base import Base
 
 from .engine import db
 from .model import Account, App, Tenant
-from .types import StringUUID, no_length_string, uuid_default, adjusted_text, varchar_default
+from .types import StringUUID, adjusted_text, no_length_string, uuid_default, varchar_default
 
 
 # system level tool oauth client params (client_id, client_secret, etc.)
@@ -50,7 +49,7 @@ class ToolOAuthTenantClient(Base):
 
     # NOTE (shiver): In postgres verison, this attribute is set as `db.String(512)`.
     # When migrating to MySQL, however, it causes incombility, for `db.UniqueConstraint` above
-    # requires total length of keys constrained below 3012 bytes, which can't be fulfilled. 
+    # requires total length of keys constrained below 3012 bytes, which can't be fulfilled.
     # So we choose to lower the length so that UniqueConstraint can be applied.
     plugin_id: Mapped[str] = mapped_column(db.String(255), nullable=False)
     provider: Mapped[str] = mapped_column(db.String(255), nullable=False)
@@ -76,9 +75,7 @@ class BuiltinToolProvider(Base):
 
     # id of the tool provider
     id: Mapped[str] = mapped_column(StringUUID, **uuid_default())
-    name: Mapped[str] = mapped_column(
-        db.String(256), nullable=False, **varchar_default("API KEY 1")
-    )
+    name: Mapped[str] = mapped_column(db.String(256), nullable=False, **varchar_default("API KEY 1"))
     # id of the tenant
     tenant_id: Mapped[str] = mapped_column(StringUUID, nullable=True)
     # who created this tool provider
@@ -95,9 +92,7 @@ class BuiltinToolProvider(Base):
     )
     is_default: Mapped[bool] = mapped_column(db.Boolean, nullable=False, server_default=db.text("false"))
     # credential type, e.g., "api-key", "oauth2"
-    credential_type: Mapped[str] = mapped_column(
-        db.String(32), nullable=False,  **varchar_default("api-key")
-    )
+    credential_type: Mapped[str] = mapped_column(db.String(32), nullable=False, **varchar_default("api-key"))
     expires_at: Mapped[int] = mapped_column(db.BigInteger, nullable=False, server_default=db.text("-1"))
 
     @property

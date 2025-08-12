@@ -6,8 +6,8 @@ from enum import StrEnum
 from typing import Any, ClassVar
 
 from sqlalchemy import Engine, orm
-from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.dialects.mysql import insert as mysql_insert
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.sql.expression import and_, or_
 
@@ -488,7 +488,7 @@ def _batch_upsert_draft_varaible(
     elif dify_config.SQLALCHEMY_DATABASE_URI_SCHEME == "mysql+pymysql":
         stmt = mysql_insert(WorkflowDraftVariable).values([_model_to_insertion_dict(v) for v in draft_vars])
         if policy == _UpsertPolicy.OVERWRITE:
-            # Index_elements needn't to be specified in mysql dialect. Conflict was determined 
+            # Index_elements needn't to be specified in mysql dialect. Conflict was determined
             # by unique_key.
             stmt = stmt.on_duplicate_key_update(
                 # 更新字段为“要插入的新值”
@@ -510,6 +510,7 @@ def _batch_upsert_draft_varaible(
     else:
         raise Exception(f"Invalid SQLALCHEMY_DATABASE_URI_SCHEME: {dify_config.SQLALCHEMY_DATABASE_URI_SCHEME}")
     session.execute(stmt)
+
 
 def _model_to_insertion_dict(model: WorkflowDraftVariable) -> dict[str, Any]:
     d: dict[str, Any] = {

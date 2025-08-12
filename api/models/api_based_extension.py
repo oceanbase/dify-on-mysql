@@ -5,7 +5,7 @@ from sqlalchemy.orm import mapped_column
 
 from .base import Base
 from .engine import db
-from .types import StringUUID, uuid_default, adjusted_text
+from .types import StringUUID, adjusted_text, uuid_default
 
 
 class APIBasedExtensionPoint(enum.Enum):

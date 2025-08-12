@@ -10,7 +10,7 @@ from sqlalchemy.orm import Mapped, mapped_column, reconstructor
 from models.base import Base
 
 from .engine import db
-from .types import StringUUID, adjusted_text, uuid_default, varchar_default, adjusted_array
+from .types import StringUUID, adjusted_array, adjusted_text, uuid_default, varchar_default
 
 
 class TenantAccountRole(enum.StrEnum):

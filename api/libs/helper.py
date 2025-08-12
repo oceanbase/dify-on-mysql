@@ -386,16 +386,14 @@ def convert_datetime_to_date(field, target_timezone: str = ":tz"):
 
 def convert_datetime_to_date_func(field, target_timezone: str = ":tz"):
     """
-        Helper function to make MySQL compatible. This function shouldn't be exposed to 
-        user considering implic SQL injection risks.
+    Helper function to make MySQL compatible. This function shouldn't be exposed to
+    user considering implic SQL injection risks.
     """
     if dify_config.SQLALCHEMY_DATABASE_URI_SCHEME == "postgresql":
         return sa.func.date(
             sa.func.date_trunc("day", sa.text(f"{field} AT TIME ZONE 'UTC' AT TIME ZONE {target_timezone}"))
         ).label("date")
     elif "mysql" in dify_config.SQLALCHEMY_DATABASE_URI_SCHEME:
-        return sa.func.date(
-            sa.func.convert_tz(field, "UTC", target_timezone)
-        ).label("date")
+        return sa.func.date(sa.func.convert_tz(field, "UTC", target_timezone)).label("date")
     else:
         raise NotImplementedError(f"Unsupported database URI scheme: {dify_config.SQLALCHEMY_DATABASE_URI_SCHEME}")

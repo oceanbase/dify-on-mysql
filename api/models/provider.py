@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-from sqlalchemy import func, text
+from sqlalchemy import func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
@@ -166,9 +166,7 @@ class ProviderOrder(Base):
     quantity: Mapped[int] = mapped_column(db.Integer, nullable=False, server_default=db.text("1"))
     currency: Mapped[Optional[str]] = mapped_column(db.String(40))
     total_amount: Mapped[Optional[int]] = mapped_column(db.Integer)
-    payment_status: Mapped[str] = mapped_column(
-        db.String(40), nullable=False, **varchar_default("wait_pay")
-    )
+    payment_status: Mapped[str] = mapped_column(db.String(40), nullable=False, **varchar_default("wait_pay"))
     paid_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime)
     pay_failed_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime)
     refunded_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime)

@@ -14,7 +14,6 @@ from core.workflow.entities.workflow_execution import WorkflowExecutionStatus
 if TYPE_CHECKING:
     from models.workflow import Workflow
 
-import sqlalchemy as sa
 from flask import request
 from flask_login import UserMixin
 from sqlalchemy import Float, Index, PrimaryKeyConstraint, func, text
@@ -30,7 +29,7 @@ from .account import Account, Tenant
 from .base import Base
 from .engine import db
 from .enums import CreatorUserRole
-from .types import StringUUID, no_length_string, text_default, uuid_default, varchar_default, adjusted_text
+from .types import StringUUID, adjusted_text, no_length_string, text_default, uuid_default, varchar_default
 
 if TYPE_CHECKING:
     from .workflow import Workflow
@@ -1324,7 +1323,9 @@ class MessageAnnotation(Base):
 
     id: Mapped[str] = mapped_column(StringUUID, **uuid_default())
     app_id: Mapped[str] = mapped_column(StringUUID)
-    conversation_id: Mapped[Optional[str]] = mapped_column(StringUUID, db.ForeignKey("conversations.id", ondelete="CASCADE"))
+    conversation_id: Mapped[Optional[str]] = mapped_column(
+        StringUUID, db.ForeignKey("conversations.id", ondelete="CASCADE")
+    )
     message_id: Mapped[Optional[str]] = mapped_column(StringUUID)
     question = db.Column(adjusted_text(), nullable=True)
     content = mapped_column(adjusted_text(), nullable=False)
@@ -1578,9 +1579,7 @@ class UploadFile(Base):
     size: Mapped[int] = mapped_column(db.Integer, nullable=False)
     extension: Mapped[str] = mapped_column(db.String(255), nullable=False)
     mime_type: Mapped[str] = mapped_column(db.String(255), nullable=True)
-    created_by_role: Mapped[str] = mapped_column(
-        db.String(255), nullable=False, **varchar_default("account")
-    )
+    created_by_role: Mapped[str] = mapped_column(db.String(255), nullable=False, **varchar_default("account"))
     created_by: Mapped[str] = mapped_column(StringUUID, nullable=False)
     created_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
     used: Mapped[bool] = mapped_column(db.Boolean, nullable=False, server_default=db.text("false"))

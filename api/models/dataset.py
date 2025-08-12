@@ -13,7 +13,6 @@ from json import JSONDecodeError
 from typing import Any, Optional, cast
 
 from sqlalchemy import func
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from configs import dify_config
@@ -361,9 +360,7 @@ class Document(Base):
     stopped_at = mapped_column(db.DateTime, nullable=True)
 
     # basic fields
-    indexing_status = mapped_column(
-        db.String(255), nullable=False, **varchar_default("waiting")
-    )
+    indexing_status = mapped_column(db.String(255), nullable=False, **varchar_default("waiting"))
     enabled = mapped_column(db.Boolean, nullable=False, server_default=db.text("true"))
     disabled_at = mapped_column(db.DateTime, nullable=True)
     disabled_by = mapped_column(StringUUID, nullable=True)
@@ -889,9 +886,7 @@ class DatasetKeywordTable(Base):
     id = mapped_column(StringUUID, primary_key=True, **uuid_default())
     dataset_id = mapped_column(StringUUID, nullable=False, unique=True)
     keyword_table = mapped_column(adjusted_text(), nullable=False)
-    data_source_type = mapped_column(
-        db.String(255), nullable=False, **varchar_default("database")
-    )
+    data_source_type = mapped_column(db.String(255), nullable=False, **varchar_default("database"))
 
     @property
     def keyword_table_dict(self):
@@ -933,9 +928,7 @@ class Embedding(Base):
     )
 
     id = mapped_column(StringUUID, primary_key=True, **uuid_default())
-    model_name = mapped_column(
-        db.String(255), nullable=False, **varchar_default("text-embedding-ada-002")
-    )
+    model_name = mapped_column(db.String(255), nullable=False, **varchar_default("text-embedding-ada-002"))
     hash = mapped_column(db.String(64), nullable=False)
     embedding = mapped_column(db.LargeBinary, nullable=False)
     created_at = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
@@ -1073,7 +1066,7 @@ class ExternalKnowledgeBindings(Base):
         db.Index("external_knowledge_bindings_dataset_idx", "dataset_id"),
         # NOTE (shiver): MySQL can't use attribute without specific length as index key.
         # Hereby we choose sacrifice a little bit performance for compability.
-        # db.Index("external_knowledge_bindings_external_knowledge_idx", "external_knowledge_id"), 
+        # db.Index("external_knowledge_bindings_external_knowledge_idx", "external_knowledge_id"),
         db.Index("external_knowledge_bindings_external_knowledge_api_idx", "external_knowledge_api_id"),
     )
 

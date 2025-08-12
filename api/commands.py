@@ -8,6 +8,7 @@ import click
 from flask import current_app
 from pydantic import TypeAdapter
 from sqlalchemy import select
+from tenacity import retry, stop_after_attempt, wait_exponential
 from werkzeug.exceptions import NotFound
 
 from configs import dify_config
@@ -35,7 +36,6 @@ from services.account_service import AccountService, RegisterService, TenantServ
 from services.clear_free_plan_tenant_expired_logs import ClearFreePlanTenantExpiredLogs
 from services.plugin.data_migration import PluginDataMigration
 from services.plugin.plugin_migration import PluginMigration
-from tenacity import retry, stop_after_attempt, wait_exponential
 
 
 @click.command("reset-password", help="Reset the account password.")
@@ -688,11 +688,11 @@ def ensure_caches_table_exists():
             INDEX caches_expire_time_idx (expire_time)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         """
-        
+
         with db.engine.begin() as conn:
             conn.execute(db.text(create_caches_table_sql))
             click.echo(click.style("Caches table ensured for MySQL cache mode.", fg="green"))
-                
+
     except Exception as e:
         click.echo(click.style(f"Error: Could not ensure caches table after 3 attempts: {e}", fg="red"))
         # 抛出异常，停止迁移
@@ -703,7 +703,7 @@ def ensure_caches_table_exists():
 @click.option("--directory", prompt=False, help="The target migration script directory.")
 def upgrade_db(directory: Optional[str] = None):
     click.echo("Preparing database migration...")
-    
+
     # 1. 先确保 caches 表存在（原子操作）
     # 这样在MySQL缓存模式下，分布式锁可以正常工作
     if "mysql" in dify_config.SQLALCHEMY_DATABASE_URI_SCHEME and dify_config.CACHE_SCHEME == "mysql":
@@ -713,7 +713,7 @@ def upgrade_db(directory: Optional[str] = None):
             click.echo(click.style(f"Error: Failed to ensure caches table: {e}", fg="red"))
             click.echo(click.style("Migration stopped due to caches table creation failure.", fg="red"))
             raise Exception(f"Migration failed: {e}")
-    
+
     # 2. 然后使用分布式锁（可以安全使用了）
     lock = redis_client.lock(name="db_upgrade_lock", timeout=60)
     if lock.acquire(blocking=False):

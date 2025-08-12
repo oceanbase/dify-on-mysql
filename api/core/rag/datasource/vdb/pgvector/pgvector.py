@@ -75,6 +75,7 @@ else:
     # MySQL don't support gin index (up to date)
     SQL_CREATE_INDEX_PG_BIGM = None
 
+
 class PGVector(BaseVector):
     def __init__(self, collection_name: str, config: PGVectorConfig):
         super().__init__(collection_name)

@@ -1,13 +1,12 @@
 import json
 
 from sqlalchemy import func
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import mapped_column
 
 from models.base import Base
 
 from .engine import db
-from .types import StringUUID, adjusted_json_index, adjusted_jsonb, uuid_default, adjusted_text
+from .types import StringUUID, adjusted_json_index, adjusted_jsonb, adjusted_text, uuid_default
 
 
 class DataSourceOauthBinding(Base):

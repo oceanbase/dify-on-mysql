@@ -11,7 +11,7 @@ class RedisConfig(BaseSettings):
 
     CACHE_SCHEME: str = Field(
         description="Cache scheme, can be 'mysql' or 'redis'",
-        default='redis',
+        default="redis",
     )
 
     REDIS_HOST: str = Field(
