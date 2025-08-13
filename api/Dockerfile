@@ -21,7 +21,7 @@ RUN apt-get update \
 
 # Install Python dependencies
 COPY pyproject.toml uv.lock ./
-# RUN uv sync --index-url https://pypi.tuna.tsinghua.edu.cn/simple --group storage --group tools --group vdb
+#RUN uv sync --index-url https://pypi.tuna.tsinghua.edu.cn/simple --group storage --group tools --group vdb
 RUN uv sync
 
 # production stage
@@ -72,8 +72,7 @@ RUN python -c "import tiktoken; tiktoken.encoding_for_model('gpt2')"
 # Copy source code
 COPY . /app/api/
 
-# Fix pyobvector bug
-RUN python /app/api/fix_pyobvector_bug.py
+
 
 # Copy entrypoint
 COPY docker/entrypoint.sh /entrypoint.sh
