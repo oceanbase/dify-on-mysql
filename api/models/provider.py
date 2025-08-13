@@ -1,6 +1,9 @@
+from datetime import datetime
 from enum import Enum
+from typing import Optional
 
 from sqlalchemy import func
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 from .engine import db
@@ -63,8 +66,8 @@ class Provider(Base):
     quota_limit = db.Column(db.BigInteger, nullable=True)
     quota_used = db.Column(db.BigInteger, default=0)
 
-    created_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
-    updated_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
+    created_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
+    updated_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
 
     def __repr__(self):
         return (
@@ -104,15 +107,15 @@ class ProviderModel(Base):
         ),
     )
 
-    id = db.Column(StringUUID, **uuid_default())
-    tenant_id = db.Column(StringUUID, nullable=False)
-    provider_name = db.Column(db.String(255), nullable=False)
-    model_name = db.Column(db.String(255), nullable=False)
-    model_type = db.Column(db.String(40), nullable=False)
-    encrypted_config = db.Column(adjusted_text(), nullable=True)
-    is_valid = db.Column(db.Boolean, nullable=False, server_default=db.text("false"))
-    created_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
-    updated_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
+    id: Mapped[str] = mapped_column(StringUUID, **uuid_default())
+    tenant_id: Mapped[str] = mapped_column(StringUUID, nullable=False)
+    provider_name: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    model_name: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    model_type: Mapped[str] = mapped_column(db.String(40), nullable=False)
+    encrypted_config: Mapped[Optional[str]] = mapped_column(adjusted_text(), nullable=True)
+    is_valid: Mapped[bool] = mapped_column(db.Boolean, nullable=False, server_default=db.text("false"))
+    created_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
+    updated_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
 
 
 class TenantDefaultModel(Base):
@@ -122,13 +125,13 @@ class TenantDefaultModel(Base):
         db.Index("tenant_default_model_tenant_id_provider_type_idx", "tenant_id", "provider_name", "model_type"),
     )
 
-    id = db.Column(StringUUID, **uuid_default())
-    tenant_id = db.Column(StringUUID, nullable=False)
-    provider_name = db.Column(db.String(255), nullable=False)
-    model_name = db.Column(db.String(255), nullable=False)
-    model_type = db.Column(db.String(40), nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
-    updated_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
+    id: Mapped[str] = mapped_column(StringUUID, **uuid_default())
+    tenant_id: Mapped[str] = mapped_column(StringUUID, nullable=False)
+    provider_name: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    model_name: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    model_type: Mapped[str] = mapped_column(db.String(40), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
+    updated_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
 
 
 class TenantPreferredModelProvider(Base):
@@ -138,12 +141,12 @@ class TenantPreferredModelProvider(Base):
         db.Index("tenant_preferred_model_provider_tenant_provider_idx", "tenant_id", "provider_name"),
     )
 
-    id = db.Column(StringUUID, **uuid_default())
-    tenant_id = db.Column(StringUUID, nullable=False)
-    provider_name = db.Column(db.String(255), nullable=False)
-    preferred_provider_type = db.Column(db.String(40), nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
-    updated_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
+    id: Mapped[str] = mapped_column(StringUUID, **uuid_default())
+    tenant_id: Mapped[str] = mapped_column(StringUUID, nullable=False)
+    provider_name: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    preferred_provider_type: Mapped[str] = mapped_column(db.String(40), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
+    updated_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
 
 
 class ProviderOrder(Base):
@@ -153,22 +156,22 @@ class ProviderOrder(Base):
         db.Index("provider_order_tenant_provider_idx", "tenant_id", "provider_name"),
     )
 
-    id = db.Column(StringUUID, **uuid_default())
-    tenant_id = db.Column(StringUUID, nullable=False)
-    provider_name = db.Column(db.String(255), nullable=False)
-    account_id = db.Column(StringUUID, nullable=False)
-    payment_product_id = db.Column(db.String(191), nullable=False)
-    payment_id = db.Column(db.String(191))
-    transaction_id = db.Column(db.String(191))
-    quantity = db.Column(db.Integer, nullable=False, server_default=db.text("1"))
-    currency = db.Column(db.String(40))
-    total_amount = db.Column(db.Integer)
-    payment_status = db.Column(db.String(40), nullable=False, **varchar_default("wait_pay"))
-    paid_at = db.Column(db.DateTime)
-    pay_failed_at = db.Column(db.DateTime)
-    refunded_at = db.Column(db.DateTime)
-    created_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
-    updated_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
+    id: Mapped[str] = mapped_column(StringUUID, **uuid_default())
+    tenant_id: Mapped[str] = mapped_column(StringUUID, nullable=False)
+    provider_name: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    account_id: Mapped[str] = mapped_column(StringUUID, nullable=False)
+    payment_product_id: Mapped[str] = mapped_column(db.String(191), nullable=False)
+    payment_id: Mapped[Optional[str]] = mapped_column(db.String(191))
+    transaction_id: Mapped[Optional[str]] = mapped_column(db.String(191))
+    quantity: Mapped[int] = mapped_column(db.Integer, nullable=False, server_default=db.text("1"))
+    currency: Mapped[Optional[str]] = mapped_column(db.String(40))
+    total_amount: Mapped[Optional[int]] = mapped_column(db.Integer)
+    payment_status: Mapped[str] = mapped_column(db.String(40), nullable=False, **varchar_default("wait_pay"))
+    paid_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime)
+    pay_failed_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime)
+    refunded_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime)
+    created_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
+    updated_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
 
 
 class ProviderModelSetting(Base):
@@ -182,15 +185,15 @@ class ProviderModelSetting(Base):
         db.Index("provider_model_setting_tenant_provider_model_idx", "tenant_id", "provider_name", "model_type"),
     )
 
-    id = db.Column(StringUUID, **uuid_default())
-    tenant_id = db.Column(StringUUID, nullable=False)
-    provider_name = db.Column(db.String(255), nullable=False)
-    model_name = db.Column(db.String(255), nullable=False)
-    model_type = db.Column(db.String(40), nullable=False)
-    enabled = db.Column(db.Boolean, nullable=False, server_default=db.text("true"))
-    load_balancing_enabled = db.Column(db.Boolean, nullable=False, server_default=db.text("false"))
-    created_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
-    updated_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
+    id: Mapped[str] = mapped_column(StringUUID, **uuid_default())
+    tenant_id: Mapped[str] = mapped_column(StringUUID, nullable=False)
+    provider_name: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    model_name: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    model_type: Mapped[str] = mapped_column(db.String(40), nullable=False)
+    enabled: Mapped[bool] = mapped_column(db.Boolean, nullable=False, server_default=db.text("true"))
+    load_balancing_enabled: Mapped[bool] = mapped_column(db.Boolean, nullable=False, server_default=db.text("false"))
+    created_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
+    updated_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
 
 
 class LoadBalancingModelConfig(Base):
@@ -204,13 +207,13 @@ class LoadBalancingModelConfig(Base):
         db.Index("load_balancing_model_config_tenant_provider_model_idx", "tenant_id", "provider_name", "model_type"),
     )
 
-    id = db.Column(StringUUID, **uuid_default())
-    tenant_id = db.Column(StringUUID, nullable=False)
-    provider_name = db.Column(db.String(255), nullable=False)
-    model_name = db.Column(db.String(255), nullable=False)
-    model_type = db.Column(db.String(40), nullable=False)
-    name = db.Column(db.String(255), nullable=False)
-    encrypted_config = db.Column(adjusted_text(), nullable=True)
-    enabled = db.Column(db.Boolean, nullable=False, server_default=db.text("true"))
-    created_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
-    updated_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
+    id: Mapped[str] = mapped_column(StringUUID, **uuid_default())
+    tenant_id: Mapped[str] = mapped_column(StringUUID, nullable=False)
+    provider_name: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    model_name: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    model_type: Mapped[str] = mapped_column(db.String(40), nullable=False)
+    name: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    encrypted_config: Mapped[Optional[str]] = mapped_column(adjusted_text(), nullable=True)
+    enabled: Mapped[bool] = mapped_column(db.Boolean, nullable=False, server_default=db.text("true"))
+    created_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
+    updated_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())

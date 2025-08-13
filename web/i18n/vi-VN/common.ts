@@ -58,6 +58,8 @@ const translation = {
     downloadFailed: 'Tải xuống thất bại. Vui lòng thử lại sau.',
     format: 'Định dạng',
     downloadSuccess: 'Tải xuống đã hoàn thành.',
+    deSelectAll: 'Bỏ chọn tất cả',
+    selectAll: 'Chọn Tất Cả',
   },
   placeholder: {
     input: 'Vui lòng nhập',
@@ -145,6 +147,8 @@ const translation = {
     newDataset: 'Tạo Kiến thức',
     tools: 'Công cụ',
     exploreMarketplace: 'Khám phá Marketplace',
+    appDetail: 'Chi tiết ứng dụng',
+    account: 'báo cáo',
   },
   userProfile: {
     settings: 'Cài đặt',
@@ -212,6 +216,28 @@ const translation = {
     workspaceIcon: 'Biểu tượng không gian làm việc',
     workspaceName: 'Tên không gian làm việc',
     editWorkspaceInfo: 'Chỉnh sửa thông tin không gian làm việc',
+    changeEmail: {
+      existingEmail: 'Một người dùng với email này đã tồn tại.',
+      title: 'Đổi Email',
+      resendTip: 'Không nhận được mã sao?',
+      resend: 'Gửi lại',
+      emailLabel: 'Email mới',
+      verifyNew: 'Xác minh email mới của bạn',
+      newEmail: 'Tạo một địa chỉ email mới',
+      emailPlaceholder: 'Nhập một email mới',
+      changeTo: 'Thay đổi thành {{email}}',
+      content1: 'Nếu bạn tiếp tục, chúng tôi sẽ gửi một mã xác minh đến <email>{{email}}</email> để xác thực lại.',
+      codeLabel: 'Mã xác thực',
+      content3: 'Nhập một email mới và chúng tôi sẽ gửi cho bạn một mã xác minh.',
+      sendVerifyCode: 'Gửi mã xác minh',
+      content4: 'Chúng tôi vừa gửi cho bạn một mã xác minh tạm thời đến <email>{{email}}</email>.',
+      resendCount: 'Gửi lại sau {{count}} giây',
+      continue: 'Tiếp tục',
+      content2: 'Email hiện tại của bạn là <email>{{email}}</email>. Mã xác minh đã được gửi đến địa chỉ email này.',
+      verifyEmail: 'Xác minh email hiện tại của bạn',
+      codePlaceholder: 'Dán mã 6 chữ số',
+      authTip: 'Khi email của bạn được thay đổi, các tài khoản Google hoặc GitHub liên kết với email cũ của bạn sẽ không còn có thể đăng nhập vào tài khoản này.',
+    },
   },
   members: {
     team: 'Nhóm',
@@ -253,6 +279,26 @@ const translation = {
     builder: 'Chủ thầu',
     datasetOperator: 'Quản trị viên kiến thức',
     setBuilder: 'Đặt làm trình tạo',
+    transferModal: {
+      resend: 'Gửi lại',
+      resendTip: 'Chưa nhận được mã?',
+      continue: 'Tiếp tục',
+      verifyEmail: 'Xác minh email hiện tại của bạn',
+      title: 'Chuyển quyền sở hữu không gian làm việc',
+      transferPlaceholder: 'Chọn một thành viên trong không gian làm việc…',
+      transferLabel: 'Chuyển quyền sở hữu không gian làm việc cho',
+      warningTip: 'Bạn sẽ trở thành thành viên quản trị, và chủ sở hữu mới sẽ có toàn quyền kiểm soát.',
+      verifyContent: 'Email hiện tại của bạn là <email>{{email}}</email>.',
+      warning: 'Bạn sắp chuyển quyền sở hữu của "{{workspace}}". Điều này có hiệu lực ngay lập tức và không thể hoàn tác.',
+      codePlaceholder: 'Dán mã 6 chữ số',
+      transfer: 'Chuyển quyền sở hữu không gian làm việc',
+      sendVerifyCode: 'Gửi mã xác minh',
+      resendCount: 'Gửi lại sau {{count}} giây',
+      codeLabel: 'Mã xác thực',
+      sendTip: 'Nếu bạn tiếp tục, chúng tôi sẽ gửi một mã xác minh đến <email>{{email}}</email> để xác thực lại.',
+      verifyContent2: 'Chúng tôi sẽ gửi một mã xác minh tạm thời đến email này để thực hiện xác thực lại.',
+    },
+    transferOwnership: 'Chuyển quyền sở hữu',
   },
   integrations: {
     connected: 'Đã kết nối',
@@ -444,6 +490,7 @@ const translation = {
         addPages: 'Thêm trang',
         preview: 'Xem trước',
       },
+      integratedAlert: 'Notion được tích hợp thông qua thông tin xác thực nội bộ, không cần phải ủy quyền lại.',
     },
     website: {
       title: 'Trang mạng',
@@ -465,7 +512,6 @@ const translation = {
   apiBasedExtension: {
     title: 'Các tiện ích API cung cấp quản lý API tập trung, giúp cấu hình dễ dàng sử dụng trên các ứng dụng của Dify.',
     link: 'Tìm hiểu cách phát triển Phần mở rộng API của riêng bạn.',
-    linkUrl: 'https://docs.dify.ai/en/guides/extension/api-based-extension/README',
     add: 'Thêm Phần mở rộng API',
     selector: {
       title: 'Phần mở rộng API',
@@ -550,7 +596,7 @@ const translation = {
       vectorHash: 'Vector hash:',
       hitScore: 'Điểm truy xuất:',
     },
-    inputPlaceholder: 'Nói chuyện với Bot',
+    inputPlaceholder: 'Nói chuyện với {{botName}}',
     thought: 'Tư duy',
     thinking: 'Suy nghĩ...',
     resend: 'Gửi lại',
@@ -644,6 +690,7 @@ const translation = {
   license: {
     expiring_plural: 'Hết hạn sau {{count}} ngày',
     expiring: 'Hết hạn trong một ngày',
+    unlimited: 'Vô hạn',
   },
   pagination: {
     perPage: 'Mục trên mỗi trang',
@@ -667,6 +714,7 @@ const translation = {
     dropImageHere: 'Kéo hình ảnh của bạn vào đây, hoặc',
     browse: 'duyệt',
   },
+  you: 'Bạn',
 }
 
 export default translation

@@ -15,12 +15,12 @@ class SavedMessage(Base):
         db.Index("saved_message_message_idx", "app_id", "message_id", "created_by_role", "created_by"),
     )
 
-    id = db.Column(StringUUID, **uuid_default())
-    app_id = db.Column(StringUUID, nullable=False)
-    message_id = db.Column(StringUUID, nullable=False)
-    created_by_role = db.Column(db.String(255), nullable=False, **varchar_default("end_user"))
-    created_by = db.Column(StringUUID, nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
+    id = mapped_column(StringUUID, **uuid_default())
+    app_id = mapped_column(StringUUID, nullable=False)
+    message_id = mapped_column(StringUUID, nullable=False)
+    created_by_role = mapped_column(db.String(255), nullable=False, **varchar_default("end_user"))
+    created_by = mapped_column(StringUUID, nullable=False)
+    created_at = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
 
     @property
     def message(self):
@@ -34,9 +34,9 @@ class PinnedConversation(Base):
         db.Index("pinned_conversation_conversation_idx", "app_id", "conversation_id", "created_by_role", "created_by"),
     )
 
-    id = db.Column(StringUUID, **uuid_default())
-    app_id = db.Column(StringUUID, nullable=False)
+    id = mapped_column(StringUUID, **uuid_default())
+    app_id = mapped_column(StringUUID, nullable=False)
     conversation_id: Mapped[str] = mapped_column(StringUUID)
-    created_by_role = db.Column(db.String(255), nullable=False, **varchar_default("end_user"))
-    created_by = db.Column(StringUUID, nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
+    created_by_role = mapped_column(db.String(255), nullable=False, **varchar_default("end_user"))
+    created_by = mapped_column(StringUUID, nullable=False)
+    created_at = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())

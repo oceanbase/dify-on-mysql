@@ -1,8 +1,9 @@
 import json
 import logging
-import random
 import re
+import secrets
 import string
+import struct
 import subprocess
 import time
 import uuid
@@ -12,16 +13,44 @@ from hashlib import sha256
 from typing import TYPE_CHECKING, Any, Optional, Union, cast
 from zoneinfo import available_timezones
 
+import sqlalchemy as sa
 from flask import Response, stream_with_context
 from flask_restful import fields
+from pydantic import BaseModel
 
 from configs import dify_config
 from core.app.features.rate_limiting.rate_limit import RateLimitGenerator
 from core.file import helpers as file_helpers
+from core.model_runtime.utils.encoders import jsonable_encoder
 from extensions.ext_redis import redis_client
 
 if TYPE_CHECKING:
     from models.account import Account
+    from models.model import EndUser
+
+
+def extract_tenant_id(user: Union["Account", "EndUser"]) -> str | None:
+    """
+    Extract tenant_id from Account or EndUser object.
+
+    Args:
+        user: Account or EndUser object
+
+    Returns:
+        tenant_id string if available, None otherwise
+
+    Raises:
+        ValueError: If user is neither Account nor EndUser
+    """
+    from models.account import Account
+    from models.model import EndUser
+
+    if isinstance(user, Account):
+        return user.current_tenant_id
+    elif isinstance(user, EndUser):
+        return user.tenant_id
+    else:
+        raise ValueError(f"Invalid user type: {type(user)}. Expected Account or EndUser.")
 
 
 def run(script):
@@ -120,25 +149,6 @@ class StrLen:
         return value
 
 
-class FloatRange:
-    """Restrict input to an float in a range (inclusive)"""
-
-    def __init__(self, low, high, argument="argument"):
-        self.low = low
-        self.high = high
-        self.argument = argument
-
-    def __call__(self, value):
-        value = _get_float(value)
-        if value < self.low or value > self.high:
-            error = "Invalid {arg}: {val}. {arg} must be within the range {lo} - {hi}".format(
-                arg=self.argument, val=value, lo=self.low, hi=self.high
-            )
-            raise ValueError(error)
-
-        return value
-
-
 class DatetimeString:
     def __init__(self, format, argument="argument"):
         self.format = format
@@ -175,14 +185,14 @@ def generate_string(n):
     letters_digits = string.ascii_letters + string.digits
     result = ""
     for i in range(n):
-        result += random.choice(letters_digits)
+        result += secrets.choice(letters_digits)
 
     return result
 
 
 def extract_remote_ip(request) -> str:
     if request.headers.get("CF-Connecting-IP"):
-        return cast(str, request.headers.get("Cf-Connecting-Ip"))
+        return cast(str, request.headers.get("CF-Connecting-IP"))
     elif request.headers.getlist("X-Forwarded-For"):
         return cast(str, request.headers.getlist("X-Forwarded-For")[0])
     else:
@@ -196,13 +206,67 @@ def generate_text_hash(text: str) -> str:
 
 def compact_generate_response(response: Union[Mapping, Generator, RateLimitGenerator]) -> Response:
     if isinstance(response, dict):
-        return Response(response=json.dumps(response), status=200, mimetype="application/json")
+        return Response(response=json.dumps(jsonable_encoder(response)), status=200, mimetype="application/json")
     else:
 
         def generate() -> Generator:
             yield from response
 
         return Response(stream_with_context(generate()), status=200, mimetype="text/event-stream")
+
+
+def length_prefixed_response(magic_number: int, response: Union[Mapping, Generator, RateLimitGenerator]) -> Response:
+    """
+    This function is used to return a response with a length prefix.
+    Magic number is a one byte number that indicates the type of the response.
+
+    For a compatibility with latest plugin daemon https://github.com/langgenius/dify-plugin-daemon/pull/341
+    Avoid using line-based response, it leads a memory issue.
+
+    We uses following format:
+    | Field         | Size     | Description                     |
+    |---------------|----------|---------------------------------|
+    | Magic Number  | 1 byte   | Magic number identifier         |
+    | Reserved      | 1 byte   | Reserved field                  |
+    | Header Length | 2 bytes  | Header length (usually 0xa)    |
+    | Data Length   | 4 bytes  | Length of the data              |
+    | Reserved      | 6 bytes  | Reserved fields                 |
+    | Data          | Variable | Actual data content             |
+
+    | Reserved Fields | Header   | Data     |
+    |-----------------|----------|----------|
+    | 4 bytes total   | Variable | Variable |
+
+    all data is in little endian
+    """
+
+    def pack_response_with_length_prefix(response: bytes) -> bytes:
+        header_length = 0xA
+        data_length = len(response)
+        # | Magic Number 1byte | Reserved 1byte | Header Length 2bytes | Data Length 4bytes | Reserved 6bytes | Data
+        return struct.pack("<BBHI", magic_number, 0, header_length, data_length) + b"\x00" * 6 + response
+
+    if isinstance(response, dict):
+        return Response(
+            response=pack_response_with_length_prefix(json.dumps(jsonable_encoder(response)).encode("utf-8")),
+            status=200,
+            mimetype="application/json",
+        )
+    elif isinstance(response, BaseModel):
+        return Response(
+            response=pack_response_with_length_prefix(response.model_dump_json().encode("utf-8")),
+            status=200,
+            mimetype="application/json",
+        )
+
+    def generate() -> Generator:
+        for chunk in response:
+            if isinstance(chunk, str):
+                yield pack_response_with_length_prefix(chunk.encode("utf-8"))
+            else:
+                yield pack_response_with_length_prefix(chunk)
+
+    return Response(stream_with_context(generate()), status=200, mimetype="text/event-stream")
 
 
 class TokenManager:
@@ -316,5 +380,20 @@ def convert_datetime_to_date(field, target_timezone: str = ":tz"):
         return f"DATE(DATE_TRUNC('day', {field} AT TIME ZONE 'UTC' AT TIME ZONE {target_timezone}))"
     elif "mysql" in dify_config.SQLALCHEMY_DATABASE_URI_SCHEME:
         return f"DATE(CONVERT_TZ({field}, 'UTC', {target_timezone}))"
+    else:
+        raise NotImplementedError(f"Unsupported database URI scheme: {dify_config.SQLALCHEMY_DATABASE_URI_SCHEME}")
+
+
+def convert_datetime_to_date_func(field, target_timezone: str = ":tz"):
+    """
+    Helper function to make MySQL compatible. This function shouldn't be exposed to
+    user considering implic SQL injection risks.
+    """
+    if dify_config.SQLALCHEMY_DATABASE_URI_SCHEME == "postgresql":
+        return sa.func.date(
+            sa.func.date_trunc("day", sa.text(f"{field} AT TIME ZONE 'UTC' AT TIME ZONE {target_timezone}"))
+        ).label("date")
+    elif "mysql" in dify_config.SQLALCHEMY_DATABASE_URI_SCHEME:
+        return sa.func.date(sa.func.convert_tz(field, "UTC", target_timezone)).label("date")
     else:
         raise NotImplementedError(f"Unsupported database URI scheme: {dify_config.SQLALCHEMY_DATABASE_URI_SCHEME}")

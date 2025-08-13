@@ -58,6 +58,8 @@ const translation = {
     downloadFailed: 'ดาวน์โหลดล้มเหลว กรุณาลองอีกครั้งในภายหลัง.',
     more: 'มากขึ้น',
     downloadSuccess: 'ดาวน์โหลดเสร็จสิ้นแล้ว.',
+    selectAll: 'เลือกทั้งหมด',
+    deSelectAll: 'ยกเลิกการเลือกทั้งหมด',
   },
   errorMsg: {
     fieldRequired: '{{field}} เป็นสิ่งจําเป็น',
@@ -144,6 +146,8 @@ const translation = {
     newDataset: 'สร้างความรู้',
     tools: 'เครื่อง มือ',
     exploreMarketplace: 'สํารวจ Marketplace',
+    appDetail: 'รายละเอียดแอป',
+    account: 'บัญชี',
   },
   userProfile: {
     settings: 'การตั้งค่า',
@@ -211,6 +215,28 @@ const translation = {
     workspaceIcon: 'ไอคอนพื้นที่ทำงาน',
     editWorkspaceInfo: 'แก้ไขข้อมูลเวิร์กสเปซ',
     workspaceName: 'ชื่อพื้นที่ทำงาน',
+    changeEmail: {
+      resend: 'ส่งซ้ำ',
+      changeTo: 'เปลี่ยนเป็น {{email}}',
+      sendVerifyCode: 'ส่งรหัสยืนยัน',
+      newEmail: 'สร้างที่อยู่อีเมลใหม่',
+      emailLabel: 'อีเมลใหม่',
+      emailPlaceholder: 'ป้อนอีเมลใหม่',
+      verifyEmail: 'ตรวจสอบอีเมลปัจจุบันของคุณ',
+      codePlaceholder: 'กรุณาวางรหัส 6 หลัก',
+      codeLabel: 'รหัสยืนยันตัวตน',
+      existingEmail: 'มีผู้ใช้ที่มีอีเมลนี้อยู่แล้ว.',
+      verifyNew: 'ยืนยันอีเมลใหม่ของคุณ',
+      content4: 'เราเพิ่งส่งรหัสยืนยันชั่วคราวไปที่ <email>{{email}}</email>.',
+      continue: 'ดำเนินต่อไป',
+      content2: 'อีเมลปัจจุบันของคุณคือ <email>{{email}}</email> รหัสยืนยันได้ถูกส่งไปยังที่อยู่อีเมลนี้แล้ว',
+      content3: 'กรุณาใส่อีเมลใหม่และเราจะส่งรหัสยืนยันให้คุณ',
+      content1: 'หากคุณดำเนินการต่อ เราจะส่งรหัสยืนยันไปยัง <email>{{email}}</email> เพื่อการยืนยันตัวตนใหม่อีกครั้ง.',
+      resendTip: 'ไม่ได้รับรหัสเหรอ?',
+      resendCount: 'ส่งอีกครั้งใน {{count}} วินาที',
+      authTip: 'เมื่ออีเมลของคุณถูกเปลี่ยนแปลง บัญชี Google หรือบัญชี GitHub ที่เชื่อมโยงกับอีเมลเก่าของคุณจะไม่สามารถเข้าสู่ระบบบัญชีนี้ได้อีกต่อไป.',
+      title: 'เปลี่ยนอีเมล',
+    },
   },
   members: {
     team: 'ทีม',
@@ -252,6 +278,26 @@ const translation = {
     disInvite: 'ยกเลิกคําเชิญ',
     deleteMember: 'ลบสมาชิก',
     you: '(คุณ)',
+    transferModal: {
+      resend: 'ส่งซ้ำ',
+      codePlaceholder: 'กรุณาวางรหัส 6 หลัก',
+      resendTip: 'ไม่ received รหัสใช่ไหม?',
+      sendVerifyCode: 'ส่งรหัสยืนยัน',
+      continue: 'ดำเนินต่อไป',
+      codeLabel: 'รหัสยืนยัน',
+      transferPlaceholder: 'เลือกสมาชิกในที่ทำงาน…',
+      transferLabel: 'โอนความเป็นเจ้าของพื้นที่ทำงานไปยัง',
+      transfer: 'โอนความเป็นเจ้าของพื้นที่ทำงาน',
+      resendCount: 'ส่งอีกครั้งใน {{count}} วินาที',
+      verifyEmail: 'ตรวจสอบอีเมลปัจจุบันของคุณ',
+      verifyContent2: 'เราจะส่งรหัสการตรวจสอบชั่วคราวไปยังอีเมลนี้เพื่อทำการยืนยันตัวตนใหม่.',
+      warningTip: 'คุณจะกลายเป็นสมาชิกผู้ดูแลระบบ และเจ้าของคนใหม่จะมีการควบคุมทั้งหมด',
+      warning: 'คุณกำลังจะโอนความเป็นเจ้าของของ "{{workspace}}" นี่จะมีผลทันทีและไม่สามารถย้อนกลับได้.',
+      sendTip: 'หากคุณดำเนินการต่อไป เราจะส่งรหัสการตรวจสอบไปยัง <email>{{email}}</email> สำหรับการตรวจสอบสิทธิ์ใหม่อีกครั้ง.',
+      verifyContent: 'อีเมลปัจจุบันของคุณคือ <email>{{email}}</email>.',
+      title: 'โอนความเป็นเจ้าของพื้นที่ทำงาน',
+    },
+    transferOwnership: 'โอนความเป็นเจ้าของ',
   },
   integrations: {
     connected: 'เชื่อม ต่อ',
@@ -444,6 +490,7 @@ const translation = {
         addPages: 'เพิ่มหน้า',
         preview: 'ดูตัวอย่าง',
       },
+      integratedAlert: 'Notion ถูกผสานผ่านข้อมูลประจำตัวภายใน ไม่จำเป็นต้องทำการอนุญาตใหม่อีกครั้ง.',
     },
     website: {
       title: 'เว็บไซต์',
@@ -464,7 +511,6 @@ const translation = {
   apiBasedExtension: {
     title: 'ส่วนขยาย API ให้การจัดการ API แบบรวมศูนย์ ทําให้การกําหนดค่าง่ายขึ้นเพื่อให้ใช้งานได้ง่ายในแอปพลิเคชันของ Dify',
     link: 'เรียนรู้วิธีพัฒนาส่วนขยาย API ของคุณเอง',
-    linkUrl: 'https://docs.dify.ai/en/guides/knowledge-base/create-knowledge-and-upload-documents/import-content-data/sync-from-website',
     add: 'เพิ่มส่วนขยาย API',
     selector: {
       title: 'ส่วนขยาย API',
@@ -639,6 +685,7 @@ const translation = {
   license: {
     expiring: 'หมดอายุในหนึ่งวัน',
     expiring_plural: 'หมดอายุใน {{count}} วัน',
+    unlimited: 'ไม่มีขีดจำกัด',
   },
   pagination: {
     perPage: 'รายการต่อหน้า',
@@ -662,6 +709,7 @@ const translation = {
     browse: 'ท่องเว็บ',
     supportedFormats: 'รองรับ PNG, JPG, JPEG, WEBP และ GIF',
   },
+  you: 'คุณ',
 }
 
 export default translation

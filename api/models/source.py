@@ -1,11 +1,12 @@
 import json
 
 from sqlalchemy import func
+from sqlalchemy.orm import mapped_column
 
 from models.base import Base
 
 from .engine import db
-from .types import StringUUID, adjusted_json_index, adjusted_jsonb, uuid_default
+from .types import StringUUID, adjusted_json_index, adjusted_jsonb, adjusted_text, uuid_default
 
 
 class DataSourceOauthBinding(Base):
@@ -16,14 +17,14 @@ class DataSourceOauthBinding(Base):
         adjusted_json_index("source_info_idx", "source_info"),
     )
 
-    id = db.Column(StringUUID, **uuid_default())
-    tenant_id = db.Column(StringUUID, nullable=False)
-    access_token = db.Column(db.String(255), nullable=False)
-    provider = db.Column(db.String(255), nullable=False)
-    source_info = db.Column(adjusted_jsonb(), nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
-    updated_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
-    disabled = db.Column(db.Boolean, nullable=True, server_default=db.text("false"))
+    id = mapped_column(StringUUID, **uuid_default())
+    tenant_id = mapped_column(StringUUID, nullable=False)
+    access_token = mapped_column(db.String(255), nullable=False)
+    provider = mapped_column(db.String(255), nullable=False)
+    source_info = mapped_column(adjusted_jsonb(), nullable=False)
+    created_at = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
+    updated_at = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
+    disabled = mapped_column(db.Boolean, nullable=True, server_default=db.text("false"))
 
 
 class DataSourceApiKeyAuthBinding(Base):
@@ -34,14 +35,14 @@ class DataSourceApiKeyAuthBinding(Base):
         db.Index("data_source_api_key_auth_binding_provider_idx", "provider"),
     )
 
-    id = db.Column(StringUUID, **uuid_default())
-    tenant_id = db.Column(StringUUID, nullable=False)
-    category = db.Column(db.String(255), nullable=False)
-    provider = db.Column(db.String(255), nullable=False)
-    credentials = db.Column(db.Text, nullable=True)  # JSON
-    created_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
-    updated_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
-    disabled = db.Column(db.Boolean, nullable=True, server_default=db.text("false"))
+    id = mapped_column(StringUUID, **uuid_default())
+    tenant_id = mapped_column(StringUUID, nullable=False)
+    category = mapped_column(db.String(255), nullable=False)
+    provider = mapped_column(db.String(255), nullable=False)
+    credentials = mapped_column(adjusted_text(), nullable=True)  # JSON
+    created_at = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
+    updated_at = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
+    disabled = mapped_column(db.Boolean, nullable=True, server_default=db.text("false"))
 
     def to_dict(self):
         return {

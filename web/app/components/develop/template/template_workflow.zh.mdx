@@ -14,7 +14,7 @@ Workflow 应用无会话支持，适合用于翻译/文章写作/总结 AI 等�
 
   ### Authentication
 
-  Dify Service API 使用 `API-Key` 进行鉴权。
+  Service API 使用 `API-Key` 进行鉴权。
   <i>**强烈建议开发者把 `API-Key` 放在后端存储，而非分享或者放在客户端存储，以免 `API-Key` 泄露，导致财产损失。**</i>
   所有 API 请求都应在 **`Authorization`** HTTP Header 中包含您的 `API-Key`，如下所示：
 
@@ -59,8 +59,13 @@ Workflow 应用无会话支持，适合用于翻译/文章写作/总结 AI 等�
         <i>由于 Cloudflare 限制，请求会在 100 秒超时无返回后中断。</i>
       - `user` (string) Required
         用户标识，用于定义终端用户的身份，方便检索、统计。
-        由开发者定义规则，需保证用户标识在应用内唯一。
-
+        由开发者定义规则，需保证用户标识在应用内唯一。API 无法访问 WebApp 创建的会话。
+      - `files` (array[object]) 可选
+      - `trace_id` (string) Optional
+        链路追踪ID。适用于与业务系统已有的trace组件打通，实现端到端分布式追踪等场景。如果未指定，系统将自动生成 `trace_id`。支持以下三种方式传递，具体优先级依次为：
+        1. Header：推荐通过 HTTP Header `X-Trace-Id` 传递，优先级最高。
+        2. Query 参数：通过 URL 查询参数 `trace_id` 传递。
+        3. Request Body：通过请求体字段 `trace_id` 传递（即本字段）。
 
     ### Response
     当 `response_mode` 为 `blocking` 时，返回 CompletionResponse object。
@@ -98,7 +103,6 @@ Workflow 应用无会话支持，适合用于翻译/文章写作/总结 AI 等�
       - `data` (object) 详细内容
         - `id` (string) workflow 执行 ID
         - `workflow_id` (string) 关联 Workflow ID
-        - `sequence_number` (int) 自增序号，App 内自增，从 1 开始
         - `created_at` (timestamp) 开始时间
     - `event: node_started` node 开始执行
       - `task_id` (string) 任务 ID，用于请求跟踪和下方的停止响应接口
@@ -232,7 +236,7 @@ Workflow 应用无会话支持，适合用于翻译/文章写作/总结 AI 等�
     ### Streaming Mode
     <CodeGroup title="Response">
     ```streaming {{ title: 'Response' }}
-      data: {"event": "workflow_started", "task_id": "5ad4cb98-f0c7-4085-b384-88c403be6290", "workflow_run_id": "5ad498-f0c7-4085-b384-88cbe6290", "data": {"id": "5ad498-f0c7-4085-b384-88cbe6290", "workflow_id": "dfjasklfjdslag", "sequence_number": 1, "created_at": 1679586595}}
+      data: {"event": "workflow_started", "task_id": "5ad4cb98-f0c7-4085-b384-88c403be6290", "workflow_run_id": "5ad498-f0c7-4085-b384-88cbe6290", "data": {"id": "5ad498-f0c7-4085-b384-88cbe6290", "workflow_id": "dfjasklfjdslag", "created_at": 1679586595}}
       data: {"event": "node_started", "task_id": "5ad4cb98-f0c7-4085-b384-88c403be6290", "workflow_run_id": "5ad498-f0c7-4085-b384-88cbe6290", "data": {"id": "5ad498-f0c7-4085-b384-88cbe6290", "node_id": "dfjasklfjdslag", "node_type": "start", "title": "Start", "index": 0, "predecessor_node_id": "fdljewklfklgejlglsd", "inputs": {}, "created_at": 1679586595}}
       data: {"event": "node_finished", "task_id": "5ad4cb98-f0c7-4085-b384-88c403be6290", "workflow_run_id": "5ad498-f0c7-4085-b384-88cbe6290", "data": {"id": "5ad498-f0c7-4085-b384-88cbe6290", "node_id": "dfjasklfjdslag", "node_type": "start", "title": "Start", "index": 0, "predecessor_node_id": "fdljewklfklgejlglsd", "inputs": {}, "outputs": {}, "status": "succeeded", "elapsed_time": 0.324, "execution_metadata": {"total_tokens": 63127864, "total_price": 2.378, "currency": "USD"},  "created_at": 1679586595}}
       data: {"event": "workflow_finished", "task_id": "5ad4cb98-f0c7-4085-b384-88c403be6290", "workflow_run_id": "5ad498-f0c7-4085-b384-88cbe6290", "data": {"id": "5ad498-f0c7-4085-b384-88cbe6290", "workflow_id": "dfjasklfjdslag", "outputs": {}, "status": "succeeded", "elapsed_time": 0.324, "total_tokens": 63127864, "total_steps": "1", "created_at": 1679586595, "finished_at": 1679976595}}
@@ -334,7 +338,7 @@ Workflow 应用无会话支持，适合用于翻译/文章写作/总结 AI 等�
   <Col>
     根据 workflow 执行 ID 获取 workflow 任务当前执行结果
     ### Path
-    - `workflow_run_id` (string) workflow_run_id，可在流式返回 Chunk 中获取
+    - `workflow_run_id` (string) workflow 执行 ID，可在流式返回 Chunk 中获取
     ### Response
     - `id` (string) workflow 执行 ID
     - `workflow_id` (string) 关联的 Workflow ID
@@ -346,7 +350,7 @@ Workflow 应用无会话支持，适合用于翻译/文章写作/总结 AI 等�
     - `total_tokens` (int) 任务执行总 tokens
     - `created_at` (timestamp) 任务开始时间
     - `finished_at` (timestamp) 任务结束时间
-    - `elapsed_time` (float) 耗时(s)
+    - `elapsed_time` (float) 耗时 (s)
   </Col>
   <Col sticky>
     ### Request Example
@@ -394,7 +398,7 @@ Workflow 应用无会话支持，适合用于翻译/文章写作/总结 AI 等�
     - `task_id` (string) 任务 ID，可在流式返回 Chunk 中获取
     ### Request Body
     - `user` (string) Required
-      用户标识，用于定义终端用户的身份，必须和发送消息接口传入 user 保持一致。
+      用户标识，用于定义终端用户的身份，必须和发送消息接口传入 user 保持一致。API 无法访问 WebApp 创建的会话。
     ### Response
     - `result` (string) 固定返回 "success"
   </Col>
@@ -443,7 +447,7 @@ Workflow 应用无会话支持，适合用于翻译/文章写作/总结 AI 等�
         要上传的文件。
       </Property>
       <Property name='user' type='string' key='user'>
-          用户标识，用于定义终端用户的身份，必须和发送消息接口传入 user 保持一致。
+          用户标识，用于定义终端用户的身份，必须和发送消息接口传入 user 保持一致。服务 API 不会共享 WebApp 创建的对话。
       </Property>
     </Properties>
 
@@ -470,7 +474,7 @@ Workflow 应用无会话支持，适合用于翻译/文章写作/总结 AI 等�
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Request" tag="POST" label="/files/upload" targetCode={`curl -X POST '${props.appDetail.api_base_url}/files/upload' \\\n--header 'Authorization: Bearer {api_key}' \\\n--form 'file=@localfile;type=image/[png|jpeg|jpg|webp|gif] \\\n--form 'user=abc-123'`}>
+    <CodeGroup title="Request" tag="POST" label="/files/upload" targetCode={`curl -X POST '${props.appDetail.api_base_url}/files/upload' \\\n--header 'Authorization: Bearer {api_key}' \\\n--form 'file=@localfile;type=image/[png|jpeg|jpg|webp|gif]' \\\n--form 'user=abc-123'`}>
 
     ```bash {{ title: 'cURL' }}
     curl -X POST '${props.appDetail.api_base_url}/files/upload' \
@@ -505,7 +509,7 @@ Workflow 应用无会话支持，适合用于翻译/文章写作/总结 AI 等�
 />
 <Row>
   <Col>
-    倒序返回workflow日志
+    倒序返回 workflow 日志
 
     ### Query
 
@@ -522,6 +526,12 @@ Workflow 应用无会话支持，适合用于翻译/文章写作/总结 AI 等�
       <Property name='limit' type='int' key='limit'>
         每页条数, 默认20.
       </Property>
+      <Property name='created_by_end_user_session_id' type='str' key='created_by_end_user_session_id'>
+        由哪个endUser创建，例如，`abc-123`.
+      </Property>
+      <Property name='created_by_account' type='str' key='created_by_account'>
+        由哪个邮箱账户创建，例如，lizb@test.com.
+      </Property>
     </Properties>
 
     ### Response
@@ -534,10 +544,10 @@ Workflow 应用无会话支持，适合用于翻译/文章写作/总结 AI 等�
     - `workflow_run` (object) Workflow 执行日志
       - `id` (string) 标识
       - `version` (string) 版本
-      - `status` (string) 执行状态, `running` / `succeeded` / `failed` / `stopped`
+      - `status` (string) 执行状态，`running` / `succeeded` / `failed` / `stopped`
       - `error` (string) (可选) 错误
       - `elapsed_time` (float) 耗时，单位秒
-      - `total_tokens` (int) 消耗的token数量
+      - `total_tokens` (int) 消耗的 token 数量
       - `total_steps` (int) 执行步骤长度
       - `created_at` (timestamp) 开始时间
       - `finished_at` (timestamp) 结束时间
@@ -615,6 +625,8 @@ Workflow 应用无会话支持，适合用于翻译/文章写作/总结 AI 等�
   - `name` (string) 应用名称
   - `description` (string) 应用描述
   - `tags` (array[string]) 应用标签
+  - `mode` (string) 应用模式
+  - 'author_name' (string) 作者名称
   </Col>
   <Col>
     <CodeGroup title="Request" tag="GET" label="/info" targetCode={`curl -X GET '${props.appDetail.api_base_url}/info' \\\n-H 'Authorization: Bearer {api_key}'`}>
@@ -631,7 +643,9 @@ Workflow 应用无会话支持，适合用于翻译/文章写作/总结 AI 等�
       "tags": [
         "tag1",
         "tag2"
-      ]
+      ],
+      "mode": "workflow",
+      "author_name": "Dify"
     }
     ```
     </CodeGroup>
@@ -669,11 +683,30 @@ Workflow 应用无会话支持，适合用于翻译/文章写作/总结 AI 等�
         - `default` (string) 默认值
         - `options` (array[string]) 选项值
     - `file_upload` (object) 文件上传配置
-      - `image` (object) 图片设置
-        当前仅支持图片类型：`png`, `jpg`, `jpeg`, `webp`, `gif`
-        - `enabled` (bool) 是否开启
-        - `number_limits` (int) 图片数量限制，默认 3
-        - `transfer_methods` (array[string]) 传递方式列表，remote_url , local_file，必选一个
+      - `document` (object) 文档设置  
+        当前仅支持文档类型：`txt`, `md`, `markdown`, `pdf`, `html`, `xlsx`, `xls`, `docx`, `csv`, `eml`, `msg`, `pptx`, `ppt`, `xml`, `epub`。  
+        - `enabled` (bool) 是否启用  
+        - `number_limits` (int) 文档数量限制，默认为 3  
+        - `transfer_methods` (array[string]) 传输方式列表：`remote_url`, `local_file`，必须选择一个。  
+      - `image` (object) 图片设置  
+        当前仅支持图片类型：`png`, `jpg`, `jpeg`, `webp`, `gif`。  
+        - `enabled` (bool) 是否启用  
+        - `number_limits` (int) 图片数量限制，默认为 3  
+        - `transfer_methods` (array[string]) 传输方式列表：`remote_url`, `local_file`，必须选择一个。  
+      - `audio` (object) 音频设置  
+        当前仅支持音频类型：`mp3`, `m4a`, `wav`, `webm`, `amr`。  
+        - `enabled` (bool) 是否启用  
+        - `number_limits` (int) 音频数量限制，默认为 3  
+        - `transfer_methods` (array[string]) 传输方式列表：`remote_url`, `local_file`，必须选择一个。  
+      - `video` (object) 视频设置  
+        当前仅支持视频类型：`mp4`, `mov`, `mpeg`, `mpga`。  
+        - `enabled` (bool) 是否启用  
+        - `number_limits` (int) 视频数量限制，默认为 3  
+        - `transfer_methods` (array[string]) 传输方式列表：`remote_url`, `local_file`，必须选择一个。  
+      - `custom` (object) 自定义设置  
+        - `enabled` (bool) 是否启用  
+        - `number_limits` (int) 自定义数量限制，默认为 3  
+        - `transfer_methods` (array[string]) 传输方式列表：`remote_url`, `local_file`，必须选择一个。 
     - `system_parameters` (object) 系统参数
       - `file_size_limit` (int) 文档上传大小限制 (MB)
       - `image_file_size_limit` (int) 图片文件上传大小限制（MB）
@@ -741,8 +774,8 @@ Workflow 应用无会话支持，适合用于翻译/文章写作/总结 AI 等�
   用于获取应用的 WebApp 设置
   ### Response
   - `title` (string) WebApp 名称
-  - `icon_type` (string) 图标类型, `emoji`-表情, `image`-图片
-  - `icon` (string) 图标, 如果是 `emoji` 类型, 则是 emoji 表情符号, 如果是 `image` 类型, 则是图片 URL
+  - `icon_type` (string) 图标类型，`emoji`-表情，`image`-图片
+  - `icon` (string) 图标，如果是 `emoji` 类型，则是 emoji 表情符号，如果是 `image` 类型，则是图片 URL
   - `icon_background` (string) hex 格式的背景色
   - `icon_url` (string) 图标 URL
   - `description` (string) 描述

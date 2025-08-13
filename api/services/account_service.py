@@ -1,7 +1,6 @@
 import base64
 import json
 import logging
-import random
 import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
@@ -17,7 +16,8 @@ from configs import dify_config
 from constants.languages import language_timezone_mapping, languages
 from events.tenant_event import tenant_was_created
 from extensions.ext_database import db
-from extensions.ext_redis import redis_client
+from extensions.ext_redis import redis_client, redis_fallback
+from libs.datetime_utils import naive_utc_now
 from libs.helper import RateLimiter, TokenManager
 from libs.passport import PassportService
 from libs.password import compare_password, hash_password, valid_password
@@ -29,6 +29,7 @@ from models.account import (
     Tenant,
     TenantAccountJoin,
     TenantAccountRole,
+    TenantPluginAutoUpgradeStrategy,
     TenantStatus,
 )
 from models.model import DifySetup
@@ -49,12 +50,18 @@ from services.errors.account import (
     RoleAlreadyAssignedError,
     TenantNotFoundError,
 )
-from services.errors.workspace import WorkSpaceNotAllowedCreateError
+from services.errors.workspace import WorkSpaceNotAllowedCreateError, WorkspacesLimitExceededError
 from services.feature_service import FeatureService
 from tasks.delete_account_task import delete_account_task
 from tasks.mail_account_deletion_task import send_account_deletion_verification_code
+from tasks.mail_change_mail_task import send_change_mail_task
 from tasks.mail_email_code_login import send_email_code_login_mail_task
 from tasks.mail_invite_member_task import send_invite_member_mail_task
+from tasks.mail_owner_transfer_task import (
+    send_new_owner_transfer_notify_email_task,
+    send_old_owner_transfer_notify_email_task,
+    send_owner_transfer_confirm_task,
+)
 from tasks.mail_reset_password_task import send_reset_password_mail_task
 
 
@@ -76,8 +83,13 @@ class AccountService:
     email_code_account_deletion_rate_limiter = RateLimiter(
         prefix="email_code_account_deletion_rate_limit", max_attempts=1, time_window=60 * 1
     )
+    change_email_rate_limiter = RateLimiter(prefix="change_email_rate_limit", max_attempts=1, time_window=60 * 1)
+    owner_transfer_rate_limiter = RateLimiter(prefix="owner_transfer_rate_limit", max_attempts=1, time_window=60 * 1)
+
     LOGIN_MAX_ERROR_LIMITS = 5
     FORGOT_PASSWORD_MAX_ERROR_LIMITS = 5
+    CHANGE_EMAIL_MAX_ERROR_LIMITS = 5
+    OWNER_TRANSFER_MAX_ERROR_LIMITS = 5
 
     @staticmethod
     def _get_refresh_token_key(refresh_token: str) -> str:
@@ -125,8 +137,8 @@ class AccountService:
             available_ta.current = True
             db.session.commit()
 
-        if datetime.now(UTC).replace(tzinfo=None) - account.last_active_at > timedelta(minutes=10):
-            account.last_active_at = datetime.now(UTC).replace(tzinfo=None)
+        if naive_utc_now() - account.last_active_at > timedelta(minutes=10):
+            account.last_active_at = naive_utc_now()
             db.session.commit()
 
         return cast(Account, account)
@@ -170,7 +182,7 @@ class AccountService:
 
         if account.status == AccountStatus.PENDING.value:
             account.status = AccountStatus.ACTIVE.value
-            account.initialized_at = datetime.now(UTC).replace(tzinfo=None)
+            account.initialized_at = naive_utc_now()
 
         db.session.commit()
 
@@ -261,7 +273,7 @@ class AccountService:
 
     @staticmethod
     def generate_account_deletion_verification_code(account: Account) -> tuple[str, str]:
-        code = "".join([str(random.randint(0, 9)) for _ in range(6)])
+        code = "".join([str(secrets.randbelow(exclusive_upper_bound=10)) for _ in range(6)])
         token = TokenManager.generate_token(
             account=account, token_type="account_deletion", additional_data={"code": code}
         )
@@ -308,7 +320,7 @@ class AccountService:
                 # If it exists, update the record
                 account_integrate.open_id = open_id
                 account_integrate.encrypted_token = ""  # todo
-                account_integrate.updated_at = datetime.now(UTC).replace(tzinfo=None)
+                account_integrate.updated_at = naive_utc_now()
             else:
                 # If it does not exist, create a new record
                 account_integrate = AccountIntegrate(
@@ -343,7 +355,7 @@ class AccountService:
     @staticmethod
     def update_login_info(account: Account, *, ip_address: str) -> None:
         """Update last login time and ip"""
-        account.last_login_at = datetime.now(UTC).replace(tzinfo=None)
+        account.last_login_at = naive_utc_now()
         account.last_login_ip = ip_address
         db.session.add(account)
         db.session.commit()
@@ -421,6 +433,101 @@ class AccountService:
         return token
 
     @classmethod
+    def send_change_email_email(
+        cls,
+        account: Optional[Account] = None,
+        email: Optional[str] = None,
+        old_email: Optional[str] = None,
+        language: Optional[str] = "en-US",
+        phase: Optional[str] = None,
+    ):
+        account_email = account.email if account else email
+        if account_email is None:
+            raise ValueError("Email must be provided.")
+
+        if cls.change_email_rate_limiter.is_rate_limited(account_email):
+            from controllers.console.auth.error import EmailChangeRateLimitExceededError
+
+            raise EmailChangeRateLimitExceededError()
+
+        code, token = cls.generate_change_email_token(account_email, account, old_email=old_email)
+
+        send_change_mail_task.delay(
+            language=language,
+            to=account_email,
+            code=code,
+            phase=phase,
+        )
+        cls.change_email_rate_limiter.increment_rate_limit(account_email)
+        return token
+
+    @classmethod
+    def send_owner_transfer_email(
+        cls,
+        account: Optional[Account] = None,
+        email: Optional[str] = None,
+        language: Optional[str] = "en-US",
+        workspace_name: Optional[str] = "",
+    ):
+        account_email = account.email if account else email
+        if account_email is None:
+            raise ValueError("Email must be provided.")
+
+        if cls.owner_transfer_rate_limiter.is_rate_limited(account_email):
+            from controllers.console.auth.error import OwnerTransferRateLimitExceededError
+
+            raise OwnerTransferRateLimitExceededError()
+
+        code, token = cls.generate_owner_transfer_token(account_email, account)
+
+        send_owner_transfer_confirm_task.delay(
+            language=language,
+            to=account_email,
+            code=code,
+            workspace=workspace_name,
+        )
+        cls.owner_transfer_rate_limiter.increment_rate_limit(account_email)
+        return token
+
+    @classmethod
+    def send_old_owner_transfer_notify_email(
+        cls,
+        account: Optional[Account] = None,
+        email: Optional[str] = None,
+        language: Optional[str] = "en-US",
+        workspace_name: Optional[str] = "",
+        new_owner_email: Optional[str] = "",
+    ):
+        account_email = account.email if account else email
+        if account_email is None:
+            raise ValueError("Email must be provided.")
+
+        send_old_owner_transfer_notify_email_task.delay(
+            language=language,
+            to=account_email,
+            workspace=workspace_name,
+            new_owner_email=new_owner_email,
+        )
+
+    @classmethod
+    def send_new_owner_transfer_notify_email(
+        cls,
+        account: Optional[Account] = None,
+        email: Optional[str] = None,
+        language: Optional[str] = "en-US",
+        workspace_name: Optional[str] = "",
+    ):
+        account_email = account.email if account else email
+        if account_email is None:
+            raise ValueError("Email must be provided.")
+
+        send_new_owner_transfer_notify_email_task.delay(
+            language=language,
+            to=account_email,
+            workspace=workspace_name,
+        )
+
+    @classmethod
     def generate_reset_password_token(
         cls,
         email: str,
@@ -429,10 +536,44 @@ class AccountService:
         additional_data: dict[str, Any] = {},
     ):
         if not code:
-            code = "".join([str(random.randint(0, 9)) for _ in range(6)])
+            code = "".join([str(secrets.randbelow(exclusive_upper_bound=10)) for _ in range(6)])
         additional_data["code"] = code
         token = TokenManager.generate_token(
             account=account, email=email, token_type="reset_password", additional_data=additional_data
+        )
+        return code, token
+
+    @classmethod
+    def generate_change_email_token(
+        cls,
+        email: str,
+        account: Optional[Account] = None,
+        code: Optional[str] = None,
+        old_email: Optional[str] = None,
+        additional_data: dict[str, Any] = {},
+    ):
+        if not code:
+            code = "".join([str(secrets.randbelow(exclusive_upper_bound=10)) for _ in range(6)])
+        additional_data["code"] = code
+        additional_data["old_email"] = old_email
+        token = TokenManager.generate_token(
+            account=account, email=email, token_type="change_email", additional_data=additional_data
+        )
+        return code, token
+
+    @classmethod
+    def generate_owner_transfer_token(
+        cls,
+        email: str,
+        account: Optional[Account] = None,
+        code: Optional[str] = None,
+        additional_data: dict[str, Any] = {},
+    ):
+        if not code:
+            code = "".join([str(secrets.randbelow(exclusive_upper_bound=10)) for _ in range(6)])
+        additional_data["code"] = code
+        token = TokenManager.generate_token(
+            account=account, email=email, token_type="owner_transfer", additional_data=additional_data
         )
         return code, token
 
@@ -441,8 +582,24 @@ class AccountService:
         TokenManager.revoke_token(token, "reset_password")
 
     @classmethod
+    def revoke_change_email_token(cls, token: str):
+        TokenManager.revoke_token(token, "change_email")
+
+    @classmethod
+    def revoke_owner_transfer_token(cls, token: str):
+        TokenManager.revoke_token(token, "owner_transfer")
+
+    @classmethod
     def get_reset_password_data(cls, token: str) -> Optional[dict[str, Any]]:
         return TokenManager.get_token_data(token, "reset_password")
+
+    @classmethod
+    def get_change_email_data(cls, token: str) -> Optional[dict[str, Any]]:
+        return TokenManager.get_token_data(token, "change_email")
+
+    @classmethod
+    def get_owner_transfer_data(cls, token: str) -> Optional[dict[str, Any]]:
+        return TokenManager.get_token_data(token, "owner_transfer")
 
     @classmethod
     def send_email_code_login_email(
@@ -456,7 +613,7 @@ class AccountService:
 
             raise EmailCodeLoginRateLimitExceededError()
 
-        code = "".join([str(random.randint(0, 9)) for _ in range(6)])
+        code = "".join([str(secrets.randbelow(exclusive_upper_bound=10)) for _ in range(6)])
         token = TokenManager.generate_token(
             account=account, email=email, token_type="email_code_login", additional_data={"code": code}
         )
@@ -496,6 +653,7 @@ class AccountService:
         return account
 
     @staticmethod
+    @redis_fallback(default_return=None)
     def add_login_error_rate_limit(email: str) -> None:
         key = f"login_error_rate_limit:{email}"
         count = redis_client.get(key)
@@ -505,6 +663,7 @@ class AccountService:
         redis_client.setex(key, dify_config.LOGIN_LOCKOUT_DURATION, count)
 
     @staticmethod
+    @redis_fallback(default_return=False)
     def is_login_error_rate_limit(email: str) -> bool:
         key = f"login_error_rate_limit:{email}"
         count = redis_client.get(key)
@@ -517,11 +676,13 @@ class AccountService:
         return False
 
     @staticmethod
+    @redis_fallback(default_return=None)
     def reset_login_error_rate_limit(email: str):
         key = f"login_error_rate_limit:{email}"
         redis_client.delete(key)
 
     @staticmethod
+    @redis_fallback(default_return=None)
     def add_forgot_password_error_rate_limit(email: str) -> None:
         key = f"forgot_password_error_rate_limit:{email}"
         count = redis_client.get(key)
@@ -531,6 +692,7 @@ class AccountService:
         redis_client.setex(key, dify_config.FORGOT_PASSWORD_LOCKOUT_DURATION, count)
 
     @staticmethod
+    @redis_fallback(default_return=False)
     def is_forgot_password_error_rate_limit(email: str) -> bool:
         key = f"forgot_password_error_rate_limit:{email}"
         count = redis_client.get(key)
@@ -543,11 +705,69 @@ class AccountService:
         return False
 
     @staticmethod
+    @redis_fallback(default_return=None)
     def reset_forgot_password_error_rate_limit(email: str):
         key = f"forgot_password_error_rate_limit:{email}"
         redis_client.delete(key)
 
     @staticmethod
+    @redis_fallback(default_return=None)
+    def add_change_email_error_rate_limit(email: str) -> None:
+        key = f"change_email_error_rate_limit:{email}"
+        count = redis_client.get(key)
+        if count is None:
+            count = 0
+        count = int(count) + 1
+        redis_client.setex(key, dify_config.CHANGE_EMAIL_LOCKOUT_DURATION, count)
+
+    @staticmethod
+    @redis_fallback(default_return=False)
+    def is_change_email_error_rate_limit(email: str) -> bool:
+        key = f"change_email_error_rate_limit:{email}"
+        count = redis_client.get(key)
+        if count is None:
+            return False
+        count = int(count)
+        if count > AccountService.CHANGE_EMAIL_MAX_ERROR_LIMITS:
+            return True
+        return False
+
+    @staticmethod
+    @redis_fallback(default_return=None)
+    def reset_change_email_error_rate_limit(email: str):
+        key = f"change_email_error_rate_limit:{email}"
+        redis_client.delete(key)
+
+    @staticmethod
+    @redis_fallback(default_return=None)
+    def add_owner_transfer_error_rate_limit(email: str) -> None:
+        key = f"owner_transfer_error_rate_limit:{email}"
+        count = redis_client.get(key)
+        if count is None:
+            count = 0
+        count = int(count) + 1
+        redis_client.setex(key, dify_config.OWNER_TRANSFER_LOCKOUT_DURATION, count)
+
+    @staticmethod
+    @redis_fallback(default_return=False)
+    def is_owner_transfer_error_rate_limit(email: str) -> bool:
+        key = f"owner_transfer_error_rate_limit:{email}"
+        count = redis_client.get(key)
+        if count is None:
+            return False
+        count = int(count)
+        if count > AccountService.OWNER_TRANSFER_MAX_ERROR_LIMITS:
+            return True
+        return False
+
+    @staticmethod
+    @redis_fallback(default_return=None)
+    def reset_owner_transfer_error_rate_limit(email: str):
+        key = f"owner_transfer_error_rate_limit:{email}"
+        redis_client.delete(key)
+
+    @staticmethod
+    @redis_fallback(default_return=False)
     def is_email_send_ip_limit(ip_address: str):
         minute_key = f"email_send_ip_limit_minute:{ip_address}"
         freeze_key = f"email_send_ip_limit_freeze:{ip_address}"
@@ -587,6 +807,10 @@ class AccountService:
 
         return False
 
+    @staticmethod
+    def check_email_unique(email: str) -> bool:
+        return db.session.query(Account).filter_by(email=email).first() is None
+
 
 class TenantService:
     @staticmethod
@@ -603,6 +827,17 @@ class TenantService:
         tenant = Tenant(name=name)
 
         db.session.add(tenant)
+        db.session.commit()
+
+        plugin_upgrade_strategy = TenantPluginAutoUpgradeStrategy(
+            tenant_id=tenant.id,
+            strategy_setting=TenantPluginAutoUpgradeStrategy.StrategySetting.FIX_ONLY,
+            upgrade_time_of_day=0,
+            upgrade_mode=TenantPluginAutoUpgradeStrategy.UpgradeMode.EXCLUDE,
+            exclude_plugins=[],
+            include_plugins=[],
+        )
+        db.session.add(plugin_upgrade_strategy)
         db.session.commit()
 
         tenant.encrypt_public_key = generate_key_pair(tenant.id)
@@ -627,6 +862,10 @@ class TenantService:
         """Create owner tenant if not exist"""
         if not FeatureService.get_system_features().is_allow_create_workspace and not is_setup:
             raise WorkSpaceNotAllowedCreateError()
+
+        workspaces = FeatureService.get_system_features().license.workspaces
+        if not workspaces.is_available():
+            raise WorkspacesLimitExceededError()
 
         if name:
             tenant = TenantService.create_tenant(name=name, is_setup=is_setup)
@@ -771,7 +1010,7 @@ class TenantService:
             .filter(TenantAccountJoin.tenant_id == tenant.id, TenantAccountJoin.account_id == account.id)
             .first()
         )
-        return join.role if join else None
+        return TenantAccountRole(join.role) if join else None
 
     @staticmethod
     def get_tenant_count() -> int:
@@ -841,19 +1080,19 @@ class TenantService:
         db.session.commit()
 
     @staticmethod
-    def dissolve_tenant(tenant: Tenant, operator: Account) -> None:
-        """Dissolve tenant"""
-        if not TenantService.check_member_permission(tenant, operator, operator, "remove"):
-            raise NoPermissionError("No permission to dissolve tenant.")
-        db.session.query(TenantAccountJoin).filter_by(tenant_id=tenant.id).delete()
-        db.session.delete(tenant)
-        db.session.commit()
-
-    @staticmethod
     def get_custom_config(tenant_id: str) -> dict:
         tenant = db.get_or_404(Tenant, tenant_id)
 
         return cast(dict, tenant.custom_config_dict)
+
+    @staticmethod
+    def is_owner(account: Account, tenant: Tenant) -> bool:
+        return TenantService.get_user_role(account, tenant) == TenantAccountRole.OWNER
+
+    @staticmethod
+    def is_member(account: Account, tenant: Tenant) -> bool:
+        """Check if the account is a member of the tenant"""
+        return TenantService.get_user_role(account, tenant) is not None
 
 
 class RegisterService:
@@ -882,11 +1121,11 @@ class RegisterService:
             )
 
             account.last_login_ip = ip_address
-            account.initialized_at = datetime.now(UTC).replace(tzinfo=None)
+            account.initialized_at = naive_utc_now()
 
             TenantService.create_owner_tenant_if_not_exist(account=account, is_setup=True)
 
-            dify_setup = DifySetup(version=dify_config.CURRENT_VERSION)
+            dify_setup = DifySetup(version=dify_config.project.version)
             db.session.add(dify_setup)
             db.session.commit()
         except Exception as e:
@@ -923,12 +1162,16 @@ class RegisterService:
                 is_setup=is_setup,
             )
             account.status = AccountStatus.ACTIVE.value if not status else status.value
-            account.initialized_at = datetime.now(UTC).replace(tzinfo=None)
+            account.initialized_at = naive_utc_now()
 
             if open_id is not None and provider is not None:
                 AccountService.link_account_integrate(provider, open_id, account)
 
-            if FeatureService.get_system_features().is_allow_create_workspace and create_workspace_required:
+            if (
+                FeatureService.get_system_features().is_allow_create_workspace
+                and create_workspace_required
+                and FeatureService.get_system_features().license.workspaces.is_available()
+            ):
                 tenant = TenantService.create_tenant(f"{account.name}'s Workspace")
                 TenantService.create_tenant_member(tenant, account, role="owner")
                 account.current_tenant = tenant

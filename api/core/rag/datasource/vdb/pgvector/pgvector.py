@@ -66,10 +66,14 @@ CREATE INDEX IF NOT EXISTS embedding_cosine_v1_idx_{index_hash} ON {table_name}
 USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 64);
 """
 
-SQL_CREATE_INDEX_PG_BIGM = """
-CREATE INDEX IF NOT EXISTS bigm_idx_{index_hash} ON {table_name}
-USING gin (text gin_bigm_ops);
-"""
+if dify_config.SQLALCHEMY_DATABASE_URI_SCHEME == "postgresql":
+    SQL_CREATE_INDEX_PG_BIGM = """
+    CREATE INDEX IF NOT EXISTS bigm_idx_{index_hash} ON {table_name}
+    USING gin (text gin_bigm_ops);
+    """
+else:
+    # MySQL don't support gin index (up to date)
+    SQL_CREATE_INDEX_PG_BIGM = None
 
 
 class PGVector(BaseVector):

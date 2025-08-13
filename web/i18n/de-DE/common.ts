@@ -58,6 +58,8 @@ const translation = {
     downloadSuccess: 'Download abgeschlossen.',
     more: 'Mehr',
     format: 'Format',
+    selectAll: 'Alles auswählen',
+    deSelectAll: 'Alle abwählen',
   },
   placeholder: {
     input: 'Bitte eingeben',
@@ -145,6 +147,8 @@ const translation = {
     newDataset: 'Wissen erstellen',
     tools: 'Werkzeuge',
     exploreMarketplace: 'Marketplace erkunden',
+    appDetail: 'App-Details',
+    account: 'Konto',
   },
   userProfile: {
     settings: 'Einstellungen',
@@ -212,6 +216,28 @@ const translation = {
     workspaceIcon: 'Arbeitsbereichssymbol',
     workspaceName: 'Arbeitsbereichsname',
     editWorkspaceInfo: 'Arbeitsbereichsinformationen bearbeiten',
+    changeEmail: {
+      codeLabel: 'Bestätigungscode',
+      sendVerifyCode: 'Überprüfungs-Code senden',
+      resend: 'Erneut senden',
+      continue: 'Fortsetzen',
+      verifyEmail: 'Überprüfen Sie Ihre aktuelle E-Mail',
+      newEmail: 'Richten Sie eine neue E-Mail-Adresse ein',
+      codePlaceholder: 'Geben Sie den 6-stelligen Code ein',
+      resendTip: 'Haben Sie keinen Code erhalten?',
+      title: 'E-Mail ändern',
+      content2: 'Ihre aktuelle E-Mail-Adresse lautet <email>{{email}}</email>. Der Bestätigungscode wurde an diese E-Mail-Adresse gesendet.',
+      verifyNew: 'Bestätigen Sie Ihre neue E-Mail',
+      changeTo: 'Ändern zu {{email}}',
+      content1: 'Wenn Sie fortfahren, senden wir einen Bestätigungscode an <email>{{email}}</email> zur erneuten Authentifizierung.',
+      resendCount: 'Erneut senden in {{count}}s',
+      content4: 'Wir haben Ihnen gerade einen vorübergehenden Verifizierungscode an <email>{{email}}</email> gesendet.',
+      emailPlaceholder: 'Geben Sie eine neue E-Mail-Adresse ein',
+      content3: 'Geben Sie eine neue E-Mail-Adresse ein, und wir senden Ihnen einen Bestätigungscode.',
+      existingEmail: 'Ein Benutzer mit dieser E-Mail-Adresse existiert bereits.',
+      emailLabel: 'Neue E-Mail',
+      authTip: 'Sobald Ihre E-Mail geändert wurde, können Google- oder GitHub-Konten, die mit Ihrer alten E-Mail verknüpft sind, nicht mehr auf dieses Konto zugreifen.',
+    },
   },
   members: {
     team: 'Team',
@@ -253,6 +279,26 @@ const translation = {
     datasetOperatorTip: 'Kann die Wissensdatenbank nur verwalten',
     builder: 'Bauherr',
     builderTip: 'Kann eigene Apps erstellen und bearbeiten',
+    transferModal: {
+      verifyEmail: 'Überprüfen Sie Ihre aktuelle E-Mail',
+      resendTip: 'Haben Sie keinen Code erhalten?',
+      continue: 'Fortsetzen',
+      resend: 'Erneut senden',
+      sendVerifyCode: 'Überprüfungs-Code senden',
+      title: 'Übertragung des Besitzes des Arbeitsbereichs',
+      codePlaceholder: 'Geben Sie den 6-stelligen Code ein',
+      transfer: 'Übertragung des Besitzes des Arbeitsbereichs',
+      warningTip: 'Du wirst ein Administrationsmitglied, und der neue Eigentümer wird die volle Kontrolle haben.',
+      codeLabel: 'Bestätigungscode',
+      transferPlaceholder: 'Wählen Sie ein Arbeitsbereichsmitglied aus…',
+      verifyContent: 'Ihre aktuelle E-Mail ist <email>{{email}}</email>.',
+      resendCount: 'Erneut senden in {{count}}s',
+      transferLabel: 'Übertragen Sie die Eigentümerschaft des Arbeitsbereichs auf',
+      warning: 'Sie sind dabei, das Eigentum an „{{workspace}}“ zu übertragen. Dies tritt sofort in Kraft und kann nicht rückgängig gemacht werden.',
+      verifyContent2: 'Wir werden einen temporären Bestätigungscode an diese E-Mail senden, um die erneute Authentifizierung durchzuführen.',
+      sendTip: 'Wenn Sie fortfahren, senden wir einen Bestätigungscode an <email>{{email}}</email> zur erneuten Authentifizierung.',
+    },
+    transferOwnership: 'Eigentum übertragen',
   },
   integrations: {
     connected: 'Verbunden',
@@ -444,6 +490,7 @@ const translation = {
         addPages: 'Seiten hinzufügen',
         preview: 'VORSCHAU',
       },
+      integratedAlert: 'Notion ist über interne Anmeldeinformationen integriert, es ist keine erneute Autorisierung erforderlich.',
     },
     website: {
       inactive: 'Inaktiv',
@@ -465,7 +512,6 @@ const translation = {
   apiBasedExtension: {
     title: 'API-Erweiterungen bieten zentralisiertes API-Management und vereinfachen die Konfiguration für eine einfache Verwendung in Difys Anwendungen.',
     link: 'Erfahren Sie, wie Sie Ihre eigene API-Erweiterung entwickeln.',
-    linkUrl: 'https://docs.dify.ai/en/guides/extension/api-based-extension/README',
     add: 'API-Erweiterung hinzufügen',
     selector: {
       title: 'API-Erweiterung',
@@ -550,7 +596,7 @@ const translation = {
       vectorHash: 'Vektorhash:',
       hitScore: 'Abrufwertung:',
     },
-    inputPlaceholder: 'Sprechen Sie mit dem Bot',
+    inputPlaceholder: 'Sprechen Sie mit dem {{botName}}',
     thought: 'Gedanke',
     thinking: 'Denken...',
     resend: 'Erneut senden',
@@ -644,6 +690,7 @@ const translation = {
   license: {
     expiring: 'Läuft an einem Tag ab',
     expiring_plural: 'Läuft in {{count}} Tagen ab',
+    unlimited: 'Unbegrenzt',
   },
   pagination: {
     perPage: 'Artikel pro Seite',
@@ -667,6 +714,7 @@ const translation = {
     browse: 'blättern',
     supportedFormats: 'Unterstützt PNG, JPG, JPEG, WEBP und GIF',
   },
+  you: 'Du',
 }
 
 export default translation

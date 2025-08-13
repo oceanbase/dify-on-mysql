@@ -2,19 +2,23 @@ import base64
 import json
 import logging
 import secrets
-from typing import Optional
+from typing import Any, Optional
 
 import click
 from flask import current_app
+from pydantic import TypeAdapter
 from sqlalchemy import select
+from tenacity import retry, stop_after_attempt, wait_exponential
 from werkzeug.exceptions import NotFound
 
 from configs import dify_config
 from constants.languages import languages
+from core.plugin.entities.plugin import ToolProviderID
 from core.rag.datasource.vdb.vector_factory import Vector
 from core.rag.datasource.vdb.vector_type import VectorType
 from core.rag.index_processor.constant.built_in_field import BuiltInField
 from core.rag.models.document import Document
+from core.tools.utils.system_oauth_encryption import encrypt_system_oauth_params
 from events.app_event import app_was_created
 from extensions.ext_database import db
 from extensions.ext_redis import redis_client
@@ -27,11 +31,11 @@ from models.dataset import Dataset, DatasetCollectionBinding, DatasetMetadata, D
 from models.dataset import Document as DatasetDocument
 from models.model import Account, App, AppAnnotationSetting, AppMode, Conversation, MessageAnnotation
 from models.provider import Provider, ProviderModel
-from services.account_service import RegisterService, TenantService
+from models.tools import ToolOAuthSystemClient
+from services.account_service import AccountService, RegisterService, TenantService
 from services.clear_free_plan_tenant_expired_logs import ClearFreePlanTenantExpiredLogs
 from services.plugin.data_migration import PluginDataMigration
 from services.plugin.plugin_migration import PluginMigration
-from tenacity import retry, stop_after_attempt, wait_exponential
 
 
 @click.command("reset-password", help="Reset the account password.")
@@ -69,6 +73,7 @@ def reset_password(email, new_password, password_confirm):
     account.password = base64_password_hashed
     account.password_salt = base64_salt
     db.session.commit()
+    AccountService.reset_login_error_rate_limit(email)
     click.echo(click.style("Password reset successfully.", fg="green"))
 
 
@@ -281,6 +286,7 @@ def migrate_knowledge_vector_database():
         VectorType.ELASTICSEARCH,
         VectorType.OPENGAUSS,
         VectorType.TABLESTORE,
+        VectorType.MATRIXONE,
     }
     lower_collection_vector_types = {
         VectorType.ANALYTICDB,
@@ -682,11 +688,11 @@ def ensure_caches_table_exists():
             INDEX caches_expire_time_idx (expire_time)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         """
-        
+
         with db.engine.begin() as conn:
             conn.execute(db.text(create_caches_table_sql))
             click.echo(click.style("Caches table ensured for MySQL cache mode.", fg="green"))
-                
+
     except Exception as e:
         click.echo(click.style(f"Error: Could not ensure caches table after 3 attempts: {e}", fg="red"))
         # 抛出异常，停止迁移
@@ -697,8 +703,7 @@ def ensure_caches_table_exists():
 @click.option("--directory", prompt=False, help="The target migration script directory.")
 def upgrade_db(directory: Optional[str] = None):
     click.echo("Preparing database migration...")
-    
-    # 1. 在MySQL缓存模式下，确保 caches 表存在
+   # 1. 在MySQL缓存模式下，确保 caches 表存在
     # 这样在MySQL缓存模式下，分布式锁可以正常工作
     if "mysql" in dify_config.SQLALCHEMY_DATABASE_URI_SCHEME and dify_config.CACHE_SCHEME == "mysql":
         try:
@@ -707,8 +712,9 @@ def upgrade_db(directory: Optional[str] = None):
             click.echo(click.style(f"Error: Failed to ensure caches table: {e}", fg="red"))
             click.echo(click.style("Migration stopped due to caches table creation failure.", fg="red"))
             raise Exception(f"Migration failed: {e}")
-    
+   
     # 2. 使用分布式锁
+
     lock = redis_client.lock(name="db_upgrade_lock", timeout=60)
     if lock.acquire(blocking=False):
         try:
@@ -887,6 +893,9 @@ def clear_orphaned_file_records(force: bool):
         {"type": "text", "table": "workflow_node_executions", "column": "outputs"},
         {"type": "text", "table": "conversations", "column": "introduction"},
         {"type": "text", "table": "conversations", "column": "system_instruction"},
+        {"type": "text", "table": "accounts", "column": "avatar"},
+        {"type": "text", "table": "apps", "column": "icon"},
+        {"type": "text", "table": "sites", "column": "icon"},
         {"type": "json", "table": "messages", "column": "inputs"},
         {"type": "json", "table": "messages", "column": "message"},
     ]
@@ -1191,3 +1200,49 @@ def remove_orphaned_files_on_storage(force: bool):
         click.echo(click.style(f"Removed {removed_files} orphaned files without errors.", fg="green"))
     else:
         click.echo(click.style(f"Removed {removed_files} orphaned files, with {error_files} errors.", fg="yellow"))
+
+
+@click.command("setup-system-tool-oauth-client", help="Setup system tool oauth client.")
+@click.option("--provider", prompt=True, help="Provider name")
+@click.option("--client-params", prompt=True, help="Client Params")
+def setup_system_tool_oauth_client(provider, client_params):
+    """
+    Setup system tool oauth client
+    """
+    provider_id = ToolProviderID(provider)
+    provider_name = provider_id.provider_name
+    plugin_id = provider_id.plugin_id
+
+    try:
+        # json validate
+        click.echo(click.style(f"Validating client params: {client_params}", fg="yellow"))
+        client_params_dict = TypeAdapter(dict[str, Any]).validate_json(client_params)
+        click.echo(click.style("Client params validated successfully.", fg="green"))
+
+        click.echo(click.style(f"Encrypting client params: {client_params}", fg="yellow"))
+        click.echo(click.style(f"Using SECRET_KEY: `{dify_config.SECRET_KEY}`", fg="yellow"))
+        oauth_client_params = encrypt_system_oauth_params(client_params_dict)
+        click.echo(click.style("Client params encrypted successfully.", fg="green"))
+    except Exception as e:
+        click.echo(click.style(f"Error parsing client params: {str(e)}", fg="red"))
+        return
+
+    deleted_count = (
+        db.session.query(ToolOAuthSystemClient)
+        .filter_by(
+            provider=provider_name,
+            plugin_id=plugin_id,
+        )
+        .delete()
+    )
+    if deleted_count > 0:
+        click.echo(click.style(f"Deleted {deleted_count} existing oauth client params.", fg="yellow"))
+
+    oauth_client = ToolOAuthSystemClient(
+        provider=provider_name,
+        plugin_id=plugin_id,
+        encrypted_oauth_params=oauth_client_params,
+    )
+    db.session.add(oauth_client)
+    db.session.commit()
+    click.echo(click.style(f"OAuth client params setup successfully. id: {oauth_client.id}", fg="green"))

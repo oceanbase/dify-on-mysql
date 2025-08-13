@@ -1,12 +1,15 @@
 import json
 from datetime import datetime
 from typing import Any, cast
+from urllib.parse import urlparse
 
-import sqlalchemy as sa
 from deprecated import deprecated
 from sqlalchemy import ForeignKey, func
 from sqlalchemy.orm import Mapped, mapped_column
 
+from core.file import helpers as file_helpers
+from core.helper import encrypter
+from core.mcp.types import Tool
 from core.tools.entities.common_entities import I18nObject
 from core.tools.entities.tool_bundle import ApiToolBundle
 from core.tools.entities.tool_entities import ApiProviderSchemaType, WorkflowToolParameterConfiguration
@@ -14,7 +17,49 @@ from models.base import Base
 
 from .engine import db
 from .model import Account, App, Tenant
-from .types import StringUUID, no_length_string, uuid_default, adjusted_text
+from .types import StringUUID, adjusted_text, no_length_string, uuid_default, varchar_default
+
+
+# system level tool oauth client params (client_id, client_secret, etc.)
+class ToolOAuthSystemClient(Base):
+    __tablename__ = "tool_oauth_system_clients"
+    __table_args__ = (
+        db.PrimaryKeyConstraint("id", name="tool_oauth_system_client_pkey"),
+        db.UniqueConstraint("plugin_id", "provider", name="tool_oauth_system_client_plugin_id_provider_idx"),
+    )
+
+    id: Mapped[str] = mapped_column(StringUUID, **uuid_default())
+    plugin_id: Mapped[str] = mapped_column(db.String(512), nullable=False)
+    provider: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    # oauth params of the tool provider
+    encrypted_oauth_params: Mapped[str] = mapped_column(adjusted_text(), nullable=False)
+
+
+# tenant level tool oauth client params (client_id, client_secret, etc.)
+class ToolOAuthTenantClient(Base):
+    __tablename__ = "tool_oauth_tenant_clients"
+    __table_args__ = (
+        db.PrimaryKeyConstraint("id", name="tool_oauth_tenant_client_pkey"),
+        db.UniqueConstraint("tenant_id", "plugin_id", "provider", name="unique_tool_oauth_tenant_client"),
+    )
+
+    id: Mapped[str] = mapped_column(StringUUID, **uuid_default())
+    # tenant id
+    tenant_id: Mapped[str] = mapped_column(StringUUID, nullable=False)
+
+    # NOTE (shiver): In postgres verison, this attribute is set as `db.String(512)`.
+    # When migrating to MySQL, however, it causes incombility, for `db.UniqueConstraint` above
+    # requires total length of keys constrained below 3012 bytes, which can't be fulfilled.
+    # So we choose to lower the length so that UniqueConstraint can be applied.
+    plugin_id: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    provider: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    enabled: Mapped[bool] = mapped_column(db.Boolean, nullable=False, server_default=db.text("true"))
+    # oauth params of the tool provider
+    encrypted_oauth_params: Mapped[str] = mapped_column(adjusted_text(), nullable=False)
+
+    @property
+    def oauth_params(self) -> dict:
+        return cast(dict, json.loads(self.encrypted_oauth_params or "{}"))
 
 
 class BuiltinToolProvider(Base):
@@ -25,12 +70,12 @@ class BuiltinToolProvider(Base):
     __tablename__ = "tool_builtin_providers"
     __table_args__ = (
         db.PrimaryKeyConstraint("id", name="tool_builtin_provider_pkey"),
-        # one tenant can only have one tool provider with the same name
-        db.UniqueConstraint("tenant_id", "provider", name="unique_builtin_tool_provider"),
+        db.UniqueConstraint("tenant_id", "provider", "name", name="unique_builtin_tool_provider"),
     )
 
     # id of the tool provider
     id: Mapped[str] = mapped_column(StringUUID, **uuid_default())
+    name: Mapped[str] = mapped_column(db.String(256), nullable=False, **varchar_default("API KEY 1"))
     # id of the tenant
     tenant_id: Mapped[str] = mapped_column(StringUUID, nullable=True)
     # who created this tool provider
@@ -45,6 +90,10 @@ class BuiltinToolProvider(Base):
     updated_at: Mapped[datetime] = mapped_column(
         db.DateTime, nullable=False, server_default=db.text("CURRENT_TIMESTAMP(0)")
     )
+    is_default: Mapped[bool] = mapped_column(db.Boolean, nullable=False, server_default=db.text("false"))
+    # credential type, e.g., "api-key", "oauth2"
+    credential_type: Mapped[str] = mapped_column(db.String(32), nullable=False, **varchar_default("api-key"))
+    expires_at: Mapped[int] = mapped_column(db.BigInteger, nullable=False, server_default=db.text("-1"))
 
     @property
     def credentials(self) -> dict:
@@ -62,28 +111,28 @@ class ApiToolProvider(Base):
         db.UniqueConstraint("name", "tenant_id", name="unique_api_tool_provider"),
     )
 
-    id = db.Column(StringUUID, **uuid_default())
+    id = mapped_column(StringUUID, **uuid_default())
     # name of the api provider
-    name = db.Column(db.String(255), nullable=False)
+    name = mapped_column(db.String(255), nullable=False, **varchar_default("API KEY 1"))
     # icon
-    icon = db.Column(db.String(255), nullable=False)
+    icon = mapped_column(db.String(255), nullable=False)
     # original schema
-    schema = db.Column(adjusted_text(), nullable=False)
-    schema_type_str: Mapped[str] = db.Column(db.String(40), nullable=False)
+    schema = mapped_column(adjusted_text(), nullable=False)
+    schema_type_str: Mapped[str] = mapped_column(db.String(40), nullable=False)
     # who created this tool
-    user_id = db.Column(StringUUID, nullable=False)
+    user_id = mapped_column(StringUUID, nullable=False)
     # tenant id
-    tenant_id = db.Column(StringUUID, nullable=False)
+    tenant_id = mapped_column(StringUUID, nullable=False)
     # description of the provider
-    description = db.Column(adjusted_text(), nullable=False)
+    description = mapped_column(adjusted_text(), nullable=False)
     # json format tools
-    tools_str = db.Column(adjusted_text(), nullable=False)
+    tools_str = mapped_column(adjusted_text(), nullable=False)
     # json format credentials
-    credentials_str = db.Column(adjusted_text(), nullable=False)
+    credentials_str = mapped_column(adjusted_text(), nullable=False)
     # privacy policy
-    privacy_policy = db.Column(db.String(255), nullable=True)
+    privacy_policy = mapped_column(db.String(255), nullable=True)
     # custom_disclaimer
-    custom_disclaimer: Mapped[str] = mapped_column(sa.TEXT, default="")
+    custom_disclaimer: Mapped[str] = mapped_column(adjusted_text(), default="")
 
     created_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
     updated_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
@@ -173,10 +222,6 @@ class WorkflowToolProvider(Base):
     )
 
     @property
-    def schema_type(self) -> ApiProviderSchemaType:
-        return ApiProviderSchemaType.value_of(self.schema_type_str)
-
-    @property
     def user(self) -> Account | None:
         return db.session.query(Account).filter(Account.id == self.user_id).first()
 
@@ -193,6 +238,109 @@ class WorkflowToolProvider(Base):
         return db.session.query(App).filter(App.id == self.app_id).first()
 
 
+class MCPToolProvider(Base):
+    """
+    The table stores the mcp providers.
+    """
+
+    __tablename__ = "tool_mcp_providers"
+    __table_args__ = (
+        db.PrimaryKeyConstraint("id", name="tool_mcp_provider_pkey"),
+        db.UniqueConstraint("tenant_id", "server_url_hash", name="unique_mcp_provider_server_url"),
+        db.UniqueConstraint("tenant_id", "name", name="unique_mcp_provider_name"),
+        db.UniqueConstraint("tenant_id", "server_identifier", name="unique_mcp_provider_server_identifier"),
+    )
+
+    id: Mapped[str] = mapped_column(StringUUID, **uuid_default())
+    # name of the mcp provider
+    name: Mapped[str] = mapped_column(db.String(40), nullable=False)
+    # server identifier of the mcp provider
+    server_identifier: Mapped[str] = mapped_column(db.String(64), nullable=False)
+    # encrypted url of the mcp provider
+    server_url: Mapped[str] = mapped_column(adjusted_text(), nullable=False)
+    # hash of server_url for uniqueness check
+    server_url_hash: Mapped[str] = mapped_column(db.String(64), nullable=False)
+    # icon of the mcp provider
+    icon: Mapped[str] = mapped_column(db.String(255), nullable=True)
+    # tenant id
+    tenant_id: Mapped[str] = mapped_column(StringUUID, nullable=False)
+    # who created this tool
+    user_id: Mapped[str] = mapped_column(StringUUID, nullable=False)
+    # encrypted credentials
+    encrypted_credentials: Mapped[str] = mapped_column(adjusted_text(), nullable=True)
+    # authed
+    authed: Mapped[bool] = mapped_column(db.Boolean, nullable=False, default=False)
+    # tools
+    tools: Mapped[str] = mapped_column(adjusted_text(), nullable=False, default="[]")
+    created_at: Mapped[datetime] = mapped_column(
+        db.DateTime, nullable=False, server_default=db.text("CURRENT_TIMESTAMP(0)")
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        db.DateTime, nullable=False, server_default=db.text("CURRENT_TIMESTAMP(0)")
+    )
+
+    def load_user(self) -> Account | None:
+        return db.session.query(Account).filter(Account.id == self.user_id).first()
+
+    @property
+    def tenant(self) -> Tenant | None:
+        return db.session.query(Tenant).filter(Tenant.id == self.tenant_id).first()
+
+    @property
+    def credentials(self) -> dict:
+        try:
+            return cast(dict, json.loads(self.encrypted_credentials)) or {}
+        except Exception:
+            return {}
+
+    @property
+    def mcp_tools(self) -> list[Tool]:
+        return [Tool(**tool) for tool in json.loads(self.tools)]
+
+    @property
+    def provider_icon(self) -> dict[str, str] | str:
+        try:
+            return cast(dict[str, str], json.loads(self.icon))
+        except json.JSONDecodeError:
+            return file_helpers.get_signed_file_url(self.icon)
+
+    @property
+    def decrypted_server_url(self) -> str:
+        return cast(str, encrypter.decrypt_token(self.tenant_id, self.server_url))
+
+    @property
+    def masked_server_url(self) -> str:
+        def mask_url(url: str, mask_char: str = "*") -> str:
+            """
+            mask the url to a simple string
+            """
+            parsed = urlparse(url)
+            base_url = f"{parsed.scheme}://{parsed.netloc}"
+
+            if parsed.path and parsed.path != "/":
+                return f"{base_url}/{mask_char * 6}"
+            else:
+                return base_url
+
+        return mask_url(self.decrypted_server_url)
+
+    @property
+    def decrypted_credentials(self) -> dict:
+        from core.helper.provider_cache import NoOpProviderCredentialCache
+        from core.tools.mcp_tool.provider import MCPToolProviderController
+        from core.tools.utils.encryption import create_provider_encrypter
+
+        provider_controller = MCPToolProviderController._from_db(self)
+
+        encrypter, _ = create_provider_encrypter(
+            tenant_id=self.tenant_id,
+            config=[x.to_basic_provider_config() for x in provider_controller.get_credentials_schema()],
+            cache=NoOpProviderCredentialCache(),
+        )
+
+        return encrypter.decrypt(self.credentials)  # type: ignore
+
+
 class ToolModelInvoke(Base):
     """
     store the invoke logs from tool invoke
@@ -201,33 +349,33 @@ class ToolModelInvoke(Base):
     __tablename__ = "tool_model_invokes"
     __table_args__ = (db.PrimaryKeyConstraint("id", name="tool_model_invoke_pkey"),)
 
-    id = db.Column(StringUUID, **uuid_default())
+    id = mapped_column(StringUUID, **uuid_default())
     # who invoke this tool
-    user_id = db.Column(StringUUID, nullable=False)
+    user_id = mapped_column(StringUUID, nullable=False)
     # tenant id
-    tenant_id = db.Column(StringUUID, nullable=False)
+    tenant_id = mapped_column(StringUUID, nullable=False)
     # provider
-    provider = db.Column(db.String(255), nullable=False)
+    provider = mapped_column(db.String(255), nullable=False)
     # type
-    tool_type = db.Column(db.String(40), nullable=False)
+    tool_type = mapped_column(db.String(40), nullable=False)
     # tool name
-    tool_name = db.Column(db.String(40), nullable=False)
+    tool_name = mapped_column(db.String(128), nullable=False)
     # invoke parameters
-    model_parameters = db.Column(adjusted_text(), nullable=False)
+    model_parameters = mapped_column(adjusted_text(), nullable=False)
     # prompt messages
-    prompt_messages = db.Column(adjusted_text(), nullable=False)
+    prompt_messages = mapped_column(adjusted_text(), nullable=False)
     # invoke response
-    model_response = db.Column(adjusted_text(), nullable=False)
+    model_response = mapped_column(adjusted_text(), nullable=False)
 
-    prompt_tokens = db.Column(db.Integer, nullable=False, server_default=db.text("0"))
-    answer_tokens = db.Column(db.Integer, nullable=False, server_default=db.text("0"))
-    answer_unit_price = db.Column(db.Numeric(10, 4), nullable=False)
-    answer_price_unit = db.Column(db.Numeric(10, 7), nullable=False, server_default=db.text("0.001"))
-    provider_response_latency = db.Column(db.Float, nullable=False, server_default=db.text("0"))
-    total_price = db.Column(db.Numeric(10, 7))
-    currency = db.Column(db.String(255), nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
-    updated_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
+    prompt_tokens = mapped_column(db.Integer, nullable=False, server_default=db.text("0"))
+    answer_tokens = mapped_column(db.Integer, nullable=False, server_default=db.text("0"))
+    answer_unit_price = mapped_column(db.Numeric(10, 4), nullable=False)
+    answer_price_unit = mapped_column(db.Numeric(10, 7), nullable=False, server_default=db.text("0.001"))
+    provider_response_latency = mapped_column(db.Float, nullable=False, server_default=db.text("0"))
+    total_price = mapped_column(db.Numeric(10, 7))
+    currency = mapped_column(db.String(255), nullable=False)
+    created_at = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
+    updated_at = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
 
 
 @deprecated
@@ -244,18 +392,18 @@ class ToolConversationVariables(Base):
         db.Index("conversation_id_idx", "conversation_id"),
     )
 
-    id = db.Column(StringUUID, **uuid_default())
+    id = mapped_column(StringUUID, **uuid_default())
     # conversation user id
-    user_id = db.Column(StringUUID, nullable=False)
+    user_id = mapped_column(StringUUID, nullable=False)
     # tenant id
-    tenant_id = db.Column(StringUUID, nullable=False)
+    tenant_id = mapped_column(StringUUID, nullable=False)
     # conversation id
-    conversation_id = db.Column(StringUUID, nullable=False)
+    conversation_id = mapped_column(StringUUID, nullable=False)
     # variables pool
-    variables_str = db.Column(adjusted_text(), nullable=False)
+    variables_str = mapped_column(adjusted_text(), nullable=False)
 
-    created_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
-    updated_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
+    created_at = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
+    updated_at = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
 
     @property
     def variables(self) -> Any:
@@ -304,26 +452,26 @@ class DeprecatedPublishedAppTool(Base):
         db.UniqueConstraint("app_id", "user_id", name="unique_published_app_tool"),
     )
 
-    id = db.Column(StringUUID, **uuid_default())
+    id = mapped_column(StringUUID, **uuid_default())
     # id of the app
-    app_id = db.Column(StringUUID, ForeignKey("apps.id", ondelete='CASCADE'), nullable=False)
+    app_id = mapped_column(StringUUID, ForeignKey("apps.id", ondelete="CASCADE"), nullable=False)
 
-    user_id: Mapped[str] = db.Column(StringUUID, nullable=False)
+    user_id: Mapped[str] = mapped_column(StringUUID, nullable=False)
     # who published this tool
-    description = db.Column(adjusted_text(), nullable=False)
+    description = mapped_column(adjusted_text(), nullable=False)
     # llm_description of the tool, for LLM
-    llm_description = db.Column(adjusted_text(), nullable=False)
+    llm_description = mapped_column(adjusted_text(), nullable=False)
     # query description, query will be seem as a parameter of the tool,
     # to describe this parameter to llm, we need this field
-    query_description = db.Column(adjusted_text(), nullable=False)
+    query_description = mapped_column(adjusted_text(), nullable=False)
     # query name, the name of the query parameter
-    query_name = db.Column(db.String(40), nullable=False)
+    query_name = mapped_column(db.String(40), nullable=False)
     # name of the tool provider
-    tool_name = db.Column(db.String(40), nullable=False)
+    tool_name = mapped_column(db.String(40), nullable=False)
     # author
-    author = db.Column(db.String(40), nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False, server_default=db.text("CURRENT_TIMESTAMP(0)"))
-    updated_at = db.Column(db.DateTime, nullable=False, server_default=db.text("CURRENT_TIMESTAMP(0)"))
+    author = mapped_column(db.String(40), nullable=False)
+    created_at = mapped_column(db.DateTime, nullable=False, server_default=db.text("CURRENT_TIMESTAMP(0)"))
+    updated_at = mapped_column(db.DateTime, nullable=False, server_default=db.text("CURRENT_TIMESTAMP(0)"))
 
     @property
     def description_i18n(self) -> I18nObject:
