@@ -117,16 +117,22 @@ class OceanBaseVector(BaseVector):
                 columns=cols,
                 vidxs=vidx_params,
             )
-            try:
-                if self._hybrid_search_enabled:
+            if self._hybrid_search_enabled:
+                # Get parser from config or use default ik parser
+                parser_name = dify_config.OCEANBASE_FULLTEXT_PARSER or "ik"
+                    
+                logger.info(f"Creating fulltext index for collection '{self._collection_name}' using parser '{parser_name}'")
+                    
+                try:
                     self._client.perform_raw_text_sql(f"""ALTER TABLE {self._collection_name}
-                    ADD FULLTEXT INDEX fulltext_index_for_col_text (text) WITH PARSER ik""")
-            except Exception as e:
-                raise Exception(
-                    "Failed to add fulltext index to the target table, your OceanBase version must be 4.3.5.1 or above "
-                    + "to support fulltext index and vector index in the same table",
-                    e,
-                )
+                    ADD FULLTEXT INDEX fulltext_index_for_col_text (text) WITH PARSER {parser_name}""")
+                except Exception as e:
+                    raise Exception(
+                        "Failed to add fulltext index to the target table, your OceanBase version must be 4.3.5.1 or above "
+                        + "to support fulltext index and vector index in the same table",
+                        e,
+                    )
+
             redis_client.set(collection_exist_cache_key, 1, ex=3600)
 
     def _check_hybrid_search_support(self) -> bool:

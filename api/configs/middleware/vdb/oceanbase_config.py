@@ -39,3 +39,15 @@ class OceanBaseVectorConfig(BaseSettings):
         "with older versions",
         default=False,
     )
+
+    OCEANBASE_FULLTEXT_PARSER: Optional[str] = Field(
+        description="Fulltext parser to use for text indexing. Options: 'thai_ftparser' (Thai), 'ik' (Chinese), "
+        "'auto' (automatic language detection). Default is 'ik'",
+        default="ik",
+    )
+
+    OCEANBASE_ENABLE_LANGUAGE_DETECTION: bool = Field(
+        description="Enable automatic language detection for choosing appropriate fulltext parser. "
+        "When disabled, uses OCEANBASE_FULLTEXT_PARSER setting",
+        default=True,
+    )
