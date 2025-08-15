@@ -676,7 +676,7 @@ services:
 
   # plugin daemon
   plugin_daemon:
-    image: dify-plugin-daemon:local
+    image: oceanbase/dify-plugin-daemon:0.1.0-local
     restart: always
     environment:
       # Use the shared environment variables.
