@@ -77,7 +77,8 @@ RUN python -c "import tiktoken; tiktoken.encoding_for_model('gpt2')"
 # Copy source code
 COPY . /app/api/
 
-
+# Fix pyobvector bug
+RUN python /app/api/fix_pyobvector_bug.py
 
 # Copy entrypoint
 COPY docker/entrypoint.sh /entrypoint.sh
