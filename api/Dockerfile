@@ -68,7 +68,12 @@ COPY --from=packages ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
 
 # Download nltk data
-RUN python -c "import nltk; nltk.download('punkt'); nltk.download('averaged_perceptron_tagger')"
+RUN mkdir -p /app/api/nltk_data && \
+    python -c "import nltk; \
+        downloader = nltk.downloader.Downloader('https://mirrors.tuna.tsinghua.edu.cn/nltk_data/'); \
+        downloader.download('punkt', download_dir='/app/api/nltk_data'); \
+        downloader.download('averaged_perceptron_tagger', download_dir='/app/api/nltk_data'); \
+    "
 
 ENV TIKTOKEN_CACHE_DIR=/app/api/.tiktoken_cache
 
@@ -76,9 +81,6 @@ RUN python -c "import tiktoken; tiktoken.encoding_for_model('gpt2')"
 
 # Copy source code
 COPY . /app/api/
-
-# Fix pyobvector bug
-RUN python /app/api/fix_pyobvector_bug.py
 
 # Copy entrypoint
 COPY docker/entrypoint.sh /entrypoint.sh
