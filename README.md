@@ -33,6 +33,9 @@ By replacing all databases currently used in Dify—including PostgreSQL, Weavia
 
 Furthermore, this consolidation simplifies database operations by eliminating the need to manage three distinct database systems, thereby streamlining maintenance and reducing operational complexity.
 
+### Multi-Tenant
+Due to OceanBase's native support for multi-tenancy, Dify users can now try multi-tenant by OceanBase's multi-tenantcy  without compromising Dify’s existing multi-tenant rules.
+
 
 ## Quick start
 
