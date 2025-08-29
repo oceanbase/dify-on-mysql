@@ -1,8 +1,8 @@
-# Dify for MySQL
+# Dify on MySQL
 
 English | [简体中文](README_CN.md)
 
-## Why fork
+## Backgroud
 
 Beginning in October 2024, we initiated a collaboration with the Dify Team. Given that MySQL is one of the most widely used databases worldwide, many users have expressed a strong desire for Dify to support MySQL. At the same time, owing to OceanBase’s high compatibility with MySQL, we submitted a pull request to the Dify project to introduce MySQL support. However, due to the Dify team’s ongoing commitments to their internal development milestones, they were unable to incorporate this contribution at the time.
 
@@ -26,7 +26,7 @@ OceanBase, as a distributed database, offers seamless scalability by allowing ne
 ### AI enhancement
 Given that OceanBase also functions as a vector database, it offers powerful hybrid search capabilities. This enables support for multiple data types—including vector data, scalar data (traditional structured data in relational tables), GIS, and full-text content—within a single query.
 
-Such integration enhances both the accuracy and performance of AI-driven queries, making it particularly valuable for Retrieval-Augmented Generation (RAG) systems.
+Such integration enhances both the accuracy and performance of AI-driven queries(Consolidate multiple past queries into a single query and leverage the optimizer to select the optimal execution path), making it particularly valuable for Retrieval-Augmented Generation (RAG) systems.
 
 ### Reduce Cost
 By replacing all databases currently used in Dify—including PostgreSQL, Weaviate, and Redis—with OceanBase, users can achieve more efficient resource utilization and significantly reduce hardware costs.
