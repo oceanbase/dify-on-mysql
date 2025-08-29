@@ -524,7 +524,6 @@ x-shared-env: &shared-api-worker-env
   ENABLE_MAIL_CLEAN_DOCUMENT_NOTIFY_TASK: ${ENABLE_MAIL_CLEAN_DOCUMENT_NOTIFY_TASK:-false}
   ENABLE_DATASETS_QUEUE_MONITOR: ${ENABLE_DATASETS_QUEUE_MONITOR:-false}
   ENABLE_CHECK_UPGRADABLE_PLUGIN_TASK: ${ENABLE_CHECK_UPGRADABLE_PLUGIN_TASK:-true}
-
 services:
   # API service
   api:
@@ -547,6 +546,8 @@ services:
     depends_on:
       oceanbase:
         condition: service_healthy
+      # redis:
+      #   condition: service_started
     volumes:
       # Mount the storage directory to the container, for storing user files.
       - ./volumes/app/storage:/app/api/storage
@@ -574,6 +575,8 @@ services:
     depends_on:
       oceanbase:
         condition: service_healthy
+      # redis:
+      #   condition: service_started
     volumes:
       # Mount the storage directory to the container, for storing user files.
       - ./volumes/app/storage:/app/api/storage
@@ -596,6 +599,8 @@ services:
     depends_on:
       oceanbase:
         condition: service_healthy
+      # redis:
+      #   condition: service_started
     networks:
       - ssrf_proxy_network
       - default
@@ -649,6 +654,20 @@ services:
       interval: 1s
       timeout: 3s
       retries: 60
+
+  # #The redis cache
+  # redis:
+  #   image: redis:6-alpine
+  #   restart: always
+  #   environment:
+  #     REDISCLI_AUTH: ${REDIS_PASSWORD:-difyai123456}
+  #   volumes:
+  #     # Mount the redis data directory to the container.
+  #     - ./volumes/redis/data:/data
+  #   # Set the redis password when startup redis server.
+  #   command: redis-server --requirepass ${REDIS_PASSWORD:-difyai123456}
+  #   healthcheck:
+  #     test: [ 'CMD', 'redis-cli', 'ping' ]
 
   # The DifySandbox
   sandbox:
@@ -967,6 +986,7 @@ services:
       - ./volumes/oceanbase/data:/root/ob
       - ./volumes/oceanbase/conf:/root/.obd/cluster
       - ./volumes/oceanbase/init.d:/root/boot/init.d
+      - /home/longbing.ljw/workspace/thai_ftparser_java/thai-ftparser:/root/thai-ftparser
     environment:
       OB_MEMORY_LIMIT: ${OCEANBASE_MEMORY_LIMIT:-6G}
       OB_SYS_PASSWORD: ${OCEANBASE_VECTOR_PASSWORD:-difyai123456}
