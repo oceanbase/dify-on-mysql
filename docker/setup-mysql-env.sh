@@ -85,7 +85,54 @@ update_env() {
     fi
 }
 
-CURRENT_HOST=$(hostname -i)
+CURRENT_HOST="127.0.0.1"
+# Function to get IP address on Ubuntu/CentOS using ip command
+get_linux_ip() {
+    local interface=$(ip route | awk '/^default/ { print  $5 }')
+    if [ -n "$interface" ]; then
+        CURRENT_HOST=$(ip addr show  $interface | grep 'inet\b' | grep -v 127.0.0.1  | awk '{print  $2}' | cut -d/ -f1 | head -n 1)
+    else
+        echo "Failed to get local route interface, so use 127.0.0.1 as default host ip."
+    fi
+}
+
+# Function to get IP address on macOS using ifconfig command
+get_mac_ip() {
+    local default_interface=$(route -n get default | awk '/interface:/ {print  $2}')
+
+    if [ -z "$default_interface" ]; then
+        echo "Failed to get local route interface, so use 127.0.0.1 as default host ip."
+        return
+    fi
+
+    CURRENT_HOST=$(ifconfig "$default_interface" | grep "inet " | grep -v 127.0.0.1 | awk '{print  $2}')
+
+}
+
+get_local_ip() {
+
+    # Determine the OS and call the appropriate function
+    case "$(uname)" in
+        Darwin)
+            # macOS
+            get_mac_ip
+            ;;
+        Linux)
+            get_linux_ip
+            ;;
+        *)
+            echo "Failed to get to know host's os, so use 127.0.0.1 as default host ip."
+            CURRENT_HOST="127.0.0.1"
+            ;;
+        esac
+
+}
+
+get_local_ip
+if [ -z "$CURRENT_HOST" ]; then
+        echo "Failed to get local ip, so use 127.0.0.1 as default host ip."
+        CURRENT_HOST="127.0.0.1"
+fi
 
 print_message "info" "Please fill in the database parameters:"
 
@@ -118,6 +165,35 @@ else
         COMPOSE_PROFILES=""
     fi
 fi
+
+check_db_link_params() {
+    if [ -z "$DB_HOST" ]; then
+        print_message "error" "ERROR: Database Host is not set"
+        exit 1
+    fi
+    if [ -z "$DB_PORT" ]; then
+        print_message "error" "ERROR: Database Port is not set"
+        exit 1
+    fi
+    if [ -z "$DB_USERNAME" ]; then
+        print_message "error" "ERROR: Database Username is not set"
+        exit 1
+    fi
+    if [ -z "$DB_PASSWORD" ]; then
+        print_message "error" "ERROR: Database Password is not set"
+        exit 1
+    fi
+    if [ -z "$DB_DATABASE" ]; then
+        print_message "error" "ERROR: Database Name is not set"
+        exit 1
+    fi
+    if [ -z "$DB_PLUGIN_DATABASE" ]; then
+        print_message "error" "ERROR: Plugin Database Name is not set"
+        exit 1
+    fi
+}
+
+check_db_link_params
 
 if [ "$USE_AS_VECTOR_STORE" == "Y" ]; then
     update_env "OCEANBASE_VECTOR_HOST" "$DB_HOST"
@@ -187,3 +263,6 @@ print_message "success" "\nDatabase parameters are written into .env successfull
 
 print_message "success" "\nConnect to metadata database:"
 print_message "success" "\n    mysql -h$DB_HOST -P$DB_PORT -u$DB_USERNAME -p$DB_PASSWORD -D$DB_DATABASE"
+
+
+
