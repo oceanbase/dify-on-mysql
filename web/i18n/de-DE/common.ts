@@ -60,6 +60,7 @@ const translation = {
     format: 'Format',
     selectAll: 'Alles auswählen',
     deSelectAll: 'Alle abwählen',
+    config: 'Konfiguration',
   },
   placeholder: {
     input: 'Bitte eingeben',
@@ -197,7 +198,6 @@ const translation = {
     showAppLength: '{{length}} Apps anzeigen',
     delete: 'Konto löschen',
     deleteTip: 'Wenn Sie Ihr Konto löschen, werden alle Ihre Daten dauerhaft gelöscht und können nicht wiederhergestellt werden.',
-    deleteConfirmTip: 'Zur Bestätigung senden Sie bitte Folgendes von Ihrer registrierten E-Mail-Adresse an ',
     myAccount: 'Mein Konto',
     studio: 'Dify Studio',
     account: 'Konto',
@@ -237,6 +237,7 @@ const translation = {
       existingEmail: 'Ein Benutzer mit dieser E-Mail-Adresse existiert bereits.',
       emailLabel: 'Neue E-Mail',
       authTip: 'Sobald Ihre E-Mail geändert wurde, können Google- oder GitHub-Konten, die mit Ihrer alten E-Mail verknüpft sind, nicht mehr auf dieses Konto zugreifen.',
+      unAvailableEmail: 'Diese E-Mail ist vorübergehend nicht verfügbar.',
     },
   },
   members: {
@@ -468,6 +469,28 @@ const translation = {
     installProvider: 'Installieren von Modellanbietern',
     toBeConfigured: 'Zu konfigurieren',
     emptyProviderTitle: 'Modellanbieter nicht eingerichtet',
+    auth: {
+      apiKeyModal: {
+        addModel: 'Modell hinzufügen',
+        title: 'API-Schlüssel-Autorisierungskonfiguration',
+        desc: 'Nachdem die Anmeldeinformationen konfiguriert wurden, können alle Mitglieder des Arbeitsbereichs dieses Modell beim Orchestrieren von Anwendungen verwenden.',
+      },
+      specifyModelCredential: 'Angeben von Modellanmeldeinformationen',
+      addNewModel: 'Neues Modell hinzufügen',
+      addCredential: 'Anmeldeinformationen hinzufügen',
+      providerManaged: 'Anbieter verwaltet',
+      addApiKey: 'API-Schlüssel hinzufügen',
+      apiKeys: 'API-Schlüssel',
+      unAuthorized: 'Unbefugt',
+      authorizationError: 'Autorisierungsfehler',
+      modelCredentials: 'Modellanmeldeinformationen',
+      configModel: 'Konfigurationsmodell',
+      authRemoved: 'Die Authentifizierung wurde entfernt.',
+      addModelCredential: 'Modellberechtigungen hinzufügen',
+      providerManagedTip: 'Die aktuelle Konfiguration wird vom Anbieter gehostet.',
+      configLoadBalancing: 'Konfiguration Lastenverteilung',
+      specifyModelCredentialTip: 'Verwenden Sie ein konfiguriertes Modellzugang.',
+    },
   },
   dataSource: {
     add: 'Eine Datenquelle hinzufügen',
@@ -715,6 +738,10 @@ const translation = {
     supportedFormats: 'Unterstützt PNG, JPG, JPEG, WEBP und GIF',
   },
   you: 'Du',
+  avatar: {
+    deleteTitle: 'Avatar entfernen',
+    deleteDescription: 'Bist du sicher, dass du dein Profilbild entfernen möchtest? Dein Konto wird das standardmäßige Anfangs-Avatar verwenden.',
+  },
 }
 
 export default translation

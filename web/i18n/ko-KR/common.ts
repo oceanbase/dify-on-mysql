@@ -60,6 +60,7 @@ const translation = {
     downloadSuccess: '다운로드 완료.',
     selectAll: '모두 선택',
     deSelectAll: '모두 선택 해제',
+    config: '구성',
   },
   placeholder: {
     input: '입력해주세요',
@@ -193,7 +194,6 @@ const translation = {
     showAppLength: '{{length}}개의 앱 표시',
     delete: '계정 삭제',
     deleteTip: '계정을 삭제하면 모든 데이터가 영구적으로 지워지며 복구할 수 없습니다.',
-    deleteConfirmTip: '확인하려면 등록된 이메일에서 다음 내용을 로 보내주세요 ',
     myAccount: '내 계정',
     studio: '디파이 스튜디오',
     account: '계정',
@@ -233,6 +233,7 @@ const translation = {
       content3: '새로운 이메일을 입력하시면 인증 코드를 보내드립니다.',
       content1: '계속 진행하면, 재인증을 위해 <email>{{email}}</email>로 인증 코드를 전송하겠습니다.',
       authTip: '이메일이 변경되면, 이전 이메일에 연결된 Google 또는 GitHub 계정은 더 이상 이 계정에 로그인할 수 없습니다.',
+      unAvailableEmail: '이 이메일은 일시적으로 사용할 수 없습니다.',
     },
   },
   members: {
@@ -464,6 +465,28 @@ const translation = {
     configureTip: 'api-key 설정 또는 사용할 모델 추가',
     emptyProviderTip: '먼저 모델 공급자를 설치하십시오.',
     toBeConfigured: '구성 예정',
+    auth: {
+      apiKeyModal: {
+        addModel: '모델 추가',
+        title: 'API 키 인증 구성',
+        desc: '자격증명을 구성한 후에는 작업 공간 내의 모든 구성원이 애플리케이션을 조정할 때 이 모델을 사용할 수 있습니다.',
+      },
+      addApiKey: 'API 키 추가',
+      apiKeys: 'API 키',
+      unAuthorized: '무단',
+      configModel: '구성 모델',
+      authorizationError: '권한 오류',
+      configLoadBalancing: '구성 로드 밸런싱',
+      addNewModel: '새 모델 추가하기',
+      specifyModelCredentialTip: '구성된 모델 자격 증명을 사용합니다.',
+      modelCredentials: '모델 자격 증명',
+      addCredential: '자격 증명을 추가하다',
+      authRemoved: '인증이 제거되었습니다.',
+      providerManaged: '제공자가 관리하는',
+      addModelCredential: '모델 자격 증명 추가',
+      specifyModelCredential: '모델 자격 증명을 명시하세요.',
+      providerManagedTip: '현재 구성은 제공업체에 의해 호스팅되고 있습니다.',
+    },
   },
   dataSource: {
     add: '데이터 소스 추가하기',
@@ -711,6 +734,10 @@ const translation = {
     dropImageHere: '여기에 이미지를 드롭하거나',
   },
   you: '너',
+  avatar: {
+    deleteTitle: '아바타 제거하기',
+    deleteDescription: '프로필 사진을 제거하시겠습니까? 귀하의 계정은 기본 초기 아바타를 사용하게 됩니다.',
+  },
 }
 
 export default translation

@@ -19,6 +19,8 @@ from core.rag.models.document import Document
 from extensions.ext_redis import redis_client
 from models.dataset import Dataset
 
+logger = logging.getLogger(__name__)
+
 
 class PGVectorConfig(BaseModel):
     host: str
@@ -74,7 +76,6 @@ if dify_config.SQLALCHEMY_DATABASE_URI_SCHEME == "postgresql":
 else:
     # MySQL don't support gin index (up to date)
     SQL_CREATE_INDEX_PG_BIGM = None
-
 
 class PGVector(BaseVector):
     def __init__(self, collection_name: str, config: PGVectorConfig):
@@ -159,7 +160,7 @@ class PGVector(BaseVector):
                 cur.execute(f"DELETE FROM {self.table_name} WHERE id IN %s", (tuple(ids),))
             except psycopg2.errors.UndefinedTable:
                 # table not exists
-                logging.warning(f"Table {self.table_name} not found, skipping delete operation.")
+                logger.warning("Table %s not found, skipping delete operation.", self.table_name)
                 return
             except Exception as e:
                 raise e

@@ -1,8 +1,8 @@
-import enum
 import uuid
+import enum
 from typing import Generic, TypeVar
 
-from sqlalchemy import CHAR, JSON, VARCHAR, TypeDecorator
+from sqlalchemy import CHAR, JSON, TypeDecorator, VARCHAR
 from sqlalchemy.dialects import mysql, postgresql
 
 from configs import dify_config

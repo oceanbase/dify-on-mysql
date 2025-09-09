@@ -25,6 +25,8 @@ from services.feature_service import FeatureService
 from services.tag_service import TagService
 from tasks.remove_app_and_related_data_task import remove_app_and_related_data_task
 
+logger = logging.getLogger(__name__)
+
 
 class AppService:
     def get_paginate_apps(self, user_id: str, tenant_id: str, args: dict) -> Pagination | None:
@@ -53,9 +55,10 @@ class AppService:
         if args.get("name"):
             name = args["name"][:30]
             filters.append(App.name.ilike(f"%{name}%"))
-        if args.get("tag_ids"):
+        # Check if tag_ids is not empty to avoid WHERE false condition
+        if args.get("tag_ids") and len(args["tag_ids"]) > 0:
             target_ids = TagService.get_target_ids_by_tag_ids("app", tenant_id, args["tag_ids"])
-            if target_ids:
+            if target_ids and len(target_ids) > 0:
                 filters.append(App.id.in_(target_ids))
             else:
                 return None
@@ -94,7 +97,7 @@ class AppService:
             except (ProviderTokenNotInitError, LLMBadRequestError):
                 model_instance = None
             except Exception as e:
-                logging.exception(f"Get default model instance failed, tenant_id: {tenant_id}")
+                logger.exception("Get default model instance failed, tenant_id: %s", tenant_id)
                 model_instance = None
 
             if model_instance:
@@ -382,7 +385,7 @@ class AppService:
                 elif provider_type == "api":
                     try:
                         provider: Optional[ApiToolProvider] = (
-                            db.session.query(ApiToolProvider).filter(ApiToolProvider.id == provider_id).first()
+                            db.session.query(ApiToolProvider).where(ApiToolProvider.id == provider_id).first()
                         )
                         if provider is None:
                             raise ValueError(f"provider not found for tool {tool_name}")
@@ -399,7 +402,7 @@ class AppService:
         :param app_id: app id
         :return: app code
         """
-        site = db.session.query(Site).filter(Site.app_id == app_id).first()
+        site = db.session.query(Site).where(Site.app_id == app_id).first()
         if not site:
             raise ValueError(f"App with id {app_id} not found")
         return str(site.code)
@@ -411,7 +414,7 @@ class AppService:
         :param app_code: app code
         :return: app id
         """
-        site = db.session.query(Site).filter(Site.code == app_code).first()
+        site = db.session.query(Site).where(Site.code == app_code).first()
         if not site:
             raise ValueError(f"App with code {app_code} not found")
         return str(site.app_id)

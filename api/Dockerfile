@@ -4,7 +4,9 @@ FROM python:3.12-slim-bookworm AS base
 WORKDIR /app/api
 
 # Install uv
-ENV UV_VERSION=0.7.11
+ENV UV_VERSION=0.8.9
+ENV UV_HTTP_TIMEOUT=600
+ENV UV_INDEX=https://pypi.tuna.tsinghua.edu.cn/simple
 
 
 RUN pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple uv==${UV_VERSION}
@@ -21,8 +23,7 @@ RUN apt-get update \
 
 # Install Python dependencies
 COPY pyproject.toml uv.lock ./
-RUN uv sync --index-url https://pypi.tuna.tsinghua.edu.cn/simple
-# RUN uv sync
+RUN uv sync --no-dev
 
 # production stage
 FROM base AS production
@@ -39,6 +40,11 @@ EXPOSE 5001
 
 # set timezone
 ENV TZ=UTC
+
+# Set UTF-8 locale
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
+ENV PYTHONIOENCODING=utf-8
 
 WORKDIR /app/api
 
@@ -67,7 +73,12 @@ COPY --from=packages ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
 
 # Download nltk data
-RUN python -c "import nltk; nltk.download('punkt'); nltk.download('averaged_perceptron_tagger')"
+RUN mkdir -p /app/api/nltk_data && \
+    python -c "import nltk; \
+        downloader = nltk.downloader.Downloader('https://mirrors.tuna.tsinghua.edu.cn/nltk_data/'); \
+        downloader.download('punkt', download_dir='/app/api/nltk_data'); \
+        downloader.download('averaged_perceptron_tagger', download_dir='/app/api/nltk_data'); \
+    "
 
 ENV TIKTOKEN_CACHE_DIR=/app/api/.tiktoken_cache
 

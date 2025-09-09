@@ -1,11 +1,12 @@
 import enum
+from datetime import datetime
 
-from sqlalchemy import func
-from sqlalchemy.orm import mapped_column
+import sqlalchemy as sa
+from sqlalchemy import DateTime, String, Text, func
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
-from .engine import db
-from .types import StringUUID, adjusted_text, uuid_default
+from .types import StringUUID, uuid_default, adjusted_text
 
 
 class APIBasedExtensionPoint(enum.Enum):
@@ -18,13 +19,13 @@ class APIBasedExtensionPoint(enum.Enum):
 class APIBasedExtension(Base):
     __tablename__ = "api_based_extensions"
     __table_args__ = (
-        db.PrimaryKeyConstraint("id", name="api_based_extension_pkey"),
-        db.Index("api_based_extension_tenant_idx", "tenant_id"),
+        sa.PrimaryKeyConstraint("id", name="api_based_extension_pkey"),
+        sa.Index("api_based_extension_tenant_idx", "tenant_id"),
     )
 
     id = mapped_column(StringUUID, **uuid_default())
     tenant_id = mapped_column(StringUUID, nullable=False)
-    name = mapped_column(db.String(255), nullable=False)
-    api_endpoint = mapped_column(db.String(255), nullable=False)
+    name = mapped_column(String(255), nullable=False)
+    api_endpoint = mapped_column(String(255), nullable=False)
     api_key = mapped_column(adjusted_text(), nullable=False)
-    created_at = mapped_column(db.DateTime, nullable=False, server_default=func.current_timestamp())
+    created_at = mapped_column(DateTime, nullable=False, server_default=func.current_timestamp())

@@ -1,7 +1,9 @@
+from datetime import datetime
+
 import pytz
 from flask import request
 from flask_login import current_user
-from flask_restful import Resource, fields, marshal_with, reqparse
+from flask_restx import Resource, fields, marshal_with, reqparse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -15,7 +17,7 @@ from controllers.console.auth.error import (
     InvalidEmailError,
     InvalidTokenError,
 )
-from controllers.console.error import AccountNotFound, EmailSendIpLimitError
+from controllers.console.error import AccountInFreezeError, AccountNotFound, EmailSendIpLimitError
 from controllers.console.workspace.error import (
     AccountAlreadyInitedError,
     CurrentPasswordIncorrectError,
@@ -68,7 +70,7 @@ class AccountInitApi(Resource):
             # check invitation code
             invitation_code = (
                 db.session.query(InvitationCode)
-                .filter(
+                .where(
                     InvitationCode.code == args["invitation_code"],
                     InvitationCode.status == "unused",
                 )
@@ -228,7 +230,7 @@ class AccountIntegrateApi(Resource):
     def get(self):
         account = current_user
 
-        account_integrates = db.session.query(AccountIntegrate).filter(AccountIntegrate.account_id == account.id).all()
+        account_integrates = db.session.query(AccountIntegrate).where(AccountIntegrate.account_id == account.id).all()
 
         base_url = request.url_root.rstrip("/")
         oauth_base_path = "/console/api/oauth/login"
@@ -327,6 +329,9 @@ class EducationVerifyApi(Resource):
 class EducationApi(Resource):
     status_fields = {
         "result": fields.Boolean,
+        "is_student": fields.Boolean,
+        "expire_at": TimestampField,
+        "allow_refresh": fields.Boolean,
     }
 
     @setup_required
@@ -354,7 +359,11 @@ class EducationApi(Resource):
     def get(self):
         account = current_user
 
-        return BillingService.EducationIdentity.is_active(account.id)
+        res = BillingService.EducationIdentity.status(account.id)
+        # convert expire_at to UTC timestamp from isoformat
+        if res and "expire_at" in res:
+            res["expire_at"] = datetime.fromisoformat(res["expire_at"]).astimezone(pytz.utc)
+        return res
 
 
 class EducationAutoCompleteApi(Resource):
@@ -479,20 +488,27 @@ class ChangeEmailResetApi(Resource):
         parser.add_argument("token", type=str, required=True, nullable=False, location="json")
         args = parser.parse_args()
 
+        if AccountService.is_account_in_freeze(args["new_email"]):
+            raise AccountInFreezeError()
+
+        if not AccountService.check_email_unique(args["new_email"]):
+            raise EmailAlreadyInUseError()
+
         reset_data = AccountService.get_change_email_data(args["token"])
         if not reset_data:
             raise InvalidTokenError()
 
         AccountService.revoke_change_email_token(args["token"])
 
-        if not AccountService.check_email_unique(args["new_email"]):
-            raise EmailAlreadyInUseError()
-
         old_email = reset_data.get("old_email", "")
         if current_user.email != old_email:
             raise AccountNotFound()
 
-        updated_account = AccountService.update_account(current_user, email=args["new_email"])
+        updated_account = AccountService.update_account_email(current_user, email=args["new_email"])
+
+        AccountService.send_change_email_completed_notify_email(
+            email=args["new_email"],
+        )
 
         return updated_account
 
@@ -503,6 +519,8 @@ class CheckEmailUnique(Resource):
         parser = reqparse.RequestParser()
         parser.add_argument("email", type=email, required=True, location="json")
         args = parser.parse_args()
+        if AccountService.is_account_in_freeze(args["email"]):
+            raise AccountInFreezeError()
         if not AccountService.check_email_unique(args["email"]):
             raise EmailAlreadyInUseError()
         return {"result": "success"}

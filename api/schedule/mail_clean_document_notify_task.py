@@ -13,6 +13,8 @@ from models.account import Account, Tenant, TenantAccountJoin
 from models.dataset import Dataset, DatasetAutoDisableLog
 from services.feature_service import FeatureService
 
+logger = logging.getLogger(__name__)
+
 
 @app.celery.task(queue="dataset")
 def mail_clean_document_notify_task():
@@ -24,13 +26,13 @@ def mail_clean_document_notify_task():
     if not mail.is_inited():
         return
 
-    logging.info(click.style("Start send document clean notify mail", fg="green"))
+    logger.info(click.style("Start send document clean notify mail", fg="green"))
     start_at = time.perf_counter()
 
     # send document clean notify mail
     try:
         dataset_auto_disable_logs = (
-            db.session.query(DatasetAutoDisableLog).filter(DatasetAutoDisableLog.notified == False).all()
+            db.session.query(DatasetAutoDisableLog).where(DatasetAutoDisableLog.notified == False).all()
         )
         # group by tenant_id
         dataset_auto_disable_logs_map: dict[str, list[DatasetAutoDisableLog]] = defaultdict(list)
@@ -45,7 +47,7 @@ def mail_clean_document_notify_task():
             if plan != "sandbox":
                 knowledge_details = []
                 # check tenant
-                tenant = db.session.query(Tenant).filter(Tenant.id == tenant_id).first()
+                tenant = db.session.query(Tenant).where(Tenant.id == tenant_id).first()
                 if not tenant:
                     continue
                 # check current owner
@@ -54,7 +56,7 @@ def mail_clean_document_notify_task():
                 )
                 if not current_owner_join:
                     continue
-                account = db.session.query(Account).filter(Account.id == current_owner_join.account_id).first()
+                account = db.session.query(Account).where(Account.id == current_owner_join.account_id).first()
                 if not account:
                     continue
 
@@ -67,7 +69,7 @@ def mail_clean_document_notify_task():
                     )
 
                 for dataset_id, document_ids in dataset_auto_dataset_map.items():
-                    dataset = db.session.query(Dataset).filter(Dataset.id == dataset_id).first()
+                    dataset = db.session.query(Dataset).where(Dataset.id == dataset_id).first()
                     if dataset:
                         document_count = len(document_ids)
                         knowledge_details.append(rf"Knowledge base {dataset.name}: {document_count} documents")
@@ -89,8 +91,6 @@ def mail_clean_document_notify_task():
                 dataset_auto_disable_log.notified = True
             db.session.commit()
         end_at = time.perf_counter()
-        logging.info(
-            click.style("Send document clean notify mail succeeded: latency: {}".format(end_at - start_at), fg="green")
-        )
+        logger.info(click.style(f"Send document clean notify mail succeeded: latency: {end_at - start_at}", fg="green"))
     except Exception:
-        logging.exception("Send document clean notify mail failed")
+        logger.exception("Send document clean notify mail failed")

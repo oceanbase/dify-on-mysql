@@ -7,7 +7,7 @@ from typing import Optional
 
 from flask import current_app, request
 from flask_login import user_logged_in  # type: ignore
-from flask_restful import Resource
+from flask_restx import Resource
 from pydantic import BaseModel
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
@@ -44,7 +44,7 @@ def validate_app_token(view: Optional[Callable] = None, *, fetch_user_arg: Optio
         def decorated_view(*args, **kwargs):
             api_token = validate_and_get_api_token("app")
 
-            app_model = db.session.query(App).filter(App.id == api_token.app_id).first()
+            app_model = db.session.query(App).where(App.id == api_token.app_id).first()
             if not app_model:
                 raise Forbidden("The app no longer exists.")
 
@@ -54,7 +54,7 @@ def validate_app_token(view: Optional[Callable] = None, *, fetch_user_arg: Optio
             if not app_model.enable_api:
                 raise Forbidden("The app's API service has been disabled.")
 
-            tenant = db.session.query(Tenant).filter(Tenant.id == app_model.tenant_id).first()
+            tenant = db.session.query(Tenant).where(Tenant.id == app_model.tenant_id).first()
             if tenant is None:
                 raise ValueError("Tenant does not exist.")
             if tenant.status == TenantStatus.ARCHIVE:
@@ -62,15 +62,15 @@ def validate_app_token(view: Optional[Callable] = None, *, fetch_user_arg: Optio
 
             tenant_account_join = (
                 db.session.query(Tenant, TenantAccountJoin)
-                .filter(Tenant.id == api_token.tenant_id)
-                .filter(TenantAccountJoin.tenant_id == Tenant.id)
-                .filter(TenantAccountJoin.role.in_(["owner"]))
-                .filter(Tenant.status == TenantStatus.NORMAL)
+                .where(Tenant.id == api_token.tenant_id)
+                .where(TenantAccountJoin.tenant_id == Tenant.id)
+                .where(TenantAccountJoin.role.in_(["owner"]))
+                .where(Tenant.status == TenantStatus.NORMAL)
                 .one_or_none()
             )  # TODO: only owner information is required, so only one is returned.
             if tenant_account_join:
                 tenant, ta = tenant_account_join
-                account = db.session.query(Account).filter(Account.id == ta.account_id).first()
+                account = db.session.query(Account).where(Account.id == ta.account_id).first()
                 # Login admin
                 if account:
                     account.current_tenant = tenant
@@ -213,15 +213,15 @@ def validate_dataset_token(view=None):
             api_token = validate_and_get_api_token("dataset")
             tenant_account_join = (
                 db.session.query(Tenant, TenantAccountJoin)
-                .filter(Tenant.id == api_token.tenant_id)
-                .filter(TenantAccountJoin.tenant_id == Tenant.id)
-                .filter(TenantAccountJoin.role.in_(["owner"]))
-                .filter(Tenant.status == TenantStatus.NORMAL)
+                .where(Tenant.id == api_token.tenant_id)
+                .where(TenantAccountJoin.tenant_id == Tenant.id)
+                .where(TenantAccountJoin.role.in_(["owner"]))
+                .where(Tenant.status == TenantStatus.NORMAL)
                 .one_or_none()
             )  # TODO: only owner information is required, so only one is returned.
             if tenant_account_join:
                 tenant, ta = tenant_account_join
-                account = db.session.query(Account).filter(Account.id == ta.account_id).first()
+                account = db.session.query(Account).where(Account.id == ta.account_id).first()
                 # Login admin
                 if account:
                     account.current_tenant = tenant
@@ -271,10 +271,13 @@ def validate_and_get_api_token(scope: str | None = None):
             # .returning(ApiToken)  mysql does not support 'returning'
         )
         session.execute(update_stmt)
-        select_stmt = select(ApiToken).where(
-            ApiToken.token == auth_token,
-            (ApiToken.last_used_at.is_(None) | (ApiToken.last_used_at < cutoff_time)),
-            ApiToken.type == scope,
+        select_stmt = (
+            select(ApiToken)
+            .where(
+                ApiToken.token == auth_token,
+                (ApiToken.last_used_at.is_(None) | (ApiToken.last_used_at < cutoff_time)),
+                ApiToken.type == scope,
+            )
         )
         result = session.execute(select_stmt)
         api_token = result.scalar_one_or_none()
@@ -299,7 +302,7 @@ def create_or_update_end_user_for_user_id(app_model: App, user_id: Optional[str]
 
     end_user = (
         db.session.query(EndUser)
-        .filter(
+        .where(
             EndUser.tenant_id == app_model.tenant_id,
             EndUser.app_id == app_model.id,
             EndUser.session_id == user_id,
@@ -326,7 +329,7 @@ class DatasetApiResource(Resource):
     method_decorators = [validate_dataset_token]
 
     def get_dataset(self, dataset_id: str, tenant_id: str) -> Dataset:
-        dataset = db.session.query(Dataset).filter(Dataset.id == dataset_id, Dataset.tenant_id == tenant_id).first()
+        dataset = db.session.query(Dataset).where(Dataset.id == dataset_id, Dataset.tenant_id == tenant_id).first()
 
         if not dataset:
             raise NotFound("Dataset not found.")
