@@ -254,6 +254,8 @@ class LoadBalancingModelConfig(Base):
     model_type: Mapped[str] = mapped_column(String(40), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     encrypted_config: Mapped[Optional[str]] = mapped_column(adjusted_text(), nullable=True)
+    credential_id: Mapped[Optional[str]] = mapped_column(StringUUID, nullable=True)
+    credential_source_type: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     enabled: Mapped[bool] = mapped_column(sa.Boolean, nullable=False, server_default=text("true"))
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.current_timestamp())
     updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.current_timestamp())
