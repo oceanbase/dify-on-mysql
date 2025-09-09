@@ -60,6 +60,7 @@ const translation = {
     format: '格式',
     deSelectAll: '全不選',
     selectAll: '全選',
+    config: '配置',
   },
   placeholder: {
     input: '請輸入',
@@ -197,7 +198,6 @@ const translation = {
     showAppLength: '顯示 {{length}} 個應用',
     delete: '刪除帳戶',
     deleteTip: '刪除您的帳戶將永久刪除您的所有資料並且無法恢復。',
-    deleteConfirmTip: '請將以下內容從您的註冊電子郵件發送至 ',
     account: '帳戶',
     myAccount: '我的帳戶',
     studio: '工作室',
@@ -237,6 +237,7 @@ const translation = {
       existingEmail: '此電子郵件的用戶已經存在。',
       authTip: '一旦您的電子郵件更改，與您的舊電子郵件相關聯的 Google 或 GitHub 帳戶將無法再登錄此帳戶。',
       resendTip: '沒有收到代碼嗎？',
+      unAvailableEmail: '此郵件暫時無法使用。',
     },
   },
   members: {
@@ -468,6 +469,27 @@ const translation = {
     emptyProviderTitle: '未設置模型提供者',
     configureTip: '設置 api-key 或添加要使用的模型',
     emptyProviderTip: '請先安裝模型提供者。',
+    auth: {
+      apiKeyModal: {
+        addModel: '添加模型',
+        title: 'API 金鑰授權配置',
+        desc: '配置完憑證後，工作區內的所有成員在協調應用程式時都可以使用此模型。',
+      },
+      authRemoved: '授權已被移除',
+      configModel: '配置模型',
+      addApiKey: '添加 API 金鑰',
+      addCredential: '添加憑證',
+      addModelCredential: '添加模型憑證',
+      modelCredentials: '模型憑證',
+      providerManaged: '供應商管理',
+      addNewModel: '新增模型',
+      specifyModelCredential: '指定模型憑證',
+      specifyModelCredentialTip: '使用配置的模型憑證。',
+      apiKeys: 'API 金鑰',
+      configLoadBalancing: '配置負載均衡',
+      unAuthorized: '未經授權',
+      authorizationError: '授權錯誤',
+    },
   },
   dataSource: {
     add: '新增資料來源',
@@ -715,6 +737,10 @@ const translation = {
     dropImageHere: '將您的圖片放在這裡，或',
   },
   you: '你',
+  avatar: {
+    deleteTitle: '移除頭像',
+    deleteDescription: '您確定要刪除您的個人資料照片嗎？您的帳戶將使用默認的初始頭像。',
+  },
 }
 
 export default translation

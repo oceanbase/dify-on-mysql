@@ -24,7 +24,7 @@ export enum FormTypeEnum {
   secretInput = 'secret-input',
   select = 'select',
   radio = 'radio',
-  boolean = 'boolean',
+  checkbox = 'checkbox',
   files = 'files',
   file = 'file',
   modelSelector = 'model-selector',
@@ -58,6 +58,8 @@ export type FormSchema = {
   options?: FormOption[]
   labelClassName?: string
   validators?: AnyValidators
+  showRadioUI?: boolean
+  disabled?: boolean
 }
 
 export type FormValues = Record<string, any>

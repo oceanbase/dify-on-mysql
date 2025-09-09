@@ -16,7 +16,7 @@ import type {
   Feedback,
 } from '../types'
 import { CONVERSATION_ID_INFO } from '../constants'
-import { buildChatItemTree, getProcessedSystemVariablesFromUrlParams, getRawInputsFromUrlParams } from '../utils'
+import { buildChatItemTree, getProcessedSystemVariablesFromUrlParams, getRawInputsFromUrlParams, getRawUserVariablesFromUrlParams } from '../utils'
 import { addFileInfos, sortAgentSorts } from '../../../tools/utils'
 import { getProcessedFilesFromResponse } from '@/app/components/base/file-uploader/utils'
 import {
@@ -35,7 +35,7 @@ import type {
   ConversationItem,
 } from '@/models/share'
 import { useToastContext } from '@/app/components/base/toast'
-import { changeLanguage } from '@/i18n/i18next-config'
+import { changeLanguage } from '@/i18n-config/i18next-config'
 import { useAppFavicon } from '@/hooks/use-app-favicon'
 import { InputVarType } from '@/app/components/workflow/types'
 import { TransferMethod } from '@/types/app'
@@ -115,8 +115,11 @@ export const useChatWithHistory = (installedAppInfo?: InstalledApp) => {
   }, [])
 
   useEffect(() => {
-    if (appData?.site.default_language)
-      changeLanguage(appData.site.default_language)
+    const setLocaleFromProps = async () => {
+      if (appData?.site.default_language)
+        await changeLanguage(appData.site.default_language)
+    }
+    setLocaleFromProps()
   }, [appData])
 
   const [sidebarCollapseState, setSidebarCollapseState] = useState<boolean>(false)
@@ -159,9 +162,21 @@ export const useChatWithHistory = (installedAppInfo?: InstalledApp) => {
     return currentConversationId
   }, [currentConversationId, newConversationId])
 
-  const { data: appPinnedConversationData, mutate: mutateAppPinnedConversationData } = useSWR(['appConversationData', isInstalledApp, appId, true], () => fetchConversations(isInstalledApp, appId, undefined, true, 100))
-  const { data: appConversationData, isLoading: appConversationDataLoading, mutate: mutateAppConversationData } = useSWR(['appConversationData', isInstalledApp, appId, false], () => fetchConversations(isInstalledApp, appId, undefined, false, 100))
-  const { data: appChatListData, isLoading: appChatListDataLoading } = useSWR(chatShouldReloadKey ? ['appChatList', chatShouldReloadKey, isInstalledApp, appId] : null, () => fetchChatList(chatShouldReloadKey, isInstalledApp, appId))
+  const { data: appPinnedConversationData, mutate: mutateAppPinnedConversationData } = useSWR(
+    appId ? ['appConversationData', isInstalledApp, appId, true] : null,
+    () => fetchConversations(isInstalledApp, appId, undefined, true, 100),
+    { revalidateOnFocus: false, revalidateOnReconnect: false },
+  )
+  const { data: appConversationData, isLoading: appConversationDataLoading, mutate: mutateAppConversationData } = useSWR(
+    appId ? ['appConversationData', isInstalledApp, appId, false] : null,
+    () => fetchConversations(isInstalledApp, appId, undefined, false, 100),
+    { revalidateOnFocus: false, revalidateOnReconnect: false },
+  )
+  const { data: appChatListData, isLoading: appChatListDataLoading } = useSWR(
+    chatShouldReloadKey ? ['appChatList', chatShouldReloadKey, isInstalledApp, appId] : null,
+    () => fetchChatList(chatShouldReloadKey, isInstalledApp, appId),
+    { revalidateOnFocus: false, revalidateOnReconnect: false },
+  )
 
   const [clearChatList, setClearChatList] = useState(false)
   const [isResponding, setIsResponding] = useState(false)
@@ -181,6 +196,7 @@ export const useChatWithHistory = (installedAppInfo?: InstalledApp) => {
   const newConversationInputsRef = useRef<Record<string, any>>({})
   const [newConversationInputs, setNewConversationInputs] = useState<Record<string, any>>({})
   const [initInputs, setInitInputs] = useState<Record<string, any>>({})
+  const [initUserVariables, setInitUserVariables] = useState<Record<string, any>>({})
   const handleNewConversationInputsChange = useCallback((newInputs: Record<string, any>) => {
     newConversationInputsRef.current = newInputs
     setNewConversationInputs(newInputs)
@@ -194,7 +210,7 @@ export const useChatWithHistory = (installedAppInfo?: InstalledApp) => {
 
         return {
           ...item.paragraph,
-          default: value || item.default,
+          default: value || item.default || item.paragraph.default,
           type: 'paragraph',
         }
       }
@@ -202,15 +218,23 @@ export const useChatWithHistory = (installedAppInfo?: InstalledApp) => {
         const convertedNumber = Number(initInputs[item.number.variable]) ?? undefined
         return {
           ...item.number,
-          default: convertedNumber || item.default,
+          default: convertedNumber || item.default || item.number.default,
           type: 'number',
+        }
+      }
+
+      if(item.checkbox) {
+        return {
+          ...item.checkbox,
+          default: false,
+          type: 'checkbox',
         }
       }
       if (item.select) {
         const isInputInOptions = item.select.options.includes(initInputs[item.select.variable])
         return {
           ...item.select,
-          default: (isInputInOptions ? initInputs[item.select.variable] : undefined) || item.default,
+          default: (isInputInOptions ? initInputs[item.select.variable] : undefined) || item.select.default,
           type: 'select',
         }
       }
@@ -229,13 +253,20 @@ export const useChatWithHistory = (installedAppInfo?: InstalledApp) => {
         }
       }
 
+      if (item.json_object) {
+        return {
+          ...item.json_object,
+          type: 'json_object',
+        }
+      }
+
       let value = initInputs[item['text-input'].variable]
       if (value && item['text-input'].max_length && value.length > item['text-input'].max_length)
         value = value.slice(0, item['text-input'].max_length)
 
       return {
         ...item['text-input'],
-        default: value || item.default,
+        default: value || item.default || item['text-input'].default,
         type: 'text-input',
       }
     })
@@ -249,7 +280,9 @@ export const useChatWithHistory = (installedAppInfo?: InstalledApp) => {
     // init inputs from url params
     (async () => {
       const inputs = await getRawInputsFromUrlParams()
+      const userVariables = await getRawUserVariablesFromUrlParams()
       setInitInputs(inputs)
+      setInitUserVariables(userVariables)
     })()
   }, [])
 
@@ -322,7 +355,7 @@ export const useChatWithHistory = (installedAppInfo?: InstalledApp) => {
 
     let hasEmptyInput = ''
     let fileIsUploading = false
-    const requiredVars = inputsForms.filter(({ required }) => required)
+    const requiredVars = inputsForms.filter(({ required, type }) => required && type !== InputVarType.checkbox)
     if (requiredVars.length) {
       requiredVars.forEach(({ variable, label, type }) => {
         if (hasEmptyInput)
@@ -520,5 +553,6 @@ export const useChatWithHistory = (installedAppInfo?: InstalledApp) => {
     currentConversationInputs,
     setCurrentConversationInputs,
     allInputsHidden,
+    initUserVariables,
   }
 }

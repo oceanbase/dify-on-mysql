@@ -31,7 +31,7 @@ class MCPToolManageService:
     def get_mcp_provider_by_provider_id(provider_id: str, tenant_id: str) -> MCPToolProvider:
         res = (
             db.session.query(MCPToolProvider)
-            .filter(MCPToolProvider.tenant_id == tenant_id, MCPToolProvider.id == provider_id)
+            .where(MCPToolProvider.tenant_id == tenant_id, MCPToolProvider.id == provider_id)
             .first()
         )
         if not res:
@@ -42,7 +42,7 @@ class MCPToolManageService:
     def get_mcp_provider_by_server_identifier(server_identifier: str, tenant_id: str) -> MCPToolProvider:
         res = (
             db.session.query(MCPToolProvider)
-            .filter(MCPToolProvider.tenant_id == tenant_id, MCPToolProvider.server_identifier == server_identifier)
+            .where(MCPToolProvider.tenant_id == tenant_id, MCPToolProvider.server_identifier == server_identifier)
             .first()
         )
         if not res:
@@ -59,11 +59,13 @@ class MCPToolManageService:
         icon_type: str,
         icon_background: str,
         server_identifier: str,
+        timeout: float,
+        sse_read_timeout: float,
     ) -> ToolProviderApiEntity:
         server_url_hash = hashlib.sha256(server_url.encode()).hexdigest()
         existing_provider = (
             db.session.query(MCPToolProvider)
-            .filter(
+            .where(
                 MCPToolProvider.tenant_id == tenant_id,
                 or_(
                     MCPToolProvider.name == name,
@@ -91,6 +93,8 @@ class MCPToolManageService:
             tools="[]",
             icon=json.dumps({"content": icon, "background": icon_background}) if icon_type == "emoji" else icon,
             server_identifier=server_identifier,
+            timeout=timeout,
+            sse_read_timeout=sse_read_timeout,
         )
         db.session.add(mcp_tool)
         db.session.commit()
@@ -100,7 +104,7 @@ class MCPToolManageService:
     def retrieve_mcp_tools(tenant_id: str, for_list: bool = False) -> list[ToolProviderApiEntity]:
         mcp_providers = (
             db.session.query(MCPToolProvider)
-            .filter(MCPToolProvider.tenant_id == tenant_id)
+            .where(MCPToolProvider.tenant_id == tenant_id)
             .order_by(MCPToolProvider.name)
             .all()
         )
@@ -166,6 +170,8 @@ class MCPToolManageService:
         icon_type: str,
         icon_background: str,
         server_identifier: str,
+        timeout: float | None = None,
+        sse_read_timeout: float | None = None,
     ):
         mcp_provider = cls.get_mcp_provider_by_provider_id(provider_id, tenant_id)
 
@@ -197,6 +203,10 @@ class MCPToolManageService:
                     mcp_provider.tools = reconnect_result["tools"]
                     mcp_provider.encrypted_credentials = reconnect_result["encrypted_credentials"]
 
+            if timeout is not None:
+                mcp_provider.timeout = timeout
+            if sse_read_timeout is not None:
+                mcp_provider.sse_read_timeout = sse_read_timeout
             db.session.commit()
         except IntegrityError as e:
             db.session.rollback()

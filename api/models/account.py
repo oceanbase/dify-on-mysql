@@ -3,14 +3,15 @@ import json
 from datetime import datetime
 from typing import Optional, cast
 
+import sqlalchemy as sa
 from flask_login import UserMixin  # type: ignore
-from sqlalchemy import func
+from sqlalchemy import DateTime, String, func, select
 from sqlalchemy.orm import Mapped, mapped_column, reconstructor
 
 from models.base import Base
 
 from .engine import db
-from .types import StringUUID, adjusted_array, adjusted_text, uuid_default, varchar_default
+from .types import StringUUID, adjusted_text, uuid_default, varchar_default, adjusted_array
 
 
 class TenantAccountRole(enum.StrEnum):
@@ -83,26 +84,26 @@ class AccountStatus(enum.StrEnum):
 
 class Account(UserMixin, Base):
     __tablename__ = "accounts"
-    __table_args__ = (db.PrimaryKeyConstraint("id", name="account_pkey"), db.Index("account_email_idx", "email"))
+    __table_args__ = (sa.PrimaryKeyConstraint("id", name="account_pkey"), sa.Index("account_email_idx", "email"))
 
     id: Mapped[str] = mapped_column(StringUUID, **uuid_default())
-    name: Mapped[str] = mapped_column(db.String(255))
-    email: Mapped[str] = mapped_column(db.String(255))
-    password: Mapped[Optional[str]] = mapped_column(db.String(255))
-    password_salt: Mapped[Optional[str]] = mapped_column(db.String(255))
-    avatar: Mapped[Optional[str]] = mapped_column(db.String(255), nullable=True)
-    interface_language: Mapped[Optional[str]] = mapped_column(db.String(255))
-    interface_theme: Mapped[Optional[str]] = mapped_column(db.String(255), nullable=True)
-    timezone: Mapped[Optional[str]] = mapped_column(db.String(255))
-    last_login_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime, nullable=True)
-    last_login_ip: Mapped[Optional[str]] = mapped_column(db.String(255), nullable=True)
+    name: Mapped[str] = mapped_column(String(255))
+    email: Mapped[str] = mapped_column(String(255))
+    password: Mapped[Optional[str]] = mapped_column(String(255))
+    password_salt: Mapped[Optional[str]] = mapped_column(String(255))
+    avatar: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    interface_language: Mapped[Optional[str]] = mapped_column(String(255))
+    interface_theme: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    timezone: Mapped[Optional[str]] = mapped_column(String(255))
+    last_login_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    last_login_ip: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     last_active_at: Mapped[datetime] = mapped_column(
         db.DateTime, server_default=func.current_timestamp(), nullable=False
     )
-    status: Mapped[str] = mapped_column(db.String(16), **varchar_default("active"))
-    initialized_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(db.DateTime, server_default=func.current_timestamp(), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(db.DateTime, server_default=func.current_timestamp(), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), **varchar_default("active"))
+    initialized_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.current_timestamp(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.current_timestamp(), nullable=False)
 
     @reconstructor
     def init_on_load(self):
@@ -119,7 +120,7 @@ class Account(UserMixin, Base):
 
     @current_tenant.setter
     def current_tenant(self, tenant: "Tenant"):
-        ta = db.session.query(TenantAccountJoin).filter_by(tenant_id=tenant.id, account_id=self.id).first()
+        ta = db.session.scalar(select(TenantAccountJoin).filter_by(tenant_id=tenant.id, account_id=self.id).limit(1))
         if ta:
             self.role = TenantAccountRole(ta.role)
             self._current_tenant = tenant
@@ -135,9 +136,9 @@ class Account(UserMixin, Base):
             tuple[Tenant, TenantAccountJoin],
             (
                 db.session.query(Tenant, TenantAccountJoin)
-                .filter(Tenant.id == tenant_id)
-                .filter(TenantAccountJoin.tenant_id == Tenant.id)
-                .filter(TenantAccountJoin.account_id == self.id)
+                .where(Tenant.id == tenant_id)
+                .where(TenantAccountJoin.tenant_id == Tenant.id)
+                .where(TenantAccountJoin.account_id == self.id)
                 .one_or_none()
             ),
         )
@@ -161,11 +162,11 @@ class Account(UserMixin, Base):
     def get_by_openid(cls, provider: str, open_id: str):
         account_integrate = (
             db.session.query(AccountIntegrate)
-            .filter(AccountIntegrate.provider == provider, AccountIntegrate.open_id == open_id)
+            .where(AccountIntegrate.provider == provider, AccountIntegrate.open_id == open_id)
             .one_or_none()
         )
         if account_integrate:
-            return db.session.query(Account).filter(Account.id == account_integrate.account_id).one_or_none()
+            return db.session.query(Account).where(Account.id == account_integrate.account_id).one_or_none()
         return None
 
     # check current_user.current_tenant.current_role in ['admin', 'owner']
@@ -197,13 +198,13 @@ class TenantStatus(enum.StrEnum):
 
 class Tenant(Base):
     __tablename__ = "tenants"
-    __table_args__ = (db.PrimaryKeyConstraint("id", name="tenant_pkey"),)
+    __table_args__ = (sa.PrimaryKeyConstraint("id", name="tenant_pkey"),)
 
     id: Mapped[str] = mapped_column(StringUUID, **uuid_default())
-    name: Mapped[str] = mapped_column(db.String(255))
-    encrypt_public_key = db.Column(adjusted_text())
-    plan: Mapped[str] = mapped_column(db.String(255), **varchar_default("basic"))
-    status: Mapped[str] = mapped_column(db.String(255), **varchar_default("normal"))
+    name: Mapped[str] = mapped_column(String(255))
+    encrypt_public_key: Mapped[Optional[str]] = mapped_column(adjusted_text())
+    plan: Mapped[str] = mapped_column(String(255), **varchar_default("basic"))
+    status: Mapped[str] = mapped_column(String(255), **varchar_default("normal"))
     custom_config: Mapped[Optional[str]] = mapped_column(adjusted_text())
     created_at: Mapped[datetime] = mapped_column(db.DateTime, server_default=func.current_timestamp(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(db.DateTime, server_default=func.current_timestamp())
@@ -211,7 +212,7 @@ class Tenant(Base):
     def get_accounts(self) -> list[Account]:
         return (
             db.session.query(Account)
-            .filter(Account.id == TenantAccountJoin.account_id, TenantAccountJoin.tenant_id == self.id)
+            .where(Account.id == TenantAccountJoin.account_id, TenantAccountJoin.tenant_id == self.id)
             .all()
         )
 
@@ -227,56 +228,56 @@ class Tenant(Base):
 class TenantAccountJoin(Base):
     __tablename__ = "tenant_account_joins"
     __table_args__ = (
-        db.PrimaryKeyConstraint("id", name="tenant_account_join_pkey"),
-        db.Index("tenant_account_join_account_id_idx", "account_id"),
-        db.Index("tenant_account_join_tenant_id_idx", "tenant_id"),
-        db.UniqueConstraint("tenant_id", "account_id", name="unique_tenant_account_join"),
+        sa.PrimaryKeyConstraint("id", name="tenant_account_join_pkey"),
+        sa.Index("tenant_account_join_account_id_idx", "account_id"),
+        sa.Index("tenant_account_join_tenant_id_idx", "tenant_id"),
+        sa.UniqueConstraint("tenant_id", "account_id", name="unique_tenant_account_join"),
     )
 
     id: Mapped[str] = mapped_column(StringUUID, **uuid_default())
     tenant_id: Mapped[str] = mapped_column(StringUUID)
     account_id: Mapped[str] = mapped_column(StringUUID)
-    current: Mapped[bool] = mapped_column(db.Boolean, server_default=db.text("false"))
-    role: Mapped[str] = mapped_column(db.String(16), server_default="normal")
+    current: Mapped[bool] = mapped_column(sa.Boolean, server_default=sa.text("false"))
+    role: Mapped[str] = mapped_column(String(16), server_default="normal")
     invited_by: Mapped[Optional[str]] = mapped_column(StringUUID)
-    created_at: Mapped[datetime] = mapped_column(db.DateTime, server_default=func.current_timestamp())
-    updated_at: Mapped[datetime] = mapped_column(db.DateTime, server_default=func.current_timestamp())
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.current_timestamp())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.current_timestamp())
 
 
 class AccountIntegrate(Base):
     __tablename__ = "account_integrates"
     __table_args__ = (
-        db.PrimaryKeyConstraint("id", name="account_integrate_pkey"),
-        db.UniqueConstraint("account_id", "provider", name="unique_account_provider"),
-        db.UniqueConstraint("provider", "open_id", name="unique_provider_open_id"),
+        sa.PrimaryKeyConstraint("id", name="account_integrate_pkey"),
+        sa.UniqueConstraint("account_id", "provider", name="unique_account_provider"),
+        sa.UniqueConstraint("provider", "open_id", name="unique_provider_open_id"),
     )
 
     id: Mapped[str] = mapped_column(StringUUID, **uuid_default())
     account_id: Mapped[str] = mapped_column(StringUUID)
-    provider: Mapped[str] = mapped_column(db.String(16))
-    open_id: Mapped[str] = mapped_column(db.String(255))
-    encrypted_token: Mapped[str] = mapped_column(db.String(255))
-    created_at: Mapped[datetime] = mapped_column(db.DateTime, server_default=func.current_timestamp())
-    updated_at: Mapped[datetime] = mapped_column(db.DateTime, server_default=func.current_timestamp())
+    provider: Mapped[str] = mapped_column(String(16))
+    open_id: Mapped[str] = mapped_column(String(255))
+    encrypted_token: Mapped[str] = mapped_column(String(255))
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.current_timestamp())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.current_timestamp())
 
 
 class InvitationCode(Base):
     __tablename__ = "invitation_codes"
     __table_args__ = (
-        db.PrimaryKeyConstraint("id", name="invitation_code_pkey"),
-        db.Index("invitation_codes_batch_idx", "batch"),
-        db.Index("invitation_codes_code_idx", "code", "status"),
+        sa.PrimaryKeyConstraint("id", name="invitation_code_pkey"),
+        sa.Index("invitation_codes_batch_idx", "batch"),
+        sa.Index("invitation_codes_code_idx", "code", "status"),
     )
 
-    id: Mapped[int] = mapped_column(db.Integer)
-    batch: Mapped[str] = mapped_column(db.String(255))
-    code: Mapped[str] = mapped_column(db.String(32))
-    status: Mapped[str] = mapped_column(db.String(16), **varchar_default("unused"))
+    id: Mapped[int] = mapped_column(sa.Integer)
+    batch: Mapped[str] = mapped_column(String(255))
+    code: Mapped[str] = mapped_column(String(32))
+    status: Mapped[str] = mapped_column(String(16), **varchar_default("unused"))
     used_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime)
     used_by_tenant_id: Mapped[Optional[str]] = mapped_column(StringUUID)
     used_by_account_id: Mapped[Optional[str]] = mapped_column(StringUUID)
-    deprecated_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(db.DateTime, server_default=db.text("CURRENT_TIMESTAMP(0)"))
+    deprecated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=sa.text("CURRENT_TIMESTAMP(0)"))
 
 
 class TenantPluginPermission(Base):
@@ -292,16 +293,14 @@ class TenantPluginPermission(Base):
 
     __tablename__ = "account_plugin_permissions"
     __table_args__ = (
-        db.PrimaryKeyConstraint("id", name="account_plugin_permission_pkey"),
-        db.UniqueConstraint("tenant_id", name="unique_tenant_plugin"),
+        sa.PrimaryKeyConstraint("id", name="account_plugin_permission_pkey"),
+        sa.UniqueConstraint("tenant_id", name="unique_tenant_plugin"),
     )
 
     id: Mapped[str] = mapped_column(StringUUID, **uuid_default())
     tenant_id: Mapped[str] = mapped_column(StringUUID, nullable=False)
-    install_permission: Mapped[InstallPermission] = mapped_column(
-        db.String(16), nullable=False, server_default="everyone"
-    )
-    debug_permission: Mapped[DebugPermission] = mapped_column(db.String(16), nullable=False, server_default="noone")
+    install_permission: Mapped[InstallPermission] = mapped_column(String(16), nullable=False, server_default="everyone")
+    debug_permission: Mapped[DebugPermission] = mapped_column(String(16), nullable=False, server_default="noone")
 
 
 class TenantPluginAutoUpgradeStrategy(Base):
@@ -317,20 +316,20 @@ class TenantPluginAutoUpgradeStrategy(Base):
 
     __tablename__ = "tenant_plugin_auto_upgrade_strategies"
     __table_args__ = (
-        db.PrimaryKeyConstraint("id", name="tenant_plugin_auto_upgrade_strategy_pkey"),
-        db.UniqueConstraint("tenant_id", name="unique_tenant_plugin_auto_upgrade_strategy"),
+        sa.PrimaryKeyConstraint("id", name="tenant_plugin_auto_upgrade_strategy_pkey"),
+        sa.UniqueConstraint("tenant_id", name="unique_tenant_plugin_auto_upgrade_strategy"),
     )
 
     id: Mapped[str] = mapped_column(StringUUID, **uuid_default())
     tenant_id: Mapped[str] = mapped_column(StringUUID, nullable=False)
-    strategy_setting: Mapped[StrategySetting] = mapped_column(db.String(16), nullable=False, server_default="fix_only")
-    upgrade_time_of_day: Mapped[int] = mapped_column(db.Integer, nullable=False, default=0)  # seconds of the day
-    upgrade_mode: Mapped[UpgradeMode] = mapped_column(db.String(16), nullable=False, server_default="exclude")
+    strategy_setting: Mapped[StrategySetting] = mapped_column(String(16), nullable=False, server_default="fix_only")
+    upgrade_time_of_day: Mapped[int] = mapped_column(sa.Integer, nullable=False, default=0)  # seconds of the day
+    upgrade_mode: Mapped[UpgradeMode] = mapped_column(String(16), nullable=False, server_default="exclude")
     exclude_plugins: Mapped[list[str]] = mapped_column(
-        adjusted_array(db.String(255)), nullable=False
+        adjusted_array(String(255)), nullable=False
     )  # plugin_id (author/name)
     include_plugins: Mapped[list[str]] = mapped_column(
-        adjusted_array(db.String(255)), nullable=False
+        adjusted_array(String(255)), nullable=False
     )  # plugin_id (author/name)
-    created_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
-    updated_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.current_timestamp())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.current_timestamp())

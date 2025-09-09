@@ -64,7 +64,7 @@ const FormInputItem: FC<Props> = ({
   const isSelect = type === FormTypeEnum.select || type === FormTypeEnum.dynamicSelect
   const isAppSelector = type === FormTypeEnum.appSelector
   const isModelSelector = type === FormTypeEnum.modelSelector
-  const showTypeSwitch = isNumber || isObject || isArray
+  const showTypeSwitch = isNumber || isBoolean || isObject || isArray
   const isConstant = varInput?.type === VarKindType.constant || !varInput?.type
   const showVariableSelector = isFile || varInput?.type === VarKindType.variable
 
@@ -164,7 +164,7 @@ const FormInputItem: FC<Props> = ({
       ...value,
       [variable]: {
         ...varInput,
-        ...newValue,
+        value: newValue,
       },
     })
   }
@@ -198,7 +198,7 @@ const FormInputItem: FC<Props> = ({
         <Input
           className='h-8 grow'
           type='number'
-          value={varInput?.value || ''}
+          value={Number.isNaN(varInput?.value) ? '' : varInput?.value}
           onChange={e => handleValueChange(e.target.value)}
           placeholder={placeholder?.[language] || placeholder?.en_US}
         />
@@ -242,7 +242,7 @@ const FormInputItem: FC<Props> = ({
         <AppSelector
           disabled={readOnly}
           scope={scope || 'all'}
-          value={varInput as any}
+          value={varInput?.value}
           onSelect={handleAppOrModelSelect}
         />
       )}
@@ -251,7 +251,7 @@ const FormInputItem: FC<Props> = ({
           popupClassName='!w-[387px]'
           isAdvancedMode
           isInWorkflow
-          value={varInput}
+          value={varInput?.value}
           setModel={handleAppOrModelSelect}
           readonly={readOnly}
           scope={scope}

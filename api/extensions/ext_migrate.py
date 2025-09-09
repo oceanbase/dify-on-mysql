@@ -1,4 +1,5 @@
 from dify_app import DifyApp
+from configs import dify_config
 
 
 def init_app(app: DifyApp):
@@ -6,4 +7,9 @@ def init_app(app: DifyApp):
 
     from extensions.ext_database import db
 
-    flask_migrate.Migrate(app, db)
+    # Migration directory has to be mannually specified since mergeing 1.8.0, 
+    # haven't found why yet
+    if "mysql" in dify_config.SQLALCHEMY_DATABASE_URI_SCHEME:
+        directory="migrations-mysql"
+
+    flask_migrate.Migrate(app, db, directory=directory)

@@ -4,8 +4,8 @@ import math
 from typing import Any
 
 from pydantic import BaseModel, model_validator
-from pyobvector import VECTOR, ObVecClient  # type: ignore
-from sqlalchemy import JSON, Column, String, func
+from pyobvector import VECTOR, FtsIndexParam, FtsParser, ObVecClient, l2_distance  # type: ignore
+from sqlalchemy import JSON, Column, String
 from sqlalchemy.dialects.mysql import LONGTEXT
 
 from configs import dify_config
@@ -151,9 +151,9 @@ class OceanBaseVector(BaseVector):
             ob_full_version = result.fetchone()[0]
             ob_version = ob_full_version.split()[1]
             logger.debug("Current OceanBase version is %s", ob_version)
-            return version.parse(ob_version).base_version >= version.parse("4.3.5.1").base_version
+            return version.parse(ob_version) >= version.parse("4.3.5.1")
         except Exception as e:
-            logger.warning(f"Failed to check OceanBase version: {str(e)}. Disabling hybrid search.")
+            logger.warning("Failed to check OceanBase version: %s. Disabling hybrid search.", str(e))
             return False
 
     def add_texts(self, documents: list[Document], embeddings: list[list[float]], **kwargs):
@@ -235,7 +235,7 @@ class OceanBaseVector(BaseVector):
 
                     return docs
         except Exception as e:
-            logger.warning(f"Failed to fulltext search: {str(e)}.")
+            logger.warning("Failed to fulltext search: %s.", str(e))
             return []
 
     def search_by_vector(self, query_vector: list[float], **kwargs: Any) -> list[Document]:
@@ -258,7 +258,7 @@ class OceanBaseVector(BaseVector):
                 vec_column_name="vector",
                 vec_data=query_vector,
                 topk=topk,
-                distance_func=func.l2_distance,
+                distance_func=l2_distance,
                 output_column_names=["text", "metadata"],
                 with_dist=True,
                 where_clause=_where_clause,

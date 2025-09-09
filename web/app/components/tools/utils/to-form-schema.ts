@@ -8,6 +8,8 @@ export const toType = (type: string) => {
       return 'text-input'
     case 'number':
       return 'number-input'
+    case 'boolean':
+      return 'checkbox'
     default:
       return type
   }
@@ -63,6 +65,16 @@ export const addDefaultValue = (value: Record<string, any>, formSchemas: { varia
     const itemValue = value[formSchema.variable]
     if ((formSchema.default !== undefined) && (value === undefined || itemValue === null || itemValue === '' || itemValue === undefined))
       newValues[formSchema.variable] = formSchema.default
+
+    // Fix: Convert boolean field values to proper boolean type
+    if (formSchema.type === 'boolean' && itemValue !== undefined && itemValue !== null && itemValue !== '') {
+      if (typeof itemValue === 'string')
+        newValues[formSchema.variable] = itemValue === 'true' || itemValue === '1' || itemValue === 'True'
+       else if (typeof itemValue === 'number')
+        newValues[formSchema.variable] = itemValue === 1
+       else if (typeof itemValue === 'boolean')
+        newValues[formSchema.variable] = itemValue
+    }
   })
   return newValues
 }

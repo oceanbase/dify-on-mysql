@@ -21,7 +21,7 @@ import type { Collection, Tool } from '@/app/components/tools/types'
 import { CollectionType } from '@/app/components/tools/types'
 import { fetchBuiltInToolList, fetchCustomToolList, fetchModelToolList, fetchWorkflowToolList } from '@/service/tools'
 import I18n from '@/context/i18n'
-import { getLanguage } from '@/i18n/language'
+import { getLanguage } from '@/i18n-config/language'
 import cn from '@/utils/classnames'
 import type { ToolWithProvider } from '@/app/components/workflow/types'
 import {
@@ -120,6 +120,8 @@ const SettingBuiltInTool: FC<Props> = ({
       return t('tools.setBuiltInTools.number')
     if (type === 'text-input')
       return t('tools.setBuiltInTools.string')
+    if (type === 'checkbox')
+      return 'boolean'
     if (type === 'file')
       return t('tools.setBuiltInTools.file')
     return type

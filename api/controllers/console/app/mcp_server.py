@@ -2,7 +2,7 @@ import json
 from enum import StrEnum
 
 from flask_login import current_user
-from flask_restful import Resource, marshal_with, reqparse
+from flask_restx import Resource, marshal_with, reqparse
 from werkzeug.exceptions import NotFound
 
 from controllers.console import api
@@ -26,7 +26,7 @@ class AppMCPServerController(Resource):
     @get_app_model
     @marshal_with(app_server_fields)
     def get(self, app_model):
-        server = db.session.query(AppMCPServer).filter(AppMCPServer.app_id == app_model.id).first()
+        server = db.session.query(AppMCPServer).where(AppMCPServer.app_id == app_model.id).first()
         return server
 
     @setup_required
@@ -73,7 +73,7 @@ class AppMCPServerController(Resource):
         parser.add_argument("parameters", type=dict, required=True, location="json")
         parser.add_argument("status", type=str, required=False, location="json")
         args = parser.parse_args()
-        server = db.session.query(AppMCPServer).filter(AppMCPServer.id == args["id"]).first()
+        server = db.session.query(AppMCPServer).where(AppMCPServer.id == args["id"]).first()
         if not server:
             raise NotFound()
 
@@ -104,8 +104,8 @@ class AppMCPServerRefreshController(Resource):
             raise NotFound()
         server = (
             db.session.query(AppMCPServer)
-            .filter(AppMCPServer.id == server_id)
-            .filter(AppMCPServer.tenant_id == current_user.current_tenant_id)
+            .where(AppMCPServer.id == server_id)
+            .where(AppMCPServer.tenant_id == current_user.current_tenant_id)
             .first()
         )
         if not server:

@@ -4,7 +4,9 @@ FROM python:3.12-slim-bookworm AS base
 WORKDIR /app/api
 
 # Install uv
-ENV UV_VERSION=0.7.11
+ENV UV_VERSION=0.8.9
+ENV UV_HTTP_TIMEOUT=600
+ENV UV_INDEX=https://pypi.tuna.tsinghua.edu.cn/simple
 
 
 RUN pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple uv==${UV_VERSION}
@@ -40,6 +42,11 @@ EXPOSE 5001
 
 # set timezone
 ENV TZ=UTC
+
+# Set UTF-8 locale
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
+ENV PYTHONIOENCODING=utf-8
 
 WORKDIR /app/api
 

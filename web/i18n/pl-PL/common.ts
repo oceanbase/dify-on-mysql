@@ -60,6 +60,7 @@ const translation = {
     downloadSuccess: 'Pobieranie zakończone.',
     deSelectAll: 'Odznacz wszystkie',
     selectAll: 'Zaznacz wszystkie',
+    config: 'Konfiguracja',
   },
   placeholder: {
     input: 'Proszę wprowadzić',
@@ -243,6 +244,7 @@ const translation = {
       content2: 'Twój aktualny adres email to <email>{{email}}</email>. Kod weryfikacyjny został wysłany na ten adres email.',
       content4: 'Właśnie wysłaliśmy Ci tymczasowy kod weryfikacyjny na <email>{{email}}</email>.',
       authTip: 'Gdy twoje e-mail zostanie zmienione, konta Google lub GitHub powiązane z twoim starym e-mailem nie będą mogły już logować się do tego konta.',
+      unAvailableEmail: 'Ten email jest tymczasowo niedostępny.',
     },
   },
   members: {
@@ -481,6 +483,28 @@ const translation = {
     toBeConfigured: 'Do skonfigurowania',
     configureTip: 'Konfigurowanie klucza interfejsu API lub dodawanie modelu do użycia',
     emptyProviderTitle: 'Dostawca modelu nie jest skonfigurowany',
+    auth: {
+      apiKeyModal: {
+        addModel: 'Dodaj model',
+        title: 'Konfiguracja autoryzacji klucza API',
+        desc: 'Po skonfigurowaniu poświadczeń wszyscy członkowie w przestrzeni roboczej mogą korzystać z tego modelu podczas orkiestracji aplikacji.',
+      },
+      addApiKey: 'Dodaj klucz API',
+      configModel: 'Skonfiguruj model',
+      modelCredentials: 'Uprawnienia modelu',
+      configLoadBalancing: 'Konfiguracja równoważenia obciążenia',
+      unAuthorized: 'Nieautoryzowany',
+      specifyModelCredentialTip: 'Użyj skonfigurowanych poświadczeń modelu.',
+      addCredential: 'Dodaj dane uwierzytelniające',
+      providerManagedTip: 'Bieżąca konfiguracja jest hostowana przez dostawcę.',
+      specifyModelCredential: 'Określ dane uwierzytelniające modelu',
+      authorizationError: 'Błąd autoryzacji',
+      apiKeys: 'Klucze API',
+      providerManaged: 'Zarządzane przez dostawcę',
+      addNewModel: 'Dodaj nowy model',
+      authRemoved: 'Autoryzacja usunięta',
+      addModelCredential: 'Dodaj dane uwierzytelniające modelu',
+    },
   },
   dataSource: {
     add: 'Dodaj źródło danych',
@@ -733,6 +757,10 @@ const translation = {
     supportedFormats: 'Obsługuje PNG, JPG, JPEG, WEBP i GIF',
   },
   you: 'Ty',
+  avatar: {
+    deleteTitle: 'Usuń awatar',
+    deleteDescription: 'Czy na pewno chcesz usunąć swoje zdjęcie profilowe? Twoje konto będzie używać domyślnego, początkowego awatara.',
+  },
 }
 
 export default translation
