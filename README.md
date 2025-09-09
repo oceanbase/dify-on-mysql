@@ -39,6 +39,13 @@ This repository is available under the [Dify Open Source License](LICENSE), whic
 # Development 
 
 ## Database Migration
+
+Note that knowledge of using Alembic is REQUIRED
+
+Deply a MySQL instance locall and configue environment variables under `api`
+
+then,
+
 ```
 cd api
 ```

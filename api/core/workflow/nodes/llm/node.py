@@ -3,7 +3,7 @@ import io
 import json
 import logging
 from collections.abc import Generator, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from core.app.entities.app_invoke_entities import ModelConfigWithCredentialsEntity
 from core.file import FileType, file_manager
@@ -33,12 +33,10 @@ from core.model_runtime.entities.message_entities import (
     UserPromptMessage,
 )
 from core.model_runtime.entities.model_entities import (
-    AIModelEntity,
     ModelFeature,
     ModelPropertyKey,
     ModelType,
 )
-from core.model_runtime.model_providers.__base.large_language_model import LargeLanguageModel
 from core.model_runtime.utils.encoders import jsonable_encoder
 from core.prompt.entities.advanced_prompt_entities import CompletionModelPromptTemplate, MemoryConfig
 from core.prompt.utils.prompt_message_util import PromptMessageUtil
@@ -57,7 +55,6 @@ from core.workflow.entities.variable_entities import VariableSelector
 from core.workflow.entities.variable_pool import VariablePool
 from core.workflow.entities.workflow_node_execution import WorkflowNodeExecutionMetadataKey, WorkflowNodeExecutionStatus
 from core.workflow.enums import SystemVariableKey
-from core.workflow.graph_engine.entities.event import InNodeEvent
 from core.workflow.nodes.base import BaseNode
 from core.workflow.nodes.base.entities import BaseNodeData, RetryConfig
 from core.workflow.nodes.enums import ErrorStrategy, NodeType
@@ -92,6 +89,7 @@ from .file_saver import FileSaverImpl, LLMFileSaver
 if TYPE_CHECKING:
     from core.file.models import File
     from core.workflow.graph_engine import Graph, GraphInitParams, GraphRuntimeState
+    from core.workflow.graph_engine.entities.event import InNodeEvent
 
 logger = logging.getLogger(__name__)
 
@@ -163,7 +161,7 @@ class LLMNode(BaseNode):
     def version(cls) -> str:
         return "1"
 
-    def _run(self) -> Generator[NodeEvent | InNodeEvent, None, None]:
+    def _run(self) -> Generator[Union[NodeEvent, "InNodeEvent"], None, None]:
         node_inputs: Optional[dict[str, Any]] = None
         process_data = None
         result_text = ""
@@ -739,7 +737,7 @@ class LLMNode(BaseNode):
                 and isinstance(prompt_messages[-1], UserPromptMessage)
                 and isinstance(prompt_messages[-1].content, list)
             ):
-                prompt_messages[-1] = UserPromptMessage(content=prompt_messages[-1].content + file_prompts)
+                prompt_messages[-1] = UserPromptMessage(content=file_prompts + prompt_messages[-1].content)
             else:
                 prompt_messages.append(UserPromptMessage(content=file_prompts))
 
@@ -1005,21 +1003,6 @@ class LLMNode(BaseNode):
                 file_type=FileType.IMAGE,
             )
         return saved_file
-
-    def _fetch_model_schema(self, provider: str) -> AIModelEntity | None:
-        """
-        Fetch model schema
-        """
-        model_name = self._node_data.model.name
-        model_manager = ModelManager()
-        model_instance = model_manager.get_model_instance(
-            tenant_id=self.tenant_id, model_type=ModelType.LLM, provider=provider, model=model_name
-        )
-        model_type_instance = model_instance.model_type_instance
-        model_type_instance = cast(LargeLanguageModel, model_type_instance)
-        model_credentials = model_instance.credentials
-        model_schema = model_type_instance.get_model_schema(model_name, model_credentials)
-        return model_schema
 
     @staticmethod
     def fetch_structured_output_schema(

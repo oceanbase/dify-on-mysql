@@ -1,5 +1,6 @@
 import json
 import logging
+import math
 from typing import Any, Optional
 
 import tablestore  # type: ignore
@@ -16,12 +17,15 @@ from core.rag.models.document import Document
 from extensions.ext_redis import redis_client
 from models import Dataset
 
+logger = logging.getLogger(__name__)
+
 
 class TableStoreConfig(BaseModel):
     access_key_id: Optional[str] = None
     access_key_secret: Optional[str] = None
     instance_name: Optional[str] = None
     endpoint: Optional[str] = None
+    normalize_full_text_bm25_score: Optional[bool] = False
 
     @model_validator(mode="before")
     @classmethod
@@ -47,6 +51,7 @@ class TableStoreVector(BaseVector):
             config.access_key_secret,
             config.instance_name,
         )
+        self._normalize_full_text_bm25_score = config.normalize_full_text_bm25_score
         self._table_name = f"{collection_name}"
         self._index_name = f"{collection_name}_idx"
         self._tags_field = f"{Field.METADATA_KEY.value}_tags"
@@ -131,8 +136,8 @@ class TableStoreVector(BaseVector):
         filtered_list = None
         if document_ids_filter:
             filtered_list = ["document_id=" + item for item in document_ids_filter]
-
-        return self._search_by_full_text(query, filtered_list, top_k)
+        score_threshold = float(kwargs.get("score_threshold") or 0.0)
+        return self._search_by_full_text(query, filtered_list, top_k, score_threshold)
 
     def delete(self) -> None:
         self._delete_table_if_exist()
@@ -142,7 +147,7 @@ class TableStoreVector(BaseVector):
         with redis_client.lock(lock_name, timeout=20):
             collection_exist_cache_key = f"vector_indexing_{self._collection_name}"
             if redis_client.get(collection_exist_cache_key):
-                logging.info(f"Collection {self._collection_name} already exists.")
+                logger.info("Collection %s already exists.", self._collection_name)
                 return
 
             self._create_table_if_not_exist()
@@ -152,7 +157,7 @@ class TableStoreVector(BaseVector):
     def _create_table_if_not_exist(self) -> None:
         table_list = self._tablestore_client.list_table()
         if self._table_name in table_list:
-            logging.info("Tablestore system table[%s] already exists", self._table_name)
+            logger.info("Tablestore system table[%s] already exists", self._table_name)
             return None
 
         schema_of_primary_key = [("id", "STRING")]
@@ -160,12 +165,12 @@ class TableStoreVector(BaseVector):
         table_options = tablestore.TableOptions()
         reserved_throughput = tablestore.ReservedThroughput(tablestore.CapacityUnit(0, 0))
         self._tablestore_client.create_table(table_meta, table_options, reserved_throughput)
-        logging.info("Tablestore create table[%s] successfully.", self._table_name)
+        logger.info("Tablestore create table[%s] successfully.", self._table_name)
 
     def _create_search_index_if_not_exist(self, dimension: int) -> None:
         search_index_list = self._tablestore_client.list_search_index(table_name=self._table_name)
         if self._index_name in [t[1] for t in search_index_list]:
-            logging.info("Tablestore system index[%s] already exists", self._index_name)
+            logger.info("Tablestore system index[%s] already exists", self._index_name)
             return None
 
         field_schemas = [
@@ -203,20 +208,20 @@ class TableStoreVector(BaseVector):
 
         index_meta = tablestore.SearchIndexMeta(field_schemas)
         self._tablestore_client.create_search_index(self._table_name, self._index_name, index_meta)
-        logging.info("Tablestore create system index[%s] successfully.", self._index_name)
+        logger.info("Tablestore create system index[%s] successfully.", self._index_name)
 
     def _delete_table_if_exist(self):
         search_index_list = self._tablestore_client.list_search_index(table_name=self._table_name)
         for resp_tuple in search_index_list:
             self._tablestore_client.delete_search_index(resp_tuple[0], resp_tuple[1])
-            logging.info("Tablestore delete index[%s] successfully.", self._index_name)
+            logger.info("Tablestore delete index[%s] successfully.", self._index_name)
 
         self._tablestore_client.delete_table(self._table_name)
-        logging.info("Tablestore delete system table[%s] successfully.", self._index_name)
+        logger.info("Tablestore delete system table[%s] successfully.", self._index_name)
 
     def _delete_search_index(self) -> None:
         self._tablestore_client.delete_search_index(self._table_name, self._index_name)
-        logging.info("Tablestore delete index[%s] successfully.", self._index_name)
+        logger.info("Tablestore delete index[%s] successfully.", self._index_name)
 
     def _write_row(self, primary_key: str, attributes: dict[str, Any]) -> None:
         pk = [("id", primary_key)]
@@ -296,20 +301,42 @@ class TableStoreVector(BaseVector):
         documents = []
         for search_hit in search_response.search_hits:
             if search_hit.score > score_threshold:
-                metadata = json.loads(search_hit.row[1][0][1])
+                ots_column_map = {}
+                for col in search_hit.row[1]:
+                    ots_column_map[col[0]] = col[1]
+
+                vector_str = ots_column_map.get(Field.VECTOR.value)
+                metadata_str = ots_column_map.get(Field.METADATA_KEY.value)
+
+                vector = json.loads(vector_str) if vector_str else None
+                metadata = json.loads(metadata_str) if metadata_str else {}
+
                 metadata["score"] = search_hit.score
+
                 documents.append(
                     Document(
-                        page_content=search_hit.row[1][2][1],
-                        vector=json.loads(search_hit.row[1][3][1]),
+                        page_content=ots_column_map.get(Field.CONTENT_KEY.value) or "",
+                        vector=vector,
                         metadata=metadata,
                     )
                 )
         documents = sorted(documents, key=lambda x: x.metadata["score"] if x.metadata else 0, reverse=True)
         return documents
 
-    def _search_by_full_text(self, query: str, document_ids_filter: list[str] | None, top_k: int) -> list[Document]:
-        bool_query = tablestore.BoolQuery()
+    @staticmethod
+    def _normalize_score_exp_decay(score: float, k: float = 0.15) -> float:
+        """
+        Args:
+            score: BM25 search score.
+            k: decay factor, the larger the k, the steeper the low score end
+        """
+        normalized_score = 1 - math.exp(-k * score)
+        return max(0.0, min(1.0, normalized_score))
+
+    def _search_by_full_text(
+        self, query: str, document_ids_filter: list[str] | None, top_k: int, score_threshold: float
+    ) -> list[Document]:
+        bool_query = tablestore.BoolQuery(must_queries=[], filter_queries=[], should_queries=[], must_not_queries=[])
         bool_query.must_queries.append(tablestore.MatchQuery(text=query, field_name=Field.CONTENT_KEY.value))
 
         if document_ids_filter:
@@ -329,13 +356,36 @@ class TableStoreVector(BaseVector):
 
         documents = []
         for search_hit in search_response.search_hits:
+            score = None
+            if self._normalize_full_text_bm25_score:
+                score = self._normalize_score_exp_decay(search_hit.score)
+
+            # skip when score is below threshold and use normalize score
+            if score and score <= score_threshold:
+                continue
+
+            ots_column_map = {}
+            for col in search_hit.row[1]:
+                ots_column_map[col[0]] = col[1]
+
+            metadata_str = ots_column_map.get(Field.METADATA_KEY.value)
+            metadata = json.loads(metadata_str) if metadata_str else {}
+
+            vector_str = ots_column_map.get(Field.VECTOR.value)
+            vector = json.loads(vector_str) if vector_str else None
+
+            if score:
+                metadata["score"] = score
+
             documents.append(
                 Document(
-                    page_content=search_hit.row[1][2][1],
-                    vector=json.loads(search_hit.row[1][3][1]),
-                    metadata=json.loads(search_hit.row[1][0][1]),
+                    page_content=ots_column_map.get(Field.CONTENT_KEY.value) or "",
+                    vector=vector,
+                    metadata=metadata,
                 )
             )
+        if self._normalize_full_text_bm25_score:
+            documents = sorted(documents, key=lambda x: x.metadata["score"] if x.metadata else 0, reverse=True)
         return documents
 
 
@@ -356,5 +406,6 @@ class TableStoreVectorFactory(AbstractVectorFactory):
                 instance_name=dify_config.TABLESTORE_INSTANCE_NAME,
                 access_key_id=dify_config.TABLESTORE_ACCESS_KEY_ID,
                 access_key_secret=dify_config.TABLESTORE_ACCESS_KEY_SECRET,
+                normalize_full_text_bm25_score=dify_config.TABLESTORE_NORMALIZE_FULLTEXT_BM25_SCORE,
             ),
         )

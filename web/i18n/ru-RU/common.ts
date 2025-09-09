@@ -60,6 +60,7 @@ const translation = {
     downloadSuccess: 'Загрузка завершена.',
     selectAll: 'Выбрать все',
     deSelectAll: 'Снять выделение со всех',
+    config: 'Конфигурация',
   },
   errorMsg: {
     fieldRequired: '{{field}} обязательно',
@@ -241,6 +242,7 @@ const translation = {
       content3: 'Введите новый адрес электронной почты, и мы отправим вам код подтверждения.',
       content1: 'Если вы продолжите, мы отправим код подтверждения на <email>{{email}}</email> для повторной аутентификации.',
       authTip: 'После изменения вашего адреса электронной почты учетные записи Google или GitHub, связанные с вашим старым адресом, больше не смогут войти в эту учетную запись.',
+      unAvailableEmail: 'Этот email временно недоступен.',
     },
   },
   members: {
@@ -472,6 +474,28 @@ const translation = {
     emptyProviderTip: 'Сначала установите поставщик модели.',
     discoverMore: 'Узнайте больше в',
     installProvider: 'Установка поставщиков моделей',
+    auth: {
+      apiKeyModal: {
+        addModel: 'Добавить модель',
+        title: 'Конфигурация авторизации ключа API',
+        desc: 'После настройки учетных данных все члены рабочей области могут использовать эту модель при оркестрации приложений.',
+      },
+      authRemoved: 'Удалена аутентификация',
+      addApiKey: 'Добавьте API-ключ',
+      addCredential: 'Добавить учетные данные',
+      apiKeys: 'API ключи',
+      authorizationError: 'Ошибка авторизации',
+      modelCredentials: 'Учетные данные модели',
+      configModel: 'Настройка модели',
+      providerManaged: 'Управляемый провайдером',
+      unAuthorized: 'Неавторизованный',
+      specifyModelCredential: 'Укажите учетные данные модели',
+      addNewModel: 'Добавить новую модель',
+      addModelCredential: 'Добавить учетные данные модели',
+      configLoadBalancing: 'Конфигурация балансировки нагрузки',
+      providerManagedTip: 'Текущая конфигурация размещена у провайдера.',
+      specifyModelCredentialTip: 'Используйте конфигурированные учетные данные модели.',
+    },
   },
   dataSource: {
     add: 'Добавить источник данных',
@@ -715,6 +739,10 @@ const translation = {
     supportedFormats: 'Поддерживает PNG, JPG, JPEG, WEBP и GIF',
   },
   you: 'Ты',
+  avatar: {
+    deleteTitle: 'Удалить аватар',
+    deleteDescription: 'Вы уверены, что хотите удалить свою фотографию профиля? Ваш аккаунт будет использовать стандартный аватар.',
+  },
 }
 
 export default translation
