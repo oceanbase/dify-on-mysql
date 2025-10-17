@@ -11,6 +11,10 @@ import models as models
 import sqlalchemy as sa
 from sqlalchemy.sql import table, column
 
+
+def _is_pg(conn):
+    return conn.dialect.name == "postgresql"
+
 # revision identifiers, used by Alembic.
 revision = 'e8446f481c1e'
 down_revision = 'fa8b0fa6f407'
@@ -20,16 +24,32 @@ depends_on = None
 
 def upgrade():
     # Create provider_credentials table
-    op.create_table('provider_credentials',
-    sa.Column('id', models.types.StringUUID(), server_default=sa.text('uuidv7()'), nullable=False),
-    sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
-    sa.Column('provider_name', sa.String(length=255), nullable=False),
-    sa.Column('credential_name', sa.String(length=255), nullable=False),
-    sa.Column('encrypted_config', sa.Text(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
-    sa.PrimaryKeyConstraint('id', name='provider_credential_pkey')
-    )
+    conn = op.get_bind()
+    
+    if _is_pg(conn):
+        # PostgreSQL: Keep original syntax
+        op.create_table('provider_credentials',
+        sa.Column('id', models.types.StringUUID(), server_default=sa.text('uuidv7()'), nullable=False),
+        sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
+        sa.Column('provider_name', sa.String(length=255), nullable=False),
+        sa.Column('credential_name', sa.String(length=255), nullable=False),
+        sa.Column('encrypted_config', sa.Text(), nullable=False),
+        sa.Column('created_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
+        sa.Column('updated_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
+        sa.PrimaryKeyConstraint('id', name='provider_credential_pkey')
+        )
+    else:
+        # MySQL: Use compatible syntax
+        op.create_table('provider_credentials',
+        sa.Column('id', models.types.StringUUID(), default=lambda: str(uuidv7()), nullable=False),
+        sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
+        sa.Column('provider_name', sa.String(length=255), nullable=False),
+        sa.Column('credential_name', sa.String(length=255), nullable=False),
+        sa.Column('encrypted_config', sa.Text(), nullable=False),
+        sa.Column('created_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
+        sa.Column('updated_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
+        sa.PrimaryKeyConstraint('id', name='provider_credential_pkey')
+        )
 
     # Create index for provider_credentials
     with op.batch_alter_table('provider_credentials', schema=None) as batch_op:
