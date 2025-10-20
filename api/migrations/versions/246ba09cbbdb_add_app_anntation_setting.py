@@ -28,7 +28,6 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('app_annotation_settings',
         sa.Column('id', postgresql.UUID(), server_default=sa.text('uuid_generate_v4()'), nullable=False),
         sa.Column('app_id', postgresql.UUID(), nullable=False),
@@ -41,7 +40,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name='app_annotation_settings_pkey')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('app_annotation_settings',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuid4()), nullable=False),
         sa.Column('app_id', models.types.StringUUID(), nullable=False),

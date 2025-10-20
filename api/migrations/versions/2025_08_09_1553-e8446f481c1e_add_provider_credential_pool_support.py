@@ -27,7 +27,6 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('provider_credentials',
         sa.Column('id', models.types.StringUUID(), server_default=sa.text('uuidv7()'), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
@@ -39,7 +38,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name='provider_credential_pkey')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('provider_credentials',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuidv7()), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),

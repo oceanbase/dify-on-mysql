@@ -39,7 +39,6 @@ def downgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table(
             'tracing_app_configs',
             sa.Column('id', postgresql.UUID(), server_default=sa.text('uuid_generate_v4()'), nullable=False),
@@ -55,13 +54,12 @@ def downgrade():
             sa.PrimaryKeyConstraint('id', name='tracing_app_config_pkey')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table(
             'tracing_app_configs',
             sa.Column('id', models.types.StringUUID(), default=lambda: str(uuid4()), nullable=False),
             sa.Column('app_id', models.types.StringUUID(), nullable=False),
             sa.Column('tracing_provider', sa.String(length=255), nullable=True),
-            sa.Column('tracing_config', postgresql.JSON(astext_type=sa.Text()), nullable=True),  # Keep as-is for Phase 1
+            sa.Column('tracing_config', sa.JSON(), nullable=True),
             sa.Column(
                 'created_at', sa.TIMESTAMP(), server_default=sa.func.now(), autoincrement=False, nullable=False
             ),

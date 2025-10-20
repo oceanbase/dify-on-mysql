@@ -28,7 +28,6 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('dataset_collection_bindings',
         sa.Column('id', postgresql.UUID(), server_default=sa.text('uuid_generate_v4()'), nullable=False),
         sa.Column('provider_name', sa.String(length=40), nullable=False),
@@ -38,7 +37,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name='dataset_collection_bindings_pkey')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('dataset_collection_bindings',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuid4()), nullable=False),
         sa.Column('provider_name', sa.String(length=40), nullable=False),
@@ -52,11 +50,9 @@ def upgrade():
         batch_op.create_index('provider_model_name_idx', ['provider_name', 'model_name'], unique=False)
 
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('datasets', schema=None) as batch_op:
             batch_op.add_column(sa.Column('collection_binding_id', postgresql.UUID(), nullable=True))
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('datasets', schema=None) as batch_op:
             batch_op.add_column(sa.Column('collection_binding_id', models.types.StringUUID(), nullable=True))
 

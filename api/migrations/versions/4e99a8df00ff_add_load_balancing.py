@@ -27,7 +27,6 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('load_balancing_model_configs',
         sa.Column('id', models.types.StringUUID(), server_default=sa.text('uuid_generate_v4()'), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
@@ -42,7 +41,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name='load_balancing_model_config_pkey')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('load_balancing_model_configs',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuid4()), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
@@ -61,7 +59,6 @@ def upgrade():
         batch_op.create_index('load_balancing_model_config_tenant_provider_model_idx', ['tenant_id', 'provider_name', 'model_type'], unique=False)
 
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('provider_model_settings',
         sa.Column('id', models.types.StringUUID(), server_default=sa.text('uuid_generate_v4()'), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
@@ -75,7 +72,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name='provider_model_setting_pkey')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('provider_model_settings',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuid4()), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),

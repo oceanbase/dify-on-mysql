@@ -27,7 +27,6 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('datasource_oauth_params',
         sa.Column('id', models.types.StringUUID(), server_default=sa.text('uuidv7()'), nullable=False),
         sa.Column('plugin_id', sa.String(length=255), nullable=False),
@@ -37,17 +36,15 @@ def upgrade():
         sa.UniqueConstraint('plugin_id', 'provider', name='datasource_oauth_config_datasource_id_provider_idx')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('datasource_oauth_params',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuidv7()), nullable=False),
         sa.Column('plugin_id', sa.String(length=255), nullable=False),
         sa.Column('provider', sa.String(length=255), nullable=False),
-        sa.Column('system_credentials', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+        sa.Column('system_credentials', sa.JSON(), nullable=False),
         sa.PrimaryKeyConstraint('id', name='datasource_oauth_config_pkey'),
         sa.UniqueConstraint('plugin_id', 'provider', name='datasource_oauth_config_datasource_id_provider_idx')
         )
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('datasource_oauth_tenant_params',
         sa.Column('id', models.types.StringUUID(), server_default=sa.text('uuidv7()'), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
@@ -61,13 +58,12 @@ def upgrade():
         sa.UniqueConstraint('tenant_id', 'plugin_id', 'provider', name='datasource_oauth_tenant_config_unique')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('datasource_oauth_tenant_params',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuidv7()), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
         sa.Column('provider', sa.String(length=255), nullable=False),
         sa.Column('plugin_id', sa.String(length=255), nullable=False),
-        sa.Column('client_params', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+        sa.Column('client_params', sa.JSON(), nullable=False),
         sa.Column('enabled', sa.Boolean(), nullable=False),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
         sa.Column('updated_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
@@ -75,7 +71,6 @@ def upgrade():
         sa.UniqueConstraint('tenant_id', 'plugin_id', 'provider', name='datasource_oauth_tenant_config_unique')
         )
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('datasource_providers',
         sa.Column('id', models.types.StringUUID(), server_default=sa.text('uuidv7()'), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
@@ -93,7 +88,6 @@ def upgrade():
         sa.UniqueConstraint('tenant_id', 'plugin_id', 'provider', 'name', name='datasource_provider_unique_name')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('datasource_providers',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuidv7()), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
@@ -101,7 +95,7 @@ def upgrade():
         sa.Column('provider', sa.String(length=255), nullable=False),
         sa.Column('plugin_id', sa.String(length=255), nullable=False),
         sa.Column('auth_type', sa.String(length=255), nullable=False),
-        sa.Column('encrypted_credentials', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+        sa.Column('encrypted_credentials', sa.JSON(), nullable=False),
         sa.Column('avatar_url', sa.Text(), nullable=True),
         sa.Column('is_default', sa.Boolean(), server_default=sa.text('false'), nullable=False),
         sa.Column('expires_at', sa.Integer(), server_default='-1', nullable=False),
@@ -114,7 +108,6 @@ def upgrade():
         batch_op.create_index('datasource_provider_auth_type_provider_idx', ['tenant_id', 'plugin_id', 'provider'], unique=False)
 
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('document_pipeline_execution_logs',
         sa.Column('id', models.types.StringUUID(), server_default=sa.text('uuidv7()'), nullable=False),
         sa.Column('pipeline_id', models.types.StringUUID(), nullable=False),
@@ -128,7 +121,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name='document_pipeline_execution_log_pkey')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('document_pipeline_execution_logs',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuidv7()), nullable=False),
         sa.Column('pipeline_id', models.types.StringUUID(), nullable=False),
@@ -145,7 +137,6 @@ def upgrade():
         batch_op.create_index('document_pipeline_execution_logs_document_id_idx', ['document_id'], unique=False)
 
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('pipeline_built_in_templates',
         sa.Column('id', models.types.StringUUID(), server_default=sa.text('uuidv7()'), nullable=False),
         sa.Column('name', sa.String(length=255), nullable=False),
@@ -165,7 +156,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name='pipeline_built_in_template_pkey')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('pipeline_built_in_templates',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuidv7()), nullable=False),
         sa.Column('name', sa.String(length=255), nullable=False),
@@ -185,7 +175,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name='pipeline_built_in_template_pkey')
         )
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('pipeline_customized_templates',
         sa.Column('id', models.types.StringUUID(), server_default=sa.text('uuidv7()'), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
@@ -226,7 +215,6 @@ def upgrade():
         batch_op.create_index('pipeline_customized_template_tenant_idx', ['tenant_id'], unique=False)
 
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('pipeline_recommended_plugins',
         sa.Column('id', models.types.StringUUID(), server_default=sa.text('uuidv7()'), nullable=False),
         sa.Column('plugin_id', sa.Text(), nullable=False),
@@ -238,7 +226,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name='pipeline_recommended_plugin_pkey')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('pipeline_recommended_plugins',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuidv7()), nullable=False),
         sa.Column('plugin_id', sa.Text(), nullable=False),
@@ -250,7 +237,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name='pipeline_recommended_plugin_pkey')
         )
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('pipelines',
         sa.Column('id', models.types.StringUUID(), server_default=sa.text('uuidv7()'), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
@@ -266,7 +252,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name='pipeline_pkey')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('pipelines',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuidv7()), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
@@ -282,7 +267,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name='pipeline_pkey')
         )
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('workflow_draft_variable_files',
         sa.Column('id', models.types.StringUUID(), server_default=sa.text('uuidv7()'), nullable=False),
         sa.Column('created_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
@@ -296,7 +280,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name=op.f('workflow_draft_variable_files_pkey'))
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('workflow_draft_variable_files',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuidv7()), nullable=False),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
@@ -310,7 +293,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name=op.f('workflow_draft_variable_files_pkey'))
         )
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('workflow_node_execution_offload',
         sa.Column('id', models.types.StringUUID(), server_default=sa.text('uuidv7()'), nullable=False),
         sa.Column('created_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
@@ -323,7 +305,6 @@ def upgrade():
         sa.UniqueConstraint('node_execution_id', 'type', name=op.f('workflow_node_execution_offload_node_execution_id_key'))
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('workflow_node_execution_offload',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuidv7()), nullable=False),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
@@ -336,7 +317,6 @@ def upgrade():
         sa.UniqueConstraint('node_execution_id', 'type', name=op.f('workflow_node_execution_offload_node_execution_id_key'))
         )
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('datasets', schema=None) as batch_op:
             batch_op.add_column(sa.Column('keyword_number', sa.Integer(), server_default=sa.text('10'), nullable=True))
             batch_op.add_column(sa.Column('icon_info', postgresql.JSONB(astext_type=sa.Text()), nullable=True))
@@ -345,10 +325,9 @@ def upgrade():
             batch_op.add_column(sa.Column('chunk_structure', sa.String(length=255), nullable=True))
             batch_op.add_column(sa.Column('enable_api', sa.Boolean(), server_default=sa.text('true'), nullable=False))
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('datasets', schema=None) as batch_op:
             batch_op.add_column(sa.Column('keyword_number', sa.Integer(), server_default=sa.text('10'), nullable=True))
-            batch_op.add_column(sa.Column('icon_info', postgresql.JSONB(astext_type=sa.Text()), nullable=True))
+            batch_op.add_column(sa.Column('icon_info', sa.JSON(), nullable=True))
             batch_op.add_column(sa.Column('runtime_mode', sa.String(length=255), server_default=sa.text("'general'"), nullable=True))
             batch_op.add_column(sa.Column('pipeline_id', models.types.StringUUID(), nullable=True))
             batch_op.add_column(sa.Column('chunk_structure', sa.String(length=255), nullable=True))

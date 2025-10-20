@@ -28,7 +28,6 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('app_annotation_hit_histories',
         sa.Column('id', postgresql.UUID(), server_default=sa.text('uuid_generate_v4()'), nullable=False),
         sa.Column('app_id', postgresql.UUID(), nullable=False),
@@ -40,7 +39,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name='app_annotation_hit_histories_pkey')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('app_annotation_hit_histories',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuid4()), nullable=False),
         sa.Column('app_id', models.types.StringUUID(), nullable=False),
@@ -61,16 +59,13 @@ def upgrade():
         batch_op.add_column(sa.Column('annotation_reply', sa.Text(), nullable=True))
 
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('dataset_collection_bindings', schema=None) as batch_op:
             batch_op.add_column(sa.Column('type', sa.String(length=40), server_default=sa.text("'dataset'::character varying"), nullable=False))
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('dataset_collection_bindings', schema=None) as batch_op:
             batch_op.add_column(sa.Column('type', sa.String(length=40), server_default=sa.text("'dataset'"), nullable=False))
 
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('message_annotations', schema=None) as batch_op:
             batch_op.add_column(sa.Column('question', sa.Text(), nullable=True))
             batch_op.add_column(sa.Column('hit_count', sa.Integer(), server_default=sa.text('0'), nullable=False))
@@ -81,7 +76,6 @@ def upgrade():
                    existing_type=postgresql.UUID(),
                    nullable=True)
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('message_annotations', schema=None) as batch_op:
             batch_op.add_column(sa.Column('question', sa.Text(), nullable=True))
             batch_op.add_column(sa.Column('hit_count', sa.Integer(), server_default=sa.text('0'), nullable=False))
@@ -100,7 +94,6 @@ def downgrade():
     conn = op.get_bind()
 
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('message_annotations', schema=None) as batch_op:
             batch_op.alter_column('message_id',
                    existing_type=postgresql.UUID(),
@@ -111,7 +104,6 @@ def downgrade():
             batch_op.drop_column('hit_count')
             batch_op.drop_column('question')
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('message_annotations', schema=None) as batch_op:
             batch_op.alter_column('message_id',
                    existing_type=models.types.StringUUID(),

@@ -24,13 +24,11 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('recommended_apps', schema=None) as batch_op:
             batch_op.add_column(sa.Column('language', sa.String(length=255), server_default=sa.text("'en-US'::character varying"), nullable=False))
             batch_op.drop_index('recommended_app_is_listed_idx')
             batch_op.create_index('recommended_app_is_listed_idx', ['is_listed', 'language'], unique=False)
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('recommended_apps', schema=None) as batch_op:
             batch_op.add_column(sa.Column('language', sa.String(length=255), server_default=sa.text("'en-US'"), nullable=False))
             batch_op.drop_index('recommended_app_is_listed_idx')

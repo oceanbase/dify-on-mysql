@@ -35,11 +35,9 @@ def downgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('tool_model_invokes', schema=None) as batch_op:
             batch_op.add_column(sa.Column('tool_id', postgresql.UUID(), autoincrement=False, nullable=False))
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('tool_model_invokes', schema=None) as batch_op:
             batch_op.add_column(sa.Column('tool_id', models.types.StringUUID(), autoincrement=False, nullable=False))
 

@@ -27,13 +27,11 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('api_tokens', schema=None) as batch_op:
             batch_op.add_column(sa.Column('tenant_id', postgresql.UUID(), nullable=True))
             batch_op.create_index('api_token_tenant_idx', ['tenant_id', 'type'], unique=False)
             batch_op.drop_column('dataset_id')
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('api_tokens', schema=None) as batch_op:
             batch_op.add_column(sa.Column('tenant_id', models.types.StringUUID(), nullable=True))
             batch_op.create_index('api_token_tenant_idx', ['tenant_id', 'type'], unique=False)
@@ -47,13 +45,11 @@ def downgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('api_tokens', schema=None) as batch_op:
             batch_op.add_column(sa.Column('dataset_id', postgresql.UUID(), autoincrement=False, nullable=True))
             batch_op.drop_index('api_token_tenant_idx')
             batch_op.drop_column('tenant_id')
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('api_tokens', schema=None) as batch_op:
             batch_op.add_column(sa.Column('dataset_id', models.types.StringUUID(), autoincrement=False, nullable=True))
             batch_op.drop_index('api_token_tenant_idx')

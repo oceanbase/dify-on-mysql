@@ -27,14 +27,12 @@ def upgrade():
         batch_op.add_column(sa.Column('invoke_from', sa.String(length=255), nullable=True))
 
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('messages', schema=None) as batch_op:
             batch_op.add_column(sa.Column('status', sa.String(length=255), server_default=sa.text("'normal'::character varying"), nullable=False))
             batch_op.add_column(sa.Column('error', sa.Text(), nullable=True))
             batch_op.add_column(sa.Column('message_metadata', sa.Text(), nullable=True))
             batch_op.add_column(sa.Column('invoke_from', sa.String(length=255), nullable=True))
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('messages', schema=None) as batch_op:
             batch_op.add_column(sa.Column('status', sa.String(length=255), server_default=sa.text("'normal'"), nullable=False))
             batch_op.add_column(sa.Column('error', sa.Text(), nullable=True))

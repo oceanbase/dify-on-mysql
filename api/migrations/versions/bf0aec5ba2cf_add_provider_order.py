@@ -28,7 +28,6 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('provider_orders',
         sa.Column('id', postgresql.UUID(), server_default=sa.text('uuid_generate_v4()'), nullable=False),
         sa.Column('tenant_id', postgresql.UUID(), nullable=False),
@@ -49,7 +48,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name='provider_order_pkey')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('provider_orders',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuid4()), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),

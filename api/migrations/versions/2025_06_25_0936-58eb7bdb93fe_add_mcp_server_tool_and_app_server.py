@@ -27,7 +27,6 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('app_mcp_servers',
         sa.Column('id', models.types.StringUUID(), server_default=sa.text('uuid_generate_v4()'), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
@@ -44,7 +43,6 @@ def upgrade():
         sa.UniqueConstraint('server_code', name='unique_app_mcp_server_server_code')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('app_mcp_servers',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuid4()), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
@@ -61,7 +59,6 @@ def upgrade():
         sa.UniqueConstraint('server_code', name='unique_app_mcp_server_server_code')
         )
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('tool_mcp_providers',
         sa.Column('id', models.types.StringUUID(), server_default=sa.text('uuid_generate_v4()'), nullable=False),
         sa.Column('name', sa.String(length=40), nullable=False),
@@ -82,7 +79,6 @@ def upgrade():
         sa.UniqueConstraint('tenant_id', 'server_url_hash', name='unique_mcp_provider_server_url')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('tool_mcp_providers',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuid4()), nullable=False),
         sa.Column('name', sa.String(length=40), nullable=False),

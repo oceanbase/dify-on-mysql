@@ -27,7 +27,6 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('document_segments', schema=None) as batch_op:
             batch_op.add_column(sa.Column('answer', sa.Text(), nullable=True))
             batch_op.add_column(sa.Column('updated_by', postgresql.UUID(), nullable=True))
@@ -36,7 +35,6 @@ def upgrade():
         with op.batch_alter_table('documents', schema=None) as batch_op:
             batch_op.add_column(sa.Column('doc_form', sa.String(length=255), server_default=sa.text("'text_model'::character varying"), nullable=False))
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('document_segments', schema=None) as batch_op:
             batch_op.add_column(sa.Column('answer', sa.Text(), nullable=True))
             batch_op.add_column(sa.Column('updated_by', models.types.StringUUID(), nullable=True))

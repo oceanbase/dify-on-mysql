@@ -24,7 +24,6 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('datasets', schema=None) as batch_op:
             batch_op.alter_column('embedding_model',
                    existing_type=sa.VARCHAR(length=255),
@@ -35,7 +34,6 @@ def upgrade():
                    nullable=True,
                    existing_server_default=sa.text("'openai'::character varying"))
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('datasets', schema=None) as batch_op:
             batch_op.alter_column('embedding_model',
                    existing_type=sa.VARCHAR(length=255),
@@ -54,7 +52,6 @@ def downgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('datasets', schema=None) as batch_op:
             batch_op.alter_column('embedding_model_provider',
                    existing_type=sa.VARCHAR(length=255),
@@ -65,7 +62,6 @@ def downgrade():
                    nullable=False,
                    existing_server_default=sa.text("'text-embedding-ada-002'::character varying"))
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('datasets', schema=None) as batch_op:
             batch_op.alter_column('embedding_model_provider',
                    existing_type=sa.VARCHAR(length=255),

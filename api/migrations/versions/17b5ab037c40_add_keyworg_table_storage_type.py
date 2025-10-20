@@ -24,11 +24,9 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('dataset_keyword_tables', schema=None) as batch_op:
             batch_op.add_column(sa.Column('data_source_type', sa.String(length=255), server_default=sa.text("'database'::character varying"), nullable=False))
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('dataset_keyword_tables', schema=None) as batch_op:
             batch_op.add_column(sa.Column('data_source_type', sa.String(length=255), server_default=sa.text("'database'"), nullable=False))
 

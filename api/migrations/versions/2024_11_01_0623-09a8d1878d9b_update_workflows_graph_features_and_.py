@@ -46,12 +46,10 @@ def upgrade():
                nullable=False)
         conn = op.get_bind()
         if _is_pg(conn):
-            # PostgreSQL: Keep original syntax
             batch_op.alter_column('updated_at',
                    existing_type=postgresql.TIMESTAMP(),
                    nullable=False)
         else:
-            # MySQL: Use compatible syntax
             batch_op.alter_column('updated_at',
                    existing_type=sa.TIMESTAMP(),
                    nullable=False)
@@ -64,12 +62,10 @@ def downgrade():
     with op.batch_alter_table('workflows', schema=None) as batch_op:
         conn = op.get_bind()
         if _is_pg(conn):
-            # PostgreSQL: Keep original syntax
             batch_op.alter_column('updated_at',
                    existing_type=postgresql.TIMESTAMP(),
                    nullable=True)
         else:
-            # MySQL: Use compatible syntax
             batch_op.alter_column('updated_at',
                    existing_type=sa.TIMESTAMP(),
                    nullable=True)

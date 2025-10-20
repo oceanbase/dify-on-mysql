@@ -27,7 +27,6 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('oauth_provider_apps',
         sa.Column('id', models.types.StringUUID(), server_default=sa.text('uuidv7()'), nullable=False),
         sa.Column('app_icon', sa.String(length=255), nullable=False),
@@ -40,7 +39,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name='oauth_provider_app_pkey')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('oauth_provider_apps',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuidv7()), nullable=False),
         sa.Column('app_icon', sa.String(length=255), nullable=False),

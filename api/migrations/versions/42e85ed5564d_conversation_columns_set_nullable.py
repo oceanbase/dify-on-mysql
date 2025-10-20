@@ -27,7 +27,6 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('conversations', schema=None) as batch_op:
             batch_op.alter_column('app_model_config_id',
                                   existing_type=postgresql.UUID(),
@@ -39,7 +38,6 @@ def upgrade():
                                   existing_type=sa.VARCHAR(length=255),
                                   nullable=True)
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('conversations', schema=None) as batch_op:
             batch_op.alter_column('app_model_config_id',
                                   existing_type=models.types.StringUUID(),
@@ -59,7 +57,6 @@ def downgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('conversations', schema=None) as batch_op:
             batch_op.alter_column('model_id',
                                   existing_type=sa.VARCHAR(length=255),
@@ -71,7 +68,6 @@ def downgrade():
                                   existing_type=postgresql.UUID(),
                                   nullable=False)
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('conversations', schema=None) as batch_op:
             batch_op.alter_column('model_id',
                                   existing_type=sa.VARCHAR(length=255),

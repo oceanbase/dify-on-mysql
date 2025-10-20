@@ -28,7 +28,6 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('provider_models',
         sa.Column('id', postgresql.UUID(), server_default=sa.text('uuid_generate_v4()'), nullable=False),
         sa.Column('tenant_id', postgresql.UUID(), nullable=False),
@@ -43,7 +42,6 @@ def upgrade():
         sa.UniqueConstraint('tenant_id', 'provider_name', 'model_name', 'model_type', name='unique_provider_model_name')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('provider_models',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuid4()), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
@@ -62,7 +60,6 @@ def upgrade():
         batch_op.create_index('provider_model_tenant_id_provider_idx', ['tenant_id', 'provider_name'], unique=False)
 
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('tenant_default_models',
         sa.Column('id', postgresql.UUID(), server_default=sa.text('uuid_generate_v4()'), nullable=False),
         sa.Column('tenant_id', postgresql.UUID(), nullable=False),
@@ -74,7 +71,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name='tenant_default_model_pkey')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('tenant_default_models',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuid4()), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
@@ -90,7 +86,6 @@ def upgrade():
         batch_op.create_index('tenant_default_model_tenant_id_provider_type_idx', ['tenant_id', 'provider_name', 'model_type'], unique=False)
 
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('tenant_preferred_model_providers',
         sa.Column('id', postgresql.UUID(), server_default=sa.text('uuid_generate_v4()'), nullable=False),
         sa.Column('tenant_id', postgresql.UUID(), nullable=False),
@@ -101,7 +96,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name='tenant_preferred_model_provider_pkey')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('tenant_preferred_model_providers',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuid4()), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),

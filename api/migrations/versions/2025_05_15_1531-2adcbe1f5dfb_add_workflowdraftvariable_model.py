@@ -28,7 +28,6 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table(
             "workflow_draft_variables",
             sa.Column("id", models.types.StringUUID(), server_default=sa.text("uuid_generate_v4()"), nullable=False),
@@ -48,7 +47,6 @@ def upgrade():
             sa.UniqueConstraint("app_id", "node_id", "name", name=op.f("workflow_draft_variables_app_id_key")),
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table(
             "workflow_draft_variables",
             sa.Column("id", models.types.StringUUID(), default=lambda: str(uuid4()), nullable=False),

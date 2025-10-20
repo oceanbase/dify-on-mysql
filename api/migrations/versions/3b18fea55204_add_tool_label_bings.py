@@ -27,7 +27,6 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('tool_label_bindings',
         sa.Column('id', models.types.StringUUID(), server_default=sa.text('uuid_generate_v4()'), nullable=False),
         sa.Column('tool_id', sa.String(length=64), nullable=False),
@@ -36,7 +35,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name='tool_label_bind_pkey')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('tool_label_bindings',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuid4()), nullable=False),
         sa.Column('tool_id', sa.String(length=64), nullable=False),

@@ -28,7 +28,6 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('dataset_retriever_resources',
         sa.Column('id', postgresql.UUID(), server_default=sa.text('uuid_generate_v4()'), nullable=False),
         sa.Column('message_id', postgresql.UUID(), nullable=False),
@@ -51,7 +50,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name='dataset_retriever_resource_pkey')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('dataset_retriever_resources',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuid4()), nullable=False),
         sa.Column('message_id', models.types.StringUUID(), nullable=False),

@@ -28,7 +28,6 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('workflow_app_logs',
         sa.Column('id', postgresql.UUID(), server_default=sa.text('uuid_generate_v4()'), nullable=False),
         sa.Column('tenant_id', postgresql.UUID(), nullable=False),
@@ -42,7 +41,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name='workflow_app_log_pkey')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('workflow_app_logs',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuid4()), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
@@ -59,7 +57,6 @@ def upgrade():
         batch_op.create_index('workflow_app_log_app_idx', ['tenant_id', 'app_id'], unique=False)
 
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('workflow_node_executions',
         sa.Column('id', postgresql.UUID(), server_default=sa.text('uuid_generate_v4()'), nullable=False),
         sa.Column('tenant_id', postgresql.UUID(), nullable=False),
@@ -86,7 +83,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name='workflow_node_execution_pkey')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('workflow_node_executions',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuid4()), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
@@ -117,7 +113,6 @@ def upgrade():
         batch_op.create_index('workflow_node_execution_workflow_run_idx', ['tenant_id', 'app_id', 'workflow_id', 'triggered_from', 'workflow_run_id'], unique=False)
 
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('workflow_runs',
         sa.Column('id', postgresql.UUID(), server_default=sa.text('uuid_generate_v4()'), nullable=False),
         sa.Column('tenant_id', postgresql.UUID(), nullable=False),
@@ -142,7 +137,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name='workflow_run_pkey')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('workflow_runs',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuid4()), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
@@ -170,7 +164,6 @@ def upgrade():
         batch_op.create_index('workflow_run_triggerd_from_idx', ['tenant_id', 'app_id', 'triggered_from'], unique=False)
 
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('workflows',
         sa.Column('id', postgresql.UUID(), server_default=sa.text('uuid_generate_v4()'), nullable=False),
         sa.Column('tenant_id', postgresql.UUID(), nullable=False),
@@ -186,7 +179,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name='workflow_pkey')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('workflows',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuid4()), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
@@ -206,14 +198,12 @@ def upgrade():
         batch_op.create_index('workflow_version_idx', ['tenant_id', 'app_id', 'version'], unique=False)
 
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('apps', schema=None) as batch_op:
             batch_op.add_column(sa.Column('workflow_id', postgresql.UUID(), nullable=True))
 
         with op.batch_alter_table('messages', schema=None) as batch_op:
             batch_op.add_column(sa.Column('workflow_run_id', postgresql.UUID(), nullable=True))
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('apps', schema=None) as batch_op:
             batch_op.add_column(sa.Column('workflow_id', models.types.StringUUID(), nullable=True))
 

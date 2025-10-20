@@ -24,11 +24,9 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('accounts', schema=None) as batch_op:
             batch_op.add_column(sa.Column('last_active_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP(0)'), nullable=False))
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('accounts', schema=None) as batch_op:
             batch_op.add_column(sa.Column('last_active_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False))
 

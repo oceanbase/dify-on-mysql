@@ -24,13 +24,11 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('embeddings', schema=None) as batch_op:
             batch_op.add_column(sa.Column('provider_name', sa.String(length=40), server_default=sa.text("''::character varying"), nullable=False))
             batch_op.drop_constraint('embedding_hash_idx', type_='unique')
             batch_op.create_unique_constraint('embedding_hash_idx', ['model_name', 'hash', 'provider_name'])
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('embeddings', schema=None) as batch_op:
             batch_op.add_column(sa.Column('provider_name', sa.String(length=40), server_default=sa.text("''"), nullable=False))
             batch_op.drop_constraint('embedding_hash_idx', type_='unique')

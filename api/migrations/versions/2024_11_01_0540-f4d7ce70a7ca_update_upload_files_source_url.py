@@ -26,7 +26,6 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('upload_files', schema=None) as batch_op:
             batch_op.alter_column('source_url',
                    existing_type=sa.VARCHAR(length=255),
@@ -34,7 +33,6 @@ def upgrade():
                    existing_nullable=False,
                    existing_server_default=sa.text("''::character varying"))
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('upload_files', schema=None) as batch_op:
             batch_op.alter_column('source_url',
                    existing_type=sa.VARCHAR(length=255),
@@ -50,7 +48,6 @@ def downgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('upload_files', schema=None) as batch_op:
             batch_op.alter_column('source_url',
                    existing_type=sa.TEXT(),
@@ -58,7 +55,6 @@ def downgrade():
                    existing_nullable=False,
                    existing_server_default=sa.text("''::character varying"))
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('upload_files', schema=None) as batch_op:
             batch_op.alter_column('source_url',
                    existing_type=sa.TEXT(),

@@ -27,7 +27,6 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('dataset_permissions',
         sa.Column('id', models.types.StringUUID(), server_default=sa.text('uuid_generate_v4()'), nullable=False),
         sa.Column('dataset_id', models.types.StringUUID(), nullable=False),
@@ -37,7 +36,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name='dataset_permission_pkey')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('dataset_permissions',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuid4()), nullable=False),
         sa.Column('dataset_id', models.types.StringUUID(), nullable=False),

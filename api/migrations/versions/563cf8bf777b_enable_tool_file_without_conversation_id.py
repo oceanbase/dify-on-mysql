@@ -26,13 +26,11 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('tool_files', schema=None) as batch_op:
             batch_op.alter_column('conversation_id',
                    existing_type=postgresql.UUID(),
                    nullable=True)
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('tool_files', schema=None) as batch_op:
             batch_op.alter_column('conversation_id',
                    existing_type=models.types.StringUUID(),
@@ -46,13 +44,11 @@ def downgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('tool_files', schema=None) as batch_op:
             batch_op.alter_column('conversation_id',
                    existing_type=postgresql.UUID(),
                    nullable=False)
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('tool_files', schema=None) as batch_op:
             batch_op.alter_column('conversation_id',
                    existing_type=models.types.StringUUID(),

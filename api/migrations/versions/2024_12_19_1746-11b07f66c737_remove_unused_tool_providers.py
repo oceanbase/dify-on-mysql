@@ -33,7 +33,6 @@ def downgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('tool_providers',
         sa.Column('id', sa.UUID(), server_default=sa.text('uuid_generate_v4()'), autoincrement=False, nullable=False),
         sa.Column('tenant_id', sa.UUID(), autoincrement=False, nullable=False),
@@ -46,7 +45,6 @@ def downgrade():
         sa.UniqueConstraint('tenant_id', 'tool_name', name='unique_tool_provider_tool_name')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('tool_providers',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuid4()), autoincrement=False, nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), autoincrement=False, nullable=False),

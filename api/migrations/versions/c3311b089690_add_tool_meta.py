@@ -24,11 +24,9 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('message_agent_thoughts', schema=None) as batch_op:
             batch_op.add_column(sa.Column('tool_meta_str', sa.Text(), server_default=sa.text("'{}'::text"), nullable=False))
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('message_agent_thoughts', schema=None) as batch_op:
             batch_op.add_column(sa.Column('tool_meta_str', sa.Text(), server_default=sa.text("'{}'"), nullable=False))
 

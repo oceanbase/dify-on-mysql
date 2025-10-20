@@ -24,11 +24,9 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('apps', schema=None) as batch_op:
             batch_op.add_column(sa.Column('description', sa.Text(), server_default=sa.text("''::character varying"), nullable=False))
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('apps', schema=None) as batch_op:
             batch_op.add_column(sa.Column('description', sa.Text(), server_default=sa.text("''"), nullable=False))
 

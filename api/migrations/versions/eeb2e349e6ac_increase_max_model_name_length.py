@@ -32,7 +32,6 @@ def upgrade():
                existing_nullable=False)
 
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('embeddings', schema=None) as batch_op:
             batch_op.alter_column('model_name',
                    existing_type=sa.VARCHAR(length=40),
@@ -40,7 +39,6 @@ def upgrade():
                    existing_nullable=False,
                    existing_server_default=sa.text("'text-embedding-ada-002'::character varying"))
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('embeddings', schema=None) as batch_op:
             batch_op.alter_column('model_name',
                    existing_type=sa.VARCHAR(length=40),
@@ -56,7 +54,6 @@ def downgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('embeddings', schema=None) as batch_op:
             batch_op.alter_column('model_name',
                    existing_type=sa.String(length=255),
@@ -64,7 +61,6 @@ def downgrade():
                    existing_nullable=False,
                    existing_server_default=sa.text("'text-embedding-ada-002'::character varying"))
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('embeddings', schema=None) as batch_op:
             batch_op.alter_column('model_name',
                    existing_type=sa.String(length=255),

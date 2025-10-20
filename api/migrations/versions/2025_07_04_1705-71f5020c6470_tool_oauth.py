@@ -27,7 +27,6 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('tool_oauth_system_clients',
         sa.Column('id', models.types.StringUUID(), server_default=sa.text('uuid_generate_v4()'), nullable=False),
         sa.Column('plugin_id', sa.String(length=512), nullable=False),
@@ -37,7 +36,6 @@ def upgrade():
         sa.UniqueConstraint('plugin_id', 'provider', name='tool_oauth_system_client_plugin_id_provider_idx')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('tool_oauth_system_clients',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuid4()), nullable=False),
         sa.Column('plugin_id', sa.String(length=512), nullable=False),
@@ -47,7 +45,6 @@ def upgrade():
         sa.UniqueConstraint('plugin_id', 'provider', name='tool_oauth_system_client_plugin_id_provider_idx')
         )
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('tool_oauth_tenant_clients',
         sa.Column('id', models.types.StringUUID(), server_default=sa.text('uuid_generate_v4()'), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
@@ -59,7 +56,6 @@ def upgrade():
         sa.UniqueConstraint('tenant_id', 'plugin_id', 'provider', name='unique_tool_oauth_tenant_client')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('tool_oauth_tenant_clients',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuid4()), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
@@ -72,7 +68,6 @@ def upgrade():
         )
 
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('tool_builtin_providers', schema=None) as batch_op:
             batch_op.add_column(sa.Column('name', sa.String(length=256), server_default=sa.text("'API KEY 1'::character varying"), nullable=False))
             batch_op.add_column(sa.Column('is_default', sa.Boolean(), server_default=sa.text('false'), nullable=False))
@@ -80,7 +75,6 @@ def upgrade():
             batch_op.drop_constraint(batch_op.f('unique_builtin_tool_provider'), type_='unique')
             batch_op.create_unique_constraint(batch_op.f('unique_builtin_tool_provider'), ['tenant_id', 'provider', 'name'])
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('tool_builtin_providers', schema=None) as batch_op:
             batch_op.add_column(sa.Column('name', sa.String(length=256), server_default=sa.text("'API KEY 1'"), nullable=False))
             batch_op.add_column(sa.Column('is_default', sa.Boolean(), server_default=sa.text('false'), nullable=False))

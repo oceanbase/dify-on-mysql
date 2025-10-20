@@ -28,7 +28,6 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('message_files',
         sa.Column('id', postgresql.UUID(), server_default=sa.text('uuid_generate_v4()'), nullable=False),
         sa.Column('message_id', postgresql.UUID(), nullable=False),
@@ -42,7 +41,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name='message_file_pkey')
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('message_files',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuid4()), nullable=False),
         sa.Column('message_id', models.types.StringUUID(), nullable=False),
@@ -64,11 +62,9 @@ def upgrade():
         batch_op.add_column(sa.Column('file_upload', sa.Text(), nullable=True))
 
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('upload_files', schema=None) as batch_op:
             batch_op.add_column(sa.Column('created_by_role', sa.String(length=255), server_default=sa.text("'account'::character varying"), nullable=False))
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('upload_files', schema=None) as batch_op:
             batch_op.add_column(sa.Column('created_by_role', sa.String(length=255), server_default=sa.text("'account'"), nullable=False))
 

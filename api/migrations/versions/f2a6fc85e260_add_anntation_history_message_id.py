@@ -27,12 +27,10 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         with op.batch_alter_table('app_annotation_hit_histories', schema=None) as batch_op:
             batch_op.add_column(sa.Column('message_id', postgresql.UUID(), nullable=False))
             batch_op.create_index('app_annotation_hit_histories_message_idx', ['message_id'], unique=False)
     else:
-        # MySQL: Use compatible syntax
         with op.batch_alter_table('app_annotation_hit_histories', schema=None) as batch_op:
             batch_op.add_column(sa.Column('message_id', models.types.StringUUID(), nullable=False))
             batch_op.create_index('app_annotation_hit_histories_message_idx', ['message_id'], unique=False)

@@ -26,7 +26,6 @@ def upgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Keep original syntax
         op.create_table('workflow__conversation_variables',
         sa.Column('id', models.types.StringUUID(), nullable=False),
         sa.Column('conversation_id', models.types.StringUUID(), nullable=False),
@@ -37,7 +36,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', 'conversation_id', name=op.f('workflow__conversation_variables_pkey'))
         )
     else:
-        # MySQL: Use compatible syntax
         op.create_table('workflow__conversation_variables',
         sa.Column('id', models.types.StringUUID(), nullable=False),
         sa.Column('conversation_id', models.types.StringUUID(), nullable=False),
