@@ -46,7 +46,7 @@ def upgrade():
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
         sa.Column('category', sa.String(length=255), nullable=False),
         sa.Column('provider', sa.String(length=255), nullable=False),
-        sa.Column('credentials', sa.Text(), nullable=True),
+        sa.Column('credentials', models.types.LongText(), nullable=True),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
         sa.Column('updated_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
         sa.Column('disabled', sa.Boolean(), server_default=sa.text('false'), nullable=True),

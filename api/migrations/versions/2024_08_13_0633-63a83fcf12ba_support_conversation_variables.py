@@ -40,7 +40,7 @@ def upgrade():
         sa.Column('id', models.types.StringUUID(), nullable=False),
         sa.Column('conversation_id', models.types.StringUUID(), nullable=False),
         sa.Column('app_id', models.types.StringUUID(), nullable=False),
-        sa.Column('data', sa.Text(), nullable=False),
+        sa.Column('data', models.types.LongText(), nullable=False),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
         sa.Column('updated_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
         sa.PrimaryKeyConstraint('id', 'conversation_id', name=op.f('workflow__conversation_variables_pkey'))
@@ -50,8 +50,12 @@ def upgrade():
         batch_op.create_index(batch_op.f('workflow__conversation_variables_app_id_idx'), ['app_id'], unique=False)
         batch_op.create_index(batch_op.f('workflow__conversation_variables_created_at_idx'), ['created_at'], unique=False)
 
-    with op.batch_alter_table('workflows', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('conversation_variables', sa.Text(), server_default='{}', nullable=False))
+    if _is_pg(conn):
+        with op.batch_alter_table('workflows', schema=None) as batch_op:
+            batch_op.add_column(sa.Column('conversation_variables', sa.Text(), server_default='{}', nullable=False))
+    else:
+        with op.batch_alter_table('workflows', schema=None) as batch_op:
+            batch_op.add_column(sa.Column('conversation_variables', models.types.LongText(), server_default='{}', nullable=False))
 
     # ### end Alembic commands ###
 

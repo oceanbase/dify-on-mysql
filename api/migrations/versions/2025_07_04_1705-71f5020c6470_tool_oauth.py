@@ -40,7 +40,7 @@ def upgrade():
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuid4()), nullable=False),
         sa.Column('plugin_id', sa.String(length=512), nullable=False),
         sa.Column('provider', sa.String(length=255), nullable=False),
-        sa.Column('encrypted_oauth_params', sa.Text(), nullable=False),
+        sa.Column('encrypted_oauth_params', models.types.LongText(), nullable=False),
         sa.PrimaryKeyConstraint('id', name='tool_oauth_system_client_pkey'),
         sa.UniqueConstraint('plugin_id', 'provider', name='tool_oauth_system_client_plugin_id_provider_idx')
         )
@@ -62,7 +62,7 @@ def upgrade():
         sa.Column('plugin_id', sa.String(length=512), nullable=False),
         sa.Column('provider', sa.String(length=255), nullable=False),
         sa.Column('enabled', sa.Boolean(), server_default=sa.text('true'), nullable=False),
-        sa.Column('encrypted_oauth_params', sa.Text(), nullable=False),
+        sa.Column('encrypted_oauth_params', models.types.LongText(), nullable=False),
         sa.PrimaryKeyConstraint('id', name='tool_oauth_tenant_client_pkey'),
         sa.UniqueConstraint('tenant_id', 'plugin_id', 'provider', name='unique_tool_oauth_tenant_client')
         )

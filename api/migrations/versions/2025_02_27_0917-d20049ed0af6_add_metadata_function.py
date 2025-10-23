@@ -101,7 +101,8 @@ def upgrade():
                    existing_nullable=True)
             batch_op.create_index('document_metadata_idx', ['doc_metadata'], unique=False, postgresql_using='gin')
     else:
-        pass
+        with op.batch_alter_table('documents', schema=None) as batch_op:
+            batch_op.create_index('document_metadata_idx', ['doc_metadata'], unique=False)
     # ### end Alembic commands ###
 
 
@@ -117,7 +118,8 @@ def downgrade():
                    type_=postgresql.JSON(astext_type=sa.Text()),
                    existing_nullable=True)
     else:
-        pass
+        with op.batch_alter_table('documents', schema=None) as batch_op:
+            batch_op.drop_index('document_metadata_idx')
 
     with op.batch_alter_table('datasets', schema=None) as batch_op:
         batch_op.drop_column('built_in_field_enabled')

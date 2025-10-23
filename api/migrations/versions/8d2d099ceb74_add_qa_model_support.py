@@ -36,7 +36,7 @@ def upgrade():
             batch_op.add_column(sa.Column('doc_form', sa.String(length=255), server_default=sa.text("'text_model'::character varying"), nullable=False))
     else:
         with op.batch_alter_table('document_segments', schema=None) as batch_op:
-            batch_op.add_column(sa.Column('answer', sa.Text(), nullable=True))
+            batch_op.add_column(sa.Column('answer', models.types.LongText(), nullable=True))
             batch_op.add_column(sa.Column('updated_by', models.types.StringUUID(), nullable=True))
             batch_op.add_column(sa.Column('updated_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False))
 

@@ -49,7 +49,7 @@ def downgrade():
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuid4()), autoincrement=False, nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), autoincrement=False, nullable=False),
         sa.Column('tool_name', sa.VARCHAR(length=40), autoincrement=False, nullable=False),
-        sa.Column('encrypted_credentials', sa.TEXT(), autoincrement=False, nullable=True),
+        sa.Column('encrypted_credentials', models.types.LongText(), autoincrement=False, nullable=True),
         sa.Column('is_enabled', sa.BOOLEAN(), server_default=sa.text('false'), autoincrement=False, nullable=False),
         sa.Column('created_at', sa.TIMESTAMP(), server_default=sa.func.current_timestamp(), autoincrement=False, nullable=False),
         sa.Column('updated_at', sa.TIMESTAMP(), server_default=sa.func.current_timestamp(), autoincrement=False, nullable=False),

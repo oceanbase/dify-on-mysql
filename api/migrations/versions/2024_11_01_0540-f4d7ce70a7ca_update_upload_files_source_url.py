@@ -36,7 +36,7 @@ def upgrade():
         with op.batch_alter_table('upload_files', schema=None) as batch_op:
             batch_op.alter_column('source_url',
                    existing_type=sa.VARCHAR(length=255),
-                   type_=sa.TEXT(),
+                   type_=models.types.LongText(),
                    existing_nullable=False,
                    existing_server_default=sa.text("''"))
 
@@ -57,7 +57,7 @@ def downgrade():
     else:
         with op.batch_alter_table('upload_files', schema=None) as batch_op:
             batch_op.alter_column('source_url',
-                   existing_type=sa.TEXT(),
+                   existing_type=models.types.LongText(),
                    type_=sa.VARCHAR(length=255),
                    existing_nullable=False,
                    existing_server_default=sa.text("''"))

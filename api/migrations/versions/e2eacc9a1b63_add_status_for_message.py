@@ -8,6 +8,8 @@ Create Date: 2024-03-21 09:31:27.342221
 import sqlalchemy as sa
 from alembic import op
 
+import models.types
+
 
 def _is_pg(conn):
     return conn.dialect.name == "postgresql"
@@ -35,8 +37,8 @@ def upgrade():
     else:
         with op.batch_alter_table('messages', schema=None) as batch_op:
             batch_op.add_column(sa.Column('status', sa.String(length=255), server_default=sa.text("'normal'"), nullable=False))
-            batch_op.add_column(sa.Column('error', sa.Text(), nullable=True))
-            batch_op.add_column(sa.Column('message_metadata', sa.Text(), nullable=True))
+            batch_op.add_column(sa.Column('error', models.types.LongText(), nullable=True))
+            batch_op.add_column(sa.Column('message_metadata', models.types.LongText(), nullable=True))
             batch_op.add_column(sa.Column('invoke_from', sa.String(length=255), nullable=True))
 
     # ### end Alembic commands ###

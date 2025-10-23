@@ -43,7 +43,7 @@ def upgrade():
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
         sa.Column('name', sa.String(length=255), nullable=False),
         sa.Column('api_endpoint', sa.String(length=255), nullable=False),
-        sa.Column('api_key', sa.Text(), nullable=False),
+        sa.Column('api_key', models.types.LongText(), nullable=False),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
         sa.PrimaryKeyConstraint('id', name='api_based_extension_pkey')
         )

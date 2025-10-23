@@ -56,7 +56,7 @@ def upgrade():
         sa.Column('document_id', models.types.StringUUID(), nullable=False),
         sa.Column('segment_id', models.types.StringUUID(), nullable=False),
         sa.Column('position', sa.Integer(), nullable=False),
-        sa.Column('content', sa.Text(), nullable=False),
+        sa.Column('content', models.types.LongText(), nullable=False),
         sa.Column('word_count', sa.Integer(), nullable=False),
         sa.Column('index_node_id', sa.String(length=255), nullable=True),
         sa.Column('index_node_hash', sa.String(length=255), nullable=True),
@@ -67,7 +67,7 @@ def upgrade():
         sa.Column('updated_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
         sa.Column('indexing_at', sa.DateTime(), nullable=True),
         sa.Column('completed_at', sa.DateTime(), nullable=True),
-        sa.Column('error', sa.Text(), nullable=True),
+        sa.Column('error', models.types.LongText(), nullable=True),
         sa.PrimaryKeyConstraint('id', name='child_chunk_pkey')
         )
     

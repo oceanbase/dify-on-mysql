@@ -43,7 +43,7 @@ def upgrade():
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
         sa.Column('provider_name', sa.String(length=255), nullable=False),
         sa.Column('credential_name', sa.String(length=255), nullable=False),
-        sa.Column('encrypted_config', sa.Text(), nullable=False),
+        sa.Column('encrypted_config', models.types.LongText(), nullable=False),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
         sa.Column('updated_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
         sa.PrimaryKeyConstraint('id', name='provider_credential_pkey')
@@ -141,8 +141,14 @@ def migrate_existing_providers_data():
 
 def downgrade():
     # Re-add encrypted_config column to providers table
-    with op.batch_alter_table('providers', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('encrypted_config', sa.Text(), nullable=True))
+    conn = op.get_bind()
+    
+    if _is_pg(conn):
+        with op.batch_alter_table('providers', schema=None) as batch_op:
+            batch_op.add_column(sa.Column('encrypted_config', sa.Text(), nullable=True))
+    else:
+        with op.batch_alter_table('providers', schema=None) as batch_op:
+            batch_op.add_column(sa.Column('encrypted_config', models.types.LongText(), nullable=True))
 
     # Migrate data back from provider_credentials to providers
 

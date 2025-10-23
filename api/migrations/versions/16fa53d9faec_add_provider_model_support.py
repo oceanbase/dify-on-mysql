@@ -48,7 +48,7 @@ def upgrade():
         sa.Column('provider_name', sa.String(length=40), nullable=False),
         sa.Column('model_name', sa.String(length=40), nullable=False),
         sa.Column('model_type', sa.String(length=40), nullable=False),
-        sa.Column('encrypted_config', sa.Text(), nullable=True),
+        sa.Column('encrypted_config', models.types.LongText(), nullable=True),
         sa.Column('is_valid', sa.Boolean(), server_default=sa.text('false'), nullable=False),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
         sa.Column('updated_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),

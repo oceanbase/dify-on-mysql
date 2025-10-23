@@ -96,7 +96,7 @@ def upgrade():
         sa.Column('plugin_id', sa.String(length=255), nullable=False),
         sa.Column('auth_type', sa.String(length=255), nullable=False),
         sa.Column('encrypted_credentials', sa.JSON(), nullable=False),
-        sa.Column('avatar_url', sa.Text(), nullable=True),
+        sa.Column('avatar_url', models.types.LongText(), nullable=True),
         sa.Column('is_default', sa.Boolean(), server_default=sa.text('false'), nullable=False),
         sa.Column('expires_at', sa.Integer(), server_default='-1', nullable=False),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
@@ -126,7 +126,7 @@ def upgrade():
         sa.Column('pipeline_id', models.types.StringUUID(), nullable=False),
         sa.Column('document_id', models.types.StringUUID(), nullable=False),
         sa.Column('datasource_type', sa.String(length=255), nullable=False),
-        sa.Column('datasource_info', sa.Text(), nullable=False),
+        sa.Column('datasource_info', models.types.LongText(), nullable=False),
         sa.Column('datasource_node_id', sa.String(length=255), nullable=False),
         sa.Column('input_data', sa.JSON(), nullable=False),
         sa.Column('created_by', models.types.StringUUID(), nullable=True),
@@ -159,10 +159,10 @@ def upgrade():
         op.create_table('pipeline_built_in_templates',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuidv7()), nullable=False),
         sa.Column('name', sa.String(length=255), nullable=False),
-        sa.Column('description', sa.Text(), nullable=False),
+        sa.Column('description', models.types.LongText(), nullable=False),
         sa.Column('chunk_structure', sa.String(length=255), nullable=False),
         sa.Column('icon', sa.JSON(), nullable=False),
-        sa.Column('yaml_content', sa.Text(), nullable=False),
+        sa.Column('yaml_content', models.types.LongText(), nullable=False),
         sa.Column('copyright', sa.String(length=255), nullable=False),
         sa.Column('privacy_policy', sa.String(length=255), nullable=False),
         sa.Column('position', sa.Integer(), nullable=False),
@@ -198,11 +198,11 @@ def upgrade():
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuidv7()), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
         sa.Column('name', sa.String(length=255), nullable=False),
-        sa.Column('description', sa.Text(), nullable=False),
+        sa.Column('description', models.types.LongText(), nullable=False),
         sa.Column('chunk_structure', sa.String(length=255), nullable=False),
         sa.Column('icon', sa.JSON(), nullable=False),
         sa.Column('position', sa.Integer(), nullable=False),
-        sa.Column('yaml_content', sa.Text(), nullable=False),
+        sa.Column('yaml_content', models.types.LongText(), nullable=False),
         sa.Column('install_count', sa.Integer(), nullable=False),
         sa.Column('language', sa.String(length=255), nullable=False),
         sa.Column('created_by', models.types.StringUUID(), nullable=False),
@@ -228,8 +228,8 @@ def upgrade():
     else:
         op.create_table('pipeline_recommended_plugins',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuidv7()), nullable=False),
-        sa.Column('plugin_id', sa.Text(), nullable=False),
-        sa.Column('provider_name', sa.Text(), nullable=False),
+        sa.Column('plugin_id', models.types.LongText(), nullable=False),
+        sa.Column('provider_name', models.types.LongText(), nullable=False),
         sa.Column('position', sa.Integer(), nullable=False),
         sa.Column('active', sa.Boolean(), nullable=False),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
@@ -256,7 +256,7 @@ def upgrade():
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuidv7()), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
         sa.Column('name', sa.String(length=255), nullable=False),
-        sa.Column('description', sa.Text(), server_default=sa.text("''"), nullable=False),
+        sa.Column('description', models.types.LongText(), server_default=sa.text("''"), nullable=False),
         sa.Column('workflow_id', models.types.StringUUID(), nullable=True),
         sa.Column('is_public', sa.Boolean(), server_default=sa.text('false'), nullable=False),
         sa.Column('is_published', sa.Boolean(), server_default=sa.text('false'), nullable=False),
@@ -342,9 +342,12 @@ def upgrade():
                     comment='Indicates whether the current value is the default for a conversation variable. Always `FALSE` for other types of variables.',)
             )
         batch_op.create_index('workflow_draft_variable_file_id_idx', ['file_id'], unique=False)
-
-    with op.batch_alter_table('workflows', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('rag_pipeline_variables', sa.Text(), server_default='{}', nullable=False))
+    if _is_pg(conn):
+        with op.batch_alter_table('workflows', schema=None) as batch_op:
+            batch_op.add_column(sa.Column('rag_pipeline_variables', sa.Text(), server_default='{}', nullable=False))
+    else:
+        with op.batch_alter_table('workflows', schema=None) as batch_op:
+            batch_op.add_column(sa.Column('rag_pipeline_variables', models.types.LongText(), server_default='{}', nullable=False))
 
     # ### end Alembic commands ###
 

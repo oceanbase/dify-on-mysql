@@ -43,8 +43,8 @@ def upgrade():
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuid4()), nullable=False),
         sa.Column('app_id', models.types.StringUUID(), nullable=False),
         sa.Column('annotation_id', models.types.StringUUID(), nullable=False),
-        sa.Column('source', sa.Text(), nullable=False),
-        sa.Column('question', sa.Text(), nullable=False),
+        sa.Column('source', models.types.LongText(), nullable=False),
+        sa.Column('question', models.types.LongText(), nullable=False),
         sa.Column('account_id', models.types.StringUUID(), nullable=False),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
         sa.PrimaryKeyConstraint('id', name='app_annotation_hit_histories_pkey')
@@ -55,8 +55,12 @@ def upgrade():
         batch_op.create_index('app_annotation_hit_histories_annotation_idx', ['annotation_id'], unique=False)
         batch_op.create_index('app_annotation_hit_histories_app_idx', ['app_id'], unique=False)
 
-    with op.batch_alter_table('app_model_configs', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('annotation_reply', sa.Text(), nullable=True))
+    if _is_pg(conn):
+        with op.batch_alter_table('app_model_configs', schema=None) as batch_op:
+            batch_op.add_column(sa.Column('annotation_reply', sa.Text(), nullable=True))
+    else:
+        with op.batch_alter_table('app_model_configs', schema=None) as batch_op:
+            batch_op.add_column(sa.Column('annotation_reply', models.types.LongText(), nullable=True))
 
     if _is_pg(conn):
         with op.batch_alter_table('dataset_collection_bindings', schema=None) as batch_op:
@@ -77,7 +81,7 @@ def upgrade():
                    nullable=True)
     else:
         with op.batch_alter_table('message_annotations', schema=None) as batch_op:
-            batch_op.add_column(sa.Column('question', sa.Text(), nullable=True))
+            batch_op.add_column(sa.Column('question', models.types.LongText(), nullable=True))
             batch_op.add_column(sa.Column('hit_count', sa.Integer(), server_default=sa.text('0'), nullable=False))
             batch_op.alter_column('conversation_id',
                    existing_type=models.types.StringUUID(),

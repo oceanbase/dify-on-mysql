@@ -46,7 +46,7 @@ def upgrade():
         sa.Column('message_id', models.types.StringUUID(), nullable=False),
         sa.Column('type', sa.String(length=255), nullable=False),
         sa.Column('transfer_method', sa.String(length=255), nullable=False),
-        sa.Column('url', sa.Text(), nullable=True),
+        sa.Column('url', models.types.LongText(), nullable=True),
         sa.Column('upload_file_id', models.types.StringUUID(), nullable=True),
         sa.Column('created_by_role', sa.String(length=255), nullable=False),
         sa.Column('created_by', models.types.StringUUID(), nullable=False),
@@ -58,8 +58,12 @@ def upgrade():
         batch_op.create_index('message_file_created_by_idx', ['created_by'], unique=False)
         batch_op.create_index('message_file_message_idx', ['message_id'], unique=False)
 
-    with op.batch_alter_table('app_model_configs', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('file_upload', sa.Text(), nullable=True))
+    if _is_pg(conn):
+        with op.batch_alter_table('app_model_configs', schema=None) as batch_op:
+            batch_op.add_column(sa.Column('file_upload', sa.Text(), nullable=True))
+    else:
+        with op.batch_alter_table('app_model_configs', schema=None) as batch_op:
+            batch_op.add_column(sa.Column('file_upload', models.types.LongText(), nullable=True))
 
     if _is_pg(conn):
         with op.batch_alter_table('upload_files', schema=None) as batch_op:

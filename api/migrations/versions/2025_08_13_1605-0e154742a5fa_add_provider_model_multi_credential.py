@@ -49,7 +49,7 @@ def upgrade():
         sa.Column('model_name', sa.String(length=255), nullable=False),
         sa.Column('model_type', sa.String(length=40), nullable=False),
         sa.Column('credential_name', sa.String(length=255), nullable=False),
-        sa.Column('encrypted_config', sa.Text(), nullable=False),
+        sa.Column('encrypted_config', models.types.LongText(), nullable=False),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
         sa.Column('updated_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
         sa.PrimaryKeyConstraint('id', name='provider_model_credential_pkey')
@@ -157,8 +157,14 @@ def migrate_existing_provider_models_data():
 
 def downgrade():
     # Re-add encrypted_config column to provider_models table
-    with op.batch_alter_table('provider_models', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('encrypted_config', sa.Text(), nullable=True))
+    conn = op.get_bind()
+    
+    if _is_pg(conn):
+        with op.batch_alter_table('provider_models', schema=None) as batch_op:
+            batch_op.add_column(sa.Column('encrypted_config', sa.Text(), nullable=True))
+    else:
+        with op.batch_alter_table('provider_models', schema=None) as batch_op:
+            batch_op.add_column(sa.Column('encrypted_config', models.types.LongText(), nullable=True))
 
     if not context.is_offline_mode():
         # Migrate data back from provider_model_credentials to provider_models

@@ -88,7 +88,6 @@ COMMENT ON FUNCTION uuidv7_boundary(timestamptz) IS
 """
 ))
     else:
-        # MySQL: UUIDv7 functions are not needed as we use application-level generation
         pass
 
 
@@ -96,9 +95,7 @@ def downgrade():
     conn = op.get_bind()
     
     if _is_pg(conn):
-        # PostgreSQL: Drop uuidv7 functions
         op.execute(sa.text("DROP FUNCTION uuidv7"))
         op.execute(sa.text("DROP FUNCTION uuidv7_boundary"))
     else:
-        # MySQL: No functions to drop
         pass

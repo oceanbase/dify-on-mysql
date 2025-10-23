@@ -46,15 +46,19 @@ def upgrade():
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuid4()), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
         sa.Column('tool_name', sa.String(length=40), nullable=False),
-        sa.Column('encrypted_credentials', sa.Text(), nullable=True),
+        sa.Column('encrypted_credentials', models.types.LongText(), nullable=True),
         sa.Column('is_enabled', sa.Boolean(), server_default=sa.text('false'), nullable=False),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
         sa.Column('updated_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
         sa.PrimaryKeyConstraint('id', name='tool_provider_pkey'),
         sa.UniqueConstraint('tenant_id', 'tool_name', name='unique_tool_provider_tool_name')
         )
-    with op.batch_alter_table('app_model_configs', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('sensitive_word_avoidance', sa.Text(), nullable=True))
+    if _is_pg(conn):
+        with op.batch_alter_table('app_model_configs', schema=None) as batch_op:
+            batch_op.add_column(sa.Column('sensitive_word_avoidance', sa.Text(), nullable=True))
+    else:
+        with op.batch_alter_table('app_model_configs', schema=None) as batch_op:
+            batch_op.add_column(sa.Column('sensitive_word_avoidance', models.types.LongText(), nullable=True))
 
     # ### end Alembic commands ###
 

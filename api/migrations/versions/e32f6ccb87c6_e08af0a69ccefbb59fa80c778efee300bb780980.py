@@ -57,7 +57,7 @@ def upgrade():
         if _is_pg(conn):
             batch_op.create_index('source_info_idx', ['source_info'], unique=False, postgresql_using='gin')
         else:
-            pass
+            batch_op.create_index('source_info_idx', ['source_info'], unique=False)
 
     # ### end Alembic commands ###
 
@@ -70,7 +70,7 @@ def downgrade():
         if _is_pg(conn):
             batch_op.drop_index('source_info_idx', postgresql_using='gin')
         else:
-            pass
+            batch_op.drop_index('source_info_idx')
         batch_op.drop_index('source_binding_tenant_id_idx')
 
     op.drop_table('data_source_bindings')

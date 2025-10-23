@@ -59,7 +59,7 @@ def upgrade():
             sa.Column("description", sa.String(length=255), nullable=False),
             sa.Column("selector", sa.String(length=255), nullable=False),
             sa.Column("value_type", sa.String(length=20), nullable=False),
-            sa.Column("value", sa.Text(), nullable=False),
+            sa.Column("value", models.types.LongText(), nullable=False),
             sa.Column("visible", sa.Boolean(), nullable=False),
             sa.Column("editable", sa.Boolean(), nullable=False),
             sa.PrimaryKeyConstraint("id", name=op.f("workflow_draft_variables_pkey")),

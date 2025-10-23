@@ -44,7 +44,7 @@ def upgrade():
         sa.Column('user_id', models.types.StringUUID(), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
         sa.Column('conversation_id', models.types.StringUUID(), nullable=False),
-        sa.Column('variables_str', sa.Text(), nullable=False),
+        sa.Column('variables_str', models.types.LongText(), nullable=False),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
         sa.Column('updated_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
         sa.PrimaryKeyConstraint('id', name='tool_conversation_variables_pkey')

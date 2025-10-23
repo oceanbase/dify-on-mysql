@@ -9,6 +9,8 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
 
+import models.types
+
 
 def _is_pg(conn):
     return conn.dialect.name == "postgresql"
@@ -32,6 +34,7 @@ def upgrade():
     else:
         with op.batch_alter_table('datasets', schema=None) as batch_op:
             batch_op.add_column(sa.Column('retrieval_model', sa.JSON(), nullable=True))
+            batch_op.create_index('retrieval_model_idx', ['retrieval_model'], unique=False)
 
     # ### end Alembic commands ###
 
@@ -46,6 +49,7 @@ def downgrade():
             batch_op.drop_column('retrieval_model')
     else:
         with op.batch_alter_table('datasets', schema=None) as batch_op:
+            batch_op.drop_index('retrieval_model_idx')
             batch_op.drop_column('retrieval_model')
 
     if _is_pg(conn):
@@ -61,7 +65,7 @@ def downgrade():
         op.create_table('sessions',
         sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
         sa.Column('session_id', sa.VARCHAR(length=255), autoincrement=False, nullable=True),
-        sa.Column('data', postgresql.BYTEA(), autoincrement=False, nullable=True),  # Keep as-is
+        sa.Column('data', models.types.BinaryData(), autoincrement=False, nullable=True),
         sa.Column('expiry', sa.TIMESTAMP(), autoincrement=False, nullable=True),
         sa.PrimaryKeyConstraint('id', name='sessions_pkey'),
         sa.UniqueConstraint('session_id', name='sessions_session_id_key')
