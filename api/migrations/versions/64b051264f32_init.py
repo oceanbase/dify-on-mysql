@@ -429,7 +429,7 @@ def upgrade():
         sa.Column('content', models.types.LongText(), nullable=False),
         sa.Column('source', sa.String(length=255), nullable=False),
         sa.Column('source_app_id', models.types.StringUUID(), nullable=True),
-        sa.Column('created_by_role', sa.String(), nullable=False),
+        sa.Column('created_by_role', sa.String(length=255), nullable=False),
         sa.Column('created_by', models.types.StringUUID(), nullable=False),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
         sa.PrimaryKeyConstraint('id', name='dataset_query_pkey')
@@ -788,9 +788,9 @@ def upgrade():
         sa.Column('answer_unit_price', sa.Numeric(), nullable=True),
         sa.Column('tokens', sa.Integer(), nullable=True),
         sa.Column('total_price', sa.Numeric(), nullable=True),
-        sa.Column('currency', sa.String(), nullable=True),
+        sa.Column('currency', sa.String(length=255), nullable=True),
         sa.Column('latency', sa.Float(), nullable=True),
-        sa.Column('created_by_role', sa.String(), nullable=False),
+        sa.Column('created_by_role', sa.String(length=255), nullable=False),
         sa.Column('created_by', models.types.StringUUID(), nullable=False),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
         sa.PrimaryKeyConstraint('id', name='message_agent_thought_pkey')
