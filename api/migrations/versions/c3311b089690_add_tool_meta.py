@@ -30,7 +30,7 @@ def upgrade():
             batch_op.add_column(sa.Column('tool_meta_str', sa.Text(), server_default=sa.text("'{}'::text"), nullable=False))
     else:
         with op.batch_alter_table('message_agent_thoughts', schema=None) as batch_op:
-            batch_op.add_column(sa.Column('tool_meta_str', models.types.LongText(), server_default=sa.text("'{}'"), nullable=False))
+            batch_op.add_column(sa.Column('tool_meta_str', models.types.LongText(), default=sa.text("'{}'"), nullable=False))
 
     # ### end Alembic commands ###
 

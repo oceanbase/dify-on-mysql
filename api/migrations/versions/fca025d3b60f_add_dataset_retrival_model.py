@@ -34,7 +34,6 @@ def upgrade():
     else:
         with op.batch_alter_table('datasets', schema=None) as batch_op:
             batch_op.add_column(sa.Column('retrieval_model', sa.JSON(), nullable=True))
-            batch_op.create_index('retrieval_model_idx', ['retrieval_model'], unique=False)
 
     # ### end Alembic commands ###
 
@@ -49,7 +48,6 @@ def downgrade():
             batch_op.drop_column('retrieval_model')
     else:
         with op.batch_alter_table('datasets', schema=None) as batch_op:
-            batch_op.drop_index('retrieval_model_idx')
             batch_op.drop_column('retrieval_model')
 
     if _is_pg(conn):

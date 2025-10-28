@@ -30,7 +30,7 @@ def upgrade():
             batch_op.add_column(sa.Column('description', sa.Text(), server_default=sa.text("''::character varying"), nullable=False))
     else:
         with op.batch_alter_table('apps', schema=None) as batch_op:
-            batch_op.add_column(sa.Column('description', models.types.LongText(), server_default=sa.text("''"), nullable=False))
+            batch_op.add_column(sa.Column('description', models.types.LongText(), default=sa.text("''"), nullable=False))
 
     # ### end Alembic commands ###
 

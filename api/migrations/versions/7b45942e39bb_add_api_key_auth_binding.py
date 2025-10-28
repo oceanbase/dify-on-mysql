@@ -59,7 +59,10 @@ def upgrade():
 
     with op.batch_alter_table('data_source_bindings', schema=None) as batch_op:
         batch_op.drop_index('source_binding_tenant_id_idx')
-        batch_op.drop_index('source_info_idx')
+        if _is_pg(conn):
+            batch_op.drop_index('source_info_idx', postgresql_using='gin')
+        else:
+            pass
 
     op.rename_table('data_source_bindings', 'data_source_oauth_bindings')
 
@@ -86,7 +89,10 @@ def downgrade():
     op.rename_table('data_source_oauth_bindings', 'data_source_bindings')
 
     with op.batch_alter_table('data_source_bindings', schema=None) as batch_op:
-        batch_op.create_index('source_info_idx', ['source_info'], unique=False)
+        if _is_pg(conn):
+            batch_op.create_index('source_info_idx', ['source_info'], unique=False, postgresql_using='gin')
+        else:
+            pass
         batch_op.create_index('source_binding_tenant_id_idx', ['tenant_id'], unique=False)
 
     with op.batch_alter_table('data_source_api_key_auth_bindings', schema=None) as batch_op:

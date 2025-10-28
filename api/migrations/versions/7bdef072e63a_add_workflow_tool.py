@@ -53,7 +53,7 @@ def upgrade():
         sa.Column('user_id', models.types.StringUUID(), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
         sa.Column('description', models.types.LongText(), nullable=False),
-        sa.Column('parameter_configuration', models.types.LongText(), server_default='[]', nullable=False),
+        sa.Column('parameter_configuration', models.types.LongText(), default='[]', nullable=False),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
         sa.Column('updated_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
         sa.PrimaryKeyConstraint('id', name='tool_workflow_provider_pkey'),

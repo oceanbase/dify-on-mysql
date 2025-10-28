@@ -42,10 +42,10 @@ def upgrade():
         op.create_table('oauth_provider_apps',
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuidv7()), nullable=False),
         sa.Column('app_icon', sa.String(length=255), nullable=False),
-        sa.Column('app_label', sa.JSON(), server_default='{}', nullable=False),
+        sa.Column('app_label', sa.JSON(), default='{}', nullable=False),
         sa.Column('client_id', sa.String(length=255), nullable=False),
         sa.Column('client_secret', sa.String(length=255), nullable=False),
-        sa.Column('redirect_uris', sa.JSON(), server_default='[]', nullable=False),
+        sa.Column('redirect_uris', sa.JSON(), default='[]', nullable=False),
         sa.Column('scope', sa.String(length=255), server_default=sa.text("'read:name read:email read:avatar read:interface_language read:timezone'"), nullable=False),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
         sa.PrimaryKeyConstraint('id', name='oauth_provider_app_pkey')

@@ -76,7 +76,7 @@ def upgrade():
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
         sa.Column('external_knowledge_api_id', models.types.StringUUID(), nullable=False),
         sa.Column('dataset_id', models.types.StringUUID(), nullable=False),
-        sa.Column('external_knowledge_id', models.types.LongText(), nullable=False),
+        sa.Column('external_knowledge_id', sa.String(length=512), nullable=False),
         sa.Column('created_by', models.types.StringUUID(), nullable=False),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
         sa.Column('updated_by', models.types.StringUUID(), nullable=True),

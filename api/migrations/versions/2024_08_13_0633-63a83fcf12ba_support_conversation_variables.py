@@ -55,7 +55,7 @@ def upgrade():
             batch_op.add_column(sa.Column('conversation_variables', sa.Text(), server_default='{}', nullable=False))
     else:
         with op.batch_alter_table('workflows', schema=None) as batch_op:
-            batch_op.add_column(sa.Column('conversation_variables', models.types.LongText(), server_default='{}', nullable=False))
+            batch_op.add_column(sa.Column('conversation_variables', models.types.LongText(), default='{}', nullable=False))
 
     # ### end Alembic commands ###
 

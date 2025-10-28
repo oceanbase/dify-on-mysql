@@ -92,7 +92,7 @@ def upgrade():
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuidv7()), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
         sa.Column('name', sa.String(length=255), nullable=False),
-        sa.Column('provider', sa.String(length=255), nullable=False),
+        sa.Column('provider', sa.String(length=128), nullable=False),
         sa.Column('plugin_id', sa.String(length=255), nullable=False),
         sa.Column('auth_type', sa.String(length=255), nullable=False),
         sa.Column('encrypted_credentials', sa.JSON(), nullable=False),
@@ -256,7 +256,7 @@ def upgrade():
         sa.Column('id', models.types.StringUUID(), default=lambda: str(uuidv7()), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
         sa.Column('name', sa.String(length=255), nullable=False),
-        sa.Column('description', models.types.LongText(), server_default=sa.text("''"), nullable=False),
+        sa.Column('description', models.types.LongText(), default=sa.text("''"), nullable=False),
         sa.Column('workflow_id', models.types.StringUUID(), nullable=True),
         sa.Column('is_public', sa.Boolean(), server_default=sa.text('false'), nullable=False),
         sa.Column('is_published', sa.Boolean(), server_default=sa.text('false'), nullable=False),
@@ -347,7 +347,7 @@ def upgrade():
             batch_op.add_column(sa.Column('rag_pipeline_variables', sa.Text(), server_default='{}', nullable=False))
     else:
         with op.batch_alter_table('workflows', schema=None) as batch_op:
-            batch_op.add_column(sa.Column('rag_pipeline_variables', models.types.LongText(), server_default='{}', nullable=False))
+            batch_op.add_column(sa.Column('rag_pipeline_variables', models.types.LongText(), default='{}', nullable=False))
 
     # ### end Alembic commands ###
 
