@@ -1,17 +1,18 @@
 from datetime import datetime
 from enum import StrEnum, auto
 from functools import cached_property
+from uuid import uuid4
 
 import sqlalchemy as sa
 from sqlalchemy import DateTime, String, func, text
 from sqlalchemy.orm import Mapped, mapped_column
 
+from libs.uuid_utils import uuidv7
+
 from .base import Base
 from .engine import db
-from .types import StringUUID, LongText
+from .types import LongText, StringUUID
 
-from uuid import uuid4
-from libs.uuid_utils import uuidv7
 
 class ProviderType(StrEnum):
     CUSTOM = auto()

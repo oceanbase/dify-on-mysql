@@ -1,4 +1,5 @@
 from datetime import datetime
+from uuid import uuid4
 
 import sqlalchemy as sa
 from sqlalchemy import DateTime, String, func
@@ -9,8 +10,6 @@ from models.base import TypeBase
 from .engine import db
 from .model import Message
 from .types import StringUUID
-
-from uuid import uuid4
 
 
 class SavedMessage(TypeBase):

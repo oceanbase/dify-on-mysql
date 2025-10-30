@@ -41,9 +41,7 @@ from .account import Account
 from .base import Base, DefaultFieldsMixin
 from .engine import db
 from .enums import CreatorUserRole, DraftVariableType, ExecutionOffLoadType
-from .types import EnumText, StringUUID,LongText
-
-from uuid import uuid4
+from .types import EnumText, LongText, StringUUID
 
 logger = logging.getLogger(__name__)
 

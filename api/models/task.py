@@ -7,7 +7,9 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from libs.datetime_utils import naive_utc_now
 from models.base import TypeBase
-from .types import LongText, BinaryData
+
+from .types import BinaryData, LongText
+
 
 class CeleryTask(TypeBase):
     """Task result/status."""

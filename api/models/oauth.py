@@ -3,12 +3,11 @@ from datetime import datetime
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column
 
+from libs.uuid_utils import uuidv7
+
 from .base import Base
 from .engine import db
-from .types import StringUUID, LongText
-
-from uuid import uuid4
-from libs.uuid_utils import uuidv7
+from .types import LongText, StringUUID
 
 
 class DatasourceOauthParamConfig(Base):  # type: ignore[name-defined]

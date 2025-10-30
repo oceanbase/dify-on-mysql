@@ -11,6 +11,7 @@ import time
 from datetime import datetime
 from json import JSONDecodeError
 from typing import Any, cast
+from uuid import uuid4
 
 import sqlalchemy as sa
 from sqlalchemy import DateTime, String, func, select
@@ -20,16 +21,14 @@ from configs import dify_config
 from core.rag.index_processor.constant.built_in_field import BuiltInField, MetadataDataSource
 from core.rag.retrieval.retrieval_methods import RetrievalMethod
 from extensions.ext_storage import storage
+from libs.uuid_utils import uuidv7
 from services.entities.knowledge_entities.knowledge_entities import ParentMode, Rule
 
 from .account import Account
 from .base import Base
 from .engine import db
 from .model import App, Tag, TagBinding, UploadFile
-from .types import StringUUID, LongText,BinaryData
-
-from uuid import uuid4
-from libs.uuid_utils import uuidv7
+from .types import BinaryData, LongText, StringUUID
 
 logger = logging.getLogger(__name__)
 

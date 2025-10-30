@@ -3,6 +3,7 @@ import json
 from dataclasses import field
 from datetime import datetime
 from typing import Any, Optional
+from uuid import uuid4
 
 import sqlalchemy as sa
 from flask_login import UserMixin
@@ -10,12 +11,10 @@ from sqlalchemy import DateTime, String, func, select
 from sqlalchemy.orm import Mapped, Session, mapped_column
 from typing_extensions import deprecated
 
-from uuid import uuid4
-
 from models.base import TypeBase
 
 from .engine import db
-from .types import StringUUID,LongText
+from .types import LongText, StringUUID
 
 
 class TenantAccountRole(enum.StrEnum):

@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any, cast
+from uuid import uuid4
 
 import sqlalchemy as sa
 from deprecated import deprecated
@@ -15,9 +16,7 @@ from models.base import TypeBase
 
 from .engine import db
 from .model import Account, App, Tenant
-from .types import StringUUID,LongText
-
-from uuid import uuid4
+from .types import LongText, StringUUID
 
 if TYPE_CHECKING:
     from core.entities.mcp_provider import MCPProviderEntity
@@ -221,7 +220,7 @@ class WorkflowToolProvider(TypeBase):
         sa.UniqueConstraint("tenant_id", "app_id", name="unique_workflow_tool_provider_app_id"),
     )
 
-    id: Mapped[str] = mapped_column(StringUUID, default=lambda: str(uuid4()),init=False)
+    id: Mapped[str] = mapped_column(StringUUID, default=lambda: str(uuid4()), init=False)
     # name of the workflow provider
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     # label of the workflow provider

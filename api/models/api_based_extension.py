@@ -1,14 +1,13 @@
 import enum
 from datetime import datetime
+from uuid import uuid4
 
 import sqlalchemy as sa
 from sqlalchemy import DateTime, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
-from .types import StringUUID,LongText
-
-from uuid import uuid4
+from .types import LongText, StringUUID
 
 
 class APIBasedExtensionPoint(enum.StrEnum):

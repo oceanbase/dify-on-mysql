@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from uuid import uuid4
 
 import sqlalchemy as sa
 from sqlalchemy import DateTime, String, func
@@ -7,9 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from models.base import TypeBase
 
-from .types import StringUUID,LongText
-
-from uuid import uuid4
+from .types import LongText, StringUUID
 
 
 class DataSourceOauthBinding(TypeBase):
