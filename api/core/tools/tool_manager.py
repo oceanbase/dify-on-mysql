@@ -13,6 +13,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from yarl import URL
 
+from configs import dify_config
+
 import contexts
 from core.helper.provider_cache import ToolProviderCredentialsCache
 from core.plugin.impl.tool import PluginToolManager
@@ -621,12 +623,28 @@ class ToolManager:
         """
         # according to multi credentials, select the one with is_default=True first, then created_at oldest
         # for compatibility with old version
-        sql = """
+        if dify_config.SQLALCHEMY_DATABASE_URI_SCHEME == "postgresql":
+            # PostgreSQL: Use DISTINCT ON
+            sql = """
                 SELECT DISTINCT ON (tenant_id, provider) id
                 FROM tool_builtin_providers
                 WHERE tenant_id = :tenant_id
                 ORDER BY tenant_id, provider, is_default DESC, created_at DESC
                 """
+        else:
+            # MySQL: Use window function to achieve same result
+            sql = """
+                SELECT id FROM (
+                    SELECT id, 
+                           ROW_NUMBER() OVER (
+                               PARTITION BY tenant_id, provider 
+                               ORDER BY is_default DESC, created_at DESC
+                           ) as rn
+                    FROM tool_builtin_providers
+                    WHERE tenant_id = :tenant_id
+                ) ranked WHERE rn = 1
+                """
+        
         with Session(db.engine, autoflush=False) as session:
             ids = [row.id for row in session.execute(sa.text(sql), {"tenant_id": tenant_id}).all()]
             return session.query(BuiltinToolProvider).where(BuiltinToolProvider.id.in_(ids)).all()

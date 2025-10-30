@@ -11,7 +11,7 @@ from controllers.console.app.wraps import get_app_model
 from controllers.console.wraps import account_initialization_required, setup_required
 from core.app.entities.app_invoke_entities import InvokeFrom
 from extensions.ext_database import db
-from libs.helper import DatetimeString
+from libs.helper import DatetimeString, convert_datetime_to_date
 from libs.login import current_account_with_tenant, login_required
 from models import AppMode, Message
 
@@ -45,8 +45,9 @@ class DailyMessageStatistic(Resource):
         )
         args = parser.parse_args()
 
-        sql_query = """SELECT
-    DATE(DATE_TRUNC('day', created_at AT TIME ZONE 'UTC' AT TIME ZONE :tz )) AS date,
+        converted_created_at = convert_datetime_to_date("created_at")
+        sql_query = f"""SELECT
+    {converted_created_at} AS date,
     COUNT(*) AS message_count
 FROM
     messages
@@ -188,8 +189,9 @@ class DailyTerminalsStatistic(Resource):
         )
         args = parser.parse_args()
 
-        sql_query = """SELECT
-    DATE(DATE_TRUNC('day', created_at AT TIME ZONE 'UTC' AT TIME ZONE :tz )) AS date,
+        converted_created_at = convert_datetime_to_date("created_at")
+        sql_query = f"""SELECT
+    {converted_created_at} AS date,
     COUNT(DISTINCT messages.from_end_user_id) AS terminal_count
 FROM
     messages
@@ -262,8 +264,9 @@ class DailyTokenCostStatistic(Resource):
         )
         args = parser.parse_args()
 
-        sql_query = """SELECT
-    DATE(DATE_TRUNC('day', created_at AT TIME ZONE 'UTC' AT TIME ZONE :tz )) AS date,
+        converted_created_at = convert_datetime_to_date("created_at")
+        sql_query = f"""SELECT
+    {converted_created_at} AS date,
     (SUM(messages.message_tokens) + SUM(messages.answer_tokens)) AS token_count,
     SUM(total_price) AS total_price
 FROM
@@ -339,8 +342,9 @@ class AverageSessionInteractionStatistic(Resource):
         )
         args = parser.parse_args()
 
-        sql_query = """SELECT
-    DATE(DATE_TRUNC('day', c.created_at AT TIME ZONE 'UTC' AT TIME ZONE :tz )) AS date,
+        converted_created_at = convert_datetime_to_date("c.created_at")
+        sql_query = f"""SELECT
+    {converted_created_at} AS date,
     AVG(subquery.message_count) AS interactions
 FROM
     (
@@ -432,8 +436,9 @@ class UserSatisfactionRateStatistic(Resource):
         )
         args = parser.parse_args()
 
-        sql_query = """SELECT
-    DATE(DATE_TRUNC('day', m.created_at AT TIME ZONE 'UTC' AT TIME ZONE :tz )) AS date,
+        converted_created_at = convert_datetime_to_date("m.created_at")
+        sql_query = f"""SELECT
+    {converted_created_at} AS date,
     COUNT(m.id) AS message_count,
     COUNT(mf.id) AS feedback_count
 FROM
@@ -515,8 +520,9 @@ class AverageResponseTimeStatistic(Resource):
         )
         args = parser.parse_args()
 
-        sql_query = """SELECT
-    DATE(DATE_TRUNC('day', created_at AT TIME ZONE 'UTC' AT TIME ZONE :tz )) AS date,
+        converted_created_at = convert_datetime_to_date("created_at")
+        sql_query = f"""SELECT
+    {converted_created_at} AS date,
     AVG(provider_response_latency) AS latency
 FROM
     messages
@@ -589,8 +595,9 @@ class TokensPerSecondStatistic(Resource):
         )
         args = parser.parse_args()
 
-        sql_query = """SELECT
-    DATE(DATE_TRUNC('day', created_at AT TIME ZONE 'UTC' AT TIME ZONE :tz )) AS date,
+        converted_created_at = convert_datetime_to_date("created_at")
+        sql_query = f"""SELECT
+    {converted_created_at} AS date,
     CASE
         WHEN SUM(provider_response_latency) = 0 THEN 0
         ELSE (SUM(answer_tokens) / SUM(provider_response_latency))
