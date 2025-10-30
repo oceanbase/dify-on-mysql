@@ -13,9 +13,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from yarl import URL
 
-from configs import dify_config
-
 import contexts
+from configs import dify_config
 from core.helper.provider_cache import ToolProviderCredentialsCache
 from core.plugin.impl.tool import PluginToolManager
 from core.tools.__base.tool_provider import ToolProviderController
@@ -35,7 +34,6 @@ from services.tools.mcp_tools_manage_service import MCPToolManageService
 if TYPE_CHECKING:
     from core.workflow.nodes.tool.entities import ToolEntity
 
-from configs import dify_config
 from core.agent.entities import AgentToolEntity
 from core.app.entities.app_invoke_entities import InvokeFrom
 from core.helper.module_import_helper import load_single_subclass_from_source

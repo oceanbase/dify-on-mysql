@@ -7,8 +7,8 @@ from enum import StrEnum
 from typing import Any, ClassVar
 
 from sqlalchemy import Engine, orm, select
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.mysql import insert as mysql_insert
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.sql.expression import and_, or_
 
