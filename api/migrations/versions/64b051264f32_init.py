@@ -284,7 +284,7 @@ def upgrade():
         sa.Column('id', sa.Integer(), nullable=False, autoincrement=True),
         sa.Column('task_id', sa.String(length=155), nullable=True),
         sa.Column('status', sa.String(length=50), nullable=True),
-        sa.Column('result', sa.PickleType(), nullable=True),
+        sa.Column('result', models.types.BinaryData(), nullable=True),
         sa.Column('date_done', sa.DateTime(), nullable=True),
         sa.Column('traceback', models.types.LongText(), nullable=True),
         sa.Column('name', sa.String(length=155), nullable=True),
@@ -310,7 +310,7 @@ def upgrade():
         op.create_table('celery_tasksetmeta',
         sa.Column('id', sa.Integer(), nullable=False, autoincrement=True),
         sa.Column('taskset_id', sa.String(length=155), nullable=True),
-        sa.Column('result', sa.PickleType(), nullable=True),
+        sa.Column('result', models.types.BinaryData(), nullable=True),
         sa.Column('date_done', sa.DateTime(), nullable=True),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('taskset_id')

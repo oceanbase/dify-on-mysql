@@ -106,7 +106,7 @@ def upgrade():
 
        with op.batch_alter_table('workflows', schema=None) as batch_op:
               batch_op.alter_column('updated_at',
-                     existing_type=mysql.TIMESTAMP(),
+                     existing_type=sa.TIMESTAMP(),
                      type_=sa.DateTime(),
                      existing_nullable=False)
     # ### end Alembic commands ###
@@ -194,7 +194,7 @@ def downgrade():
        with op.batch_alter_table('workflows', schema=None) as batch_op:
               batch_op.alter_column('updated_at',
                      existing_type=sa.DateTime(),
-                     type_=mysql.TIMESTAMP(),
+                     type_=sa.TIMESTAMP(),
                      existing_nullable=False)
 
        with op.batch_alter_table('providers', schema=None) as batch_op:
