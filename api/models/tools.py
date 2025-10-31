@@ -51,7 +51,7 @@ class ToolOAuthTenantClient(TypeBase):
     id: Mapped[str] = mapped_column(StringUUID, default=lambda: str(uuid4()), init=False)
     # tenant id
     tenant_id: Mapped[str] = mapped_column(StringUUID, nullable=False)
-    plugin_id: Mapped[str] = mapped_column(String(512), nullable=False)
+    plugin_id: Mapped[str] = mapped_column(String(255), nullable=False)
     provider: Mapped[str] = mapped_column(String(255), nullable=False)
     enabled: Mapped[bool] = mapped_column(sa.Boolean, nullable=False, server_default=sa.text("true"), init=False)
     # oauth params of the tool provider
@@ -473,9 +473,9 @@ class ToolFile(TypeBase):
     # original url
     original_url: Mapped[str | None] = mapped_column(String(2048), nullable=True, default=None)
     # name
-    name: Mapped[str] = mapped_column(default="")
+    name: Mapped[str] = mapped_column(String(255), default="")
     # size
-    size: Mapped[int] = mapped_column(default=-1)
+    size: Mapped[int] = mapped_column(sa.Integer, default=-1)
 
 
 @deprecated

@@ -17,7 +17,7 @@ from core.workflow.constants import (
     CONVERSATION_VARIABLE_NODE_ID,
     SYSTEM_VARIABLE_NODE_ID,
 )
-from core.workflow.enums import NodeType, WorkflowExecutionStatus
+from core.workflow.enums import NodeType
 from extensions.ext_storage import Storage
 from factories.variable_factory import TypeMismatchError, build_segment_with_type
 from libs.datetime_utils import naive_utc_now
@@ -130,8 +130,8 @@ class Workflow(Base):
     app_id: Mapped[str] = mapped_column(StringUUID, nullable=False)
     type: Mapped[str] = mapped_column(String(255), nullable=False)
     version: Mapped[str] = mapped_column(String(255), nullable=False)
-    marked_name: Mapped[str] = mapped_column(default="", server_default="")
-    marked_comment: Mapped[str] = mapped_column(default="", server_default="")
+    marked_name: Mapped[str] = mapped_column(String(255), default="", server_default="")
+    marked_comment: Mapped[str] = mapped_column(String(255), default="", server_default="")
     graph: Mapped[str] = mapped_column(LongText)
     _features: Mapped[str] = mapped_column("features", LongText)
     created_by: Mapped[str] = mapped_column(StringUUID, nullable=False)
@@ -934,7 +934,7 @@ class WorkflowNodeExecutionOffload(Base):
     id: Mapped[str] = mapped_column(
         StringUUID,
         primary_key=True,
-        server_default=sa.text("uuidv7()"),
+        default=lambda: str(uuid4()),
     )
 
     created_at: Mapped[datetime] = mapped_column(
@@ -1219,7 +1219,7 @@ class WorkflowDraftVariable(Base):
     # The variable's value serialized as a JSON string
     #
     # If the variable is offloaded, `value` contains a truncated version, not the full original value.
-    value: Mapped[str] = mapped_column(sa.Text, nullable=False, name="value")
+    value: Mapped[str] = mapped_column(LongText, nullable=False, name="value")
 
     # Controls whether the variable should be displayed in the variable inspection panel
     visible: Mapped[bool] = mapped_column(sa.Boolean, nullable=False, default=True)

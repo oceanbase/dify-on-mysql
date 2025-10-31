@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import sqlalchemy as sa
+from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from libs.uuid_utils import uuidv7
@@ -18,8 +19,8 @@ class DatasourceOauthParamConfig(Base):  # type: ignore[name-defined]
     )
 
     id = mapped_column(StringUUID, default=lambda: str(uuidv7()))
-    plugin_id: Mapped[str] = mapped_column(db.String(255), nullable=False)
-    provider: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    plugin_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    provider: Mapped[str] = mapped_column(String(255), nullable=False)
     system_credentials: Mapped[dict] = mapped_column(sa.JSON, nullable=False)
 
 
@@ -32,10 +33,10 @@ class DatasourceProvider(Base):
     )
     id = mapped_column(StringUUID, default=lambda: str(uuidv7()))
     tenant_id = mapped_column(StringUUID, nullable=False)
-    name: Mapped[str] = mapped_column(db.String(255), nullable=False)
-    provider: Mapped[str] = mapped_column(db.String(255), nullable=False)
-    plugin_id: Mapped[str] = mapped_column(db.String(255), nullable=False)
-    auth_type: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    provider: Mapped[str] = mapped_column(String(128), nullable=False)
+    plugin_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    auth_type: Mapped[str] = mapped_column(String(255), nullable=False)
     encrypted_credentials: Mapped[dict] = mapped_column(sa.JSON, nullable=False)
     avatar_url: Mapped[str] = mapped_column(LongText, nullable=True, default="default")
     is_default: Mapped[bool] = mapped_column(sa.Boolean, nullable=False, server_default=db.text("false"))
@@ -54,8 +55,8 @@ class DatasourceOauthTenantParamConfig(Base):
 
     id = mapped_column(StringUUID, default=lambda: str(uuidv7()))
     tenant_id = mapped_column(StringUUID, nullable=False)
-    provider: Mapped[str] = mapped_column(db.String(255), nullable=False)
-    plugin_id: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    provider: Mapped[str] = mapped_column(String(255), nullable=False)
+    plugin_id: Mapped[str] = mapped_column(String(255), nullable=False)
     client_params: Mapped[dict] = mapped_column(sa.JSON, nullable=False, default={})
     enabled: Mapped[bool] = mapped_column(sa.Boolean, nullable=False, default=False)
 

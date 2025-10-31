@@ -1499,7 +1499,7 @@ class EndUser(Base, UserMixin):
     def is_anonymous(self, value: bool) -> None:
         self._is_anonymous = value
 
-    session_id: Mapped[str] = mapped_column()
+    session_id: Mapped[str] = mapped_column(String(255), nullable=False)
     created_at = mapped_column(sa.DateTime, nullable=False, server_default=func.current_timestamp())
     updated_at = mapped_column(sa.DateTime, nullable=False, server_default=func.current_timestamp())
 
@@ -1733,8 +1733,8 @@ class MessageChain(Base):
     id = mapped_column(StringUUID, default=lambda: str(uuid4()))
     message_id = mapped_column(StringUUID, nullable=False)
     type: Mapped[str] = mapped_column(String(255), nullable=False)
-    input = mapped_column(sa.Text, nullable=True)
-    output = mapped_column(sa.Text, nullable=True)
+    input = mapped_column(LongText, nullable=True)
+    output = mapped_column(LongText, nullable=True)
     created_at = mapped_column(sa.DateTime, nullable=False, server_default=sa.func.current_timestamp())
 
 
@@ -1769,9 +1769,9 @@ class MessageAgentThought(Base):
     answer_price_unit = mapped_column(sa.Numeric(10, 7), nullable=False, server_default=sa.text("0.001"))
     tokens: Mapped[int | None] = mapped_column(sa.Integer, nullable=True)
     total_price = mapped_column(sa.Numeric, nullable=True)
-    currency = mapped_column(String, nullable=True)
+    currency = mapped_column(String(255), nullable=True)
     latency: Mapped[float | None] = mapped_column(sa.Float, nullable=True)
-    created_by_role = mapped_column(String, nullable=False)
+    created_by_role = mapped_column(String(255), nullable=False)
     created_by = mapped_column(StringUUID, nullable=False)
     created_at = mapped_column(sa.DateTime, nullable=False, server_default=sa.func.current_timestamp())
 

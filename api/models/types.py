@@ -4,7 +4,7 @@ from typing import Any, Generic, TypeVar
 
 from sqlalchemy import CHAR, TEXT, VARCHAR, LargeBinary, TypeDecorator
 from sqlalchemy.dialects.mysql import LONGBLOB, LONGTEXT
-from sqlalchemy.dialects.postgresql import BYTEA
+from sqlalchemy.dialects.postgresql import BYTEA, UUID
 from sqlalchemy.engine.interfaces import Dialect
 from sqlalchemy.sql.type_api import TypeEngine
 
@@ -16,7 +16,7 @@ class StringUUID(TypeDecorator[uuid.UUID | str | None]):
     def process_bind_param(self, value: uuid.UUID | str | None, dialect: Dialect) -> str | None:
         if value is None:
             return value
-        elif dialect.name in ["postgresql", "mysql"]:
+        elif dialect.name == "postgresql":
             return str(value)
         else:
             if isinstance(value, uuid.UUID):
@@ -24,7 +24,10 @@ class StringUUID(TypeDecorator[uuid.UUID | str | None]):
             return value
 
     def load_dialect_impl(self, dialect: Dialect) -> TypeEngine[Any]:
-        return dialect.type_descriptor(CHAR(36))
+        if dialect.name == "postgresql":
+            return dialect.type_descriptor(UUID())
+        else:
+            return dialect.type_descriptor(CHAR(36))
 
     def process_result_value(self, value: uuid.UUID | str | None, dialect: Dialect) -> str | None:
         if value is None:
