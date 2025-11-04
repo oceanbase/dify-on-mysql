@@ -38,7 +38,7 @@ def upgrade():
                    existing_type=sa.VARCHAR(length=255),
                    type_=models.types.LongText(),
                    existing_nullable=False,
-                   existing_server_default=sa.text("''"))
+                   existing_default=sa.text("''"))
 
     # ### end Alembic commands ###
 
@@ -60,6 +60,6 @@ def downgrade():
                    existing_type=models.types.LongText(),
                    type_=sa.VARCHAR(length=255),
                    existing_nullable=False,
-                   existing_server_default=sa.text("''"))
+                   existing_default=sa.text("''"))
 
     # ### end Alembic commands ###

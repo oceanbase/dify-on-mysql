@@ -78,27 +78,49 @@ def upgrade():
 
 def migrate_existing_providers_data():
     """migrate providers table data to provider_credentials"""
-
+    conn = op.get_bind()
     # Define table structure for data manipulation
-    providers_table = table('providers',
-        column('id', models.types.StringUUID()),
-        column('tenant_id', models.types.StringUUID()),
-        column('provider_name', sa.String()),
-        column('encrypted_config', sa.Text()),
-        column('created_at', sa.DateTime()),
-        column('updated_at', sa.DateTime()),
-        column('credential_id', models.types.StringUUID()),
-    )
+    if _is_pg(conn):
+        providers_table = table('providers',
+            column('id', models.types.StringUUID()),
+            column('tenant_id', models.types.StringUUID()),
+            column('provider_name', sa.String()),
+            column('encrypted_config', sa.Text()),
+            column('created_at', sa.DateTime()),
+            column('updated_at', sa.DateTime()),
+            column('credential_id', models.types.StringUUID()),
+        )
+    else:
+        providers_table = table('providers',
+            column('id', models.types.StringUUID()),
+            column('tenant_id', models.types.StringUUID()),
+            column('provider_name', sa.String()),
+            column('encrypted_config', models.types.LongText()),
+            column('created_at', sa.DateTime()),
+            column('updated_at', sa.DateTime()),
+            column('credential_id', models.types.StringUUID()),
+        )
 
-    provider_credential_table = table('provider_credentials',
-        column('id', models.types.StringUUID()),
-        column('tenant_id', models.types.StringUUID()),
-        column('provider_name', sa.String()),
-        column('credential_name', sa.String()),
-        column('encrypted_config', sa.Text()),
-        column('created_at', sa.DateTime()),
-        column('updated_at', sa.DateTime())
-    )
+    if _is_pg(conn):
+        provider_credential_table = table('provider_credentials',
+            column('id', models.types.StringUUID()),
+            column('tenant_id', models.types.StringUUID()),
+            column('provider_name', sa.String()),
+            column('credential_name', sa.String()),
+            column('encrypted_config', sa.Text()),
+            column('created_at', sa.DateTime()),
+            column('updated_at', sa.DateTime())
+        )
+    else:
+        provider_credential_table = table('provider_credentials',
+            column('id', models.types.StringUUID()),
+            column('tenant_id', models.types.StringUUID()),
+            column('provider_name', sa.String()),
+            column('credential_name', sa.String()),
+            column('encrypted_config', models.types.LongText()),
+            column('created_at', sa.DateTime()),
+            column('updated_at', sa.DateTime())
+        )
 
     # Get database connection
     conn = op.get_bind()
