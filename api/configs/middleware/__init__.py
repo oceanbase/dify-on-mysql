@@ -105,30 +105,79 @@ class KeywordStoreConfig(BaseSettings):
 
 
 class DatabaseConfig(BaseSettings):
-    DB_HOST: str = Field(
-        description="Hostname or IP address of the database server.",
-        default="localhost",
-    )
-
-    DB_PORT: PositiveInt = Field(
-        description="Port number for database connection.",
-        default=5432,
-    )
-
-    DB_USERNAME: str = Field(
-        description="Username for database authentication.",
-        default="postgres",
-    )
-
-    DB_PASSWORD: str = Field(
-        description="Password for database authentication.",
-        default="",
+    # Database type selector
+    DB_TYPE: Literal["postgresql", "mysql"] = Field(
+        description="Database type to use.",
+        default="postgresql",
     )
 
     DB_DATABASE: str = Field(
         description="Name of the database to connect to.",
         default="dify",
     )
+    
+    # PostgreSQL configuration
+    POSTGRES_HOST: str = Field(
+        description="PostgreSQL hostname or IP address.",
+        default="localhost",
+    )
+
+    POSTGRES_PORT: PositiveInt = Field(
+        description="PostgreSQL port number.",
+        default=5432,
+    )
+
+    POSTGRES_USER: str = Field(
+        description="PostgreSQL username.",
+        default="postgres",
+    )
+
+    POSTGRES_PASSWORD: str = Field(
+        description="PostgreSQL password.",
+        default="difyai123456",
+    )
+    
+    # MySQL configuration
+    MYSQL_HOST: str = Field(
+        description="MySQL hostname or IP address.",
+        default="localhost",
+    )
+    
+    MYSQL_PORT: PositiveInt = Field(
+        description="MySQL port number.",
+        default=3306,
+    )
+
+    MYSQL_USER: str = Field(
+        description="MySQL username.",
+        default="root",
+    )
+
+    MYSQL_PASSWORD: str = Field(
+        description="MySQL password.",
+        default="difyai123456",
+    )
+
+    # Dynamic properties based on DB_TYPE
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def DB_HOST(self) -> str:
+        return self.POSTGRES_HOST if self.DB_TYPE == "postgresql" else self.MYSQL_HOST
+    
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def DB_PORT(self) -> int:
+        return self.POSTGRES_PORT if self.DB_TYPE == "postgresql" else self.MYSQL_PORT
+    
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def DB_USERNAME(self) -> str:
+        return self.POSTGRES_USER if self.DB_TYPE == "postgresql" else self.MYSQL_USER
+    
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def DB_PASSWORD(self) -> str:
+        return self.POSTGRES_PASSWORD if self.DB_TYPE == "postgresql" else self.MYSQL_PASSWORD
 
     DB_CHARSET: str = Field(
         description="Character set for database connection.",
@@ -140,10 +189,10 @@ class DatabaseConfig(BaseSettings):
         default="",
     )
 
-    SQLALCHEMY_DATABASE_URI_SCHEME: str = Field(
-        description="Database URI scheme for SQLAlchemy connection.",
-        default="postgresql",
-    )
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def SQLALCHEMY_DATABASE_URI_SCHEME(self) -> str:
+        return "postgresql" if self.DB_TYPE == "postgresql" else "mysql+pymysql"
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -205,6 +254,7 @@ class DatabaseConfig(BaseSettings):
         db_extras_dict = dict(parse_qsl(self.DB_EXTRAS))
         options = db_extras_dict.get("options", "")
         connect_args = {}
+        # Use the dynamic SQLALCHEMY_DATABASE_URI_SCHEME property
         if self.SQLALCHEMY_DATABASE_URI_SCHEME.startswith("postgresql"):
             timezone_opt = "-c timezone=UTC"
             if options:
