@@ -67,7 +67,6 @@ class WorkflowToolManageService:
 
         with Session(db.engine, expire_on_commit=False) as session, session.begin():
             workflow_tool_provider = WorkflowToolProvider(
-                id=str(uuidv7()),
                 tenant_id=tenant_id,
                 user_id=user_id,
                 app_id=workflow_app_id,
