@@ -106,14 +106,9 @@ class KeywordStoreConfig(BaseSettings):
 
 class DatabaseConfig(BaseSettings):
     # Database type selector
-    DB_TYPE: Literal["postgresql", "mysql"] = Field(
-        description="Database type to use.",
+    DB_TYPE: Literal["postgresql", "mysql", "oceanbase"] = Field(
+        description="Database type to use. OceanBase is MySQL-compatible.",
         default="postgresql",
-    )
-
-    DB_DATABASE: str = Field(
-        description="Name of the database to connect to.",
-        default="dify",
     )
     
     # PostgreSQL configuration
@@ -136,7 +131,12 @@ class DatabaseConfig(BaseSettings):
         description="PostgreSQL password.",
         default="difyai123456",
     )
-    
+
+    POSTGRES_DATABASE: str = Field(
+        description="PostgreSQL database name.",
+        default="dify",
+    )
+
     # MySQL configuration
     MYSQL_HOST: str = Field(
         description="MySQL hostname or IP address.",
@@ -158,26 +158,87 @@ class DatabaseConfig(BaseSettings):
         default="difyai123456",
     )
 
+    MYSQL_DATABASE: str = Field(
+        description="MySQL database name.",
+        default="dify",
+    )
+
+    # OceanBase configuration (MySQL-compatible)
+    OCEANBASE_HOST: str = Field(
+        description="OceanBase hostname or IP address.",
+        default="localhost",
+    )
+    
+    OCEANBASE_PORT: PositiveInt = Field(
+        description="OceanBase port number.",
+        default=2881,
+    )
+    
+    OCEANBASE_USER: str = Field(
+        description="OceanBase username.",
+        default="root@test",
+    )
+    
+    OCEANBASE_PASSWORD: str = Field(
+        description="OceanBase password.",
+        default="difyai123456",
+    )
+    
+    OCEANBASE_DATABASE: str = Field(
+        description="OceanBase database name.",
+        default="test",
+    )
+
     # Dynamic properties based on DB_TYPE
     @computed_field  # type: ignore[prop-decorator]
     @property
     def DB_HOST(self) -> str:
-        return self.POSTGRES_HOST if self.DB_TYPE == "postgresql" else self.MYSQL_HOST
+        if self.DB_TYPE == "postgresql":
+            return self.POSTGRES_HOST
+        elif self.DB_TYPE == "oceanbase":
+            return self.OCEANBASE_HOST
+        else:
+            return self.MYSQL_HOST
     
     @computed_field  # type: ignore[prop-decorator]
     @property
     def DB_PORT(self) -> int:
-        return self.POSTGRES_PORT if self.DB_TYPE == "postgresql" else self.MYSQL_PORT
+        if self.DB_TYPE == "postgresql":
+            return self.POSTGRES_PORT
+        elif self.DB_TYPE == "oceanbase":
+            return self.OCEANBASE_PORT
+        else:
+            return self.MYSQL_PORT
     
     @computed_field  # type: ignore[prop-decorator]
     @property
     def DB_USERNAME(self) -> str:
-        return self.POSTGRES_USER if self.DB_TYPE == "postgresql" else self.MYSQL_USER
+        if self.DB_TYPE == "postgresql":
+            return self.POSTGRES_USER
+        elif self.DB_TYPE == "oceanbase":
+            return self.OCEANBASE_USER
+        else:
+            return self.MYSQL_USER
     
     @computed_field  # type: ignore[prop-decorator]
     @property
     def DB_PASSWORD(self) -> str:
-        return self.POSTGRES_PASSWORD if self.DB_TYPE == "postgresql" else self.MYSQL_PASSWORD
+        if self.DB_TYPE == "postgresql":
+            return self.POSTGRES_PASSWORD
+        elif self.DB_TYPE == "oceanbase":
+            return self.OCEANBASE_PASSWORD
+        else:
+            return self.MYSQL_PASSWORD
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def DB_DATABASE(self) -> str:
+        if self.DB_TYPE == "postgresql":
+            return self.POSTGRES_DATABASE
+        elif self.DB_TYPE == "oceanbase":
+            return self.OCEANBASE_DATABASE
+        else:
+            return self.MYSQL_DATABASE
 
     DB_CHARSET: str = Field(
         description="Character set for database connection.",
