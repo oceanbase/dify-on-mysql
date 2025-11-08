@@ -67,7 +67,6 @@ class TestToolTransformService:
             )
         elif provider_type == "workflow":
             provider = WorkflowToolProvider(
-                id=str(uuidv7()),
                 name=fake.company(),
                 description=fake.text(max_nb_chars=100),
                 icon='{"background": "#FF6B6B", "content": "🔧"}',
@@ -760,7 +759,6 @@ class TestToolTransformService:
 
         # Create workflow tool provider
         provider = WorkflowToolProvider(
-            id=str(uuidv7()),
             name=fake.company(),
             description=fake.text(max_nb_chars=100),
             icon='{"background": "#FF6B6B", "content": "🔧"}',
