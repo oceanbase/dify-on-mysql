@@ -120,6 +120,68 @@ def test_flask_configs(monkeypatch: pytest.MonkeyPatch):
     assert str(URL(str(config["CODE_EXECUTION_ENDPOINT"])) / "v1") == "http://127.0.0.1:8194/v1"
 
 
+def test_flask_configs_mysql(monkeypatch: pytest.MonkeyPatch):
+    """Test Flask configuration with MySQL database type"""
+    flask_app = Flask("app")
+    # clear system environment variables
+    os.environ.clear()
+
+    # Set environment variables using monkeypatch for MySQL
+    monkeypatch.setenv("CONSOLE_API_URL", "https://example.com")
+    monkeypatch.setenv("CONSOLE_WEB_URL", "https://example.com")
+    monkeypatch.setenv("DB_TYPE", "mysql")
+    monkeypatch.setenv("MYSQL_USER", "root")
+    monkeypatch.setenv("MYSQL_PASSWORD", "mysql123")
+    monkeypatch.setenv("MYSQL_HOST", "mysql-host")
+    monkeypatch.setenv("MYSQL_PORT", "3306")
+    monkeypatch.setenv("MYSQL_DATABASE", "dify_mysql")
+    monkeypatch.setenv("WEB_API_CORS_ALLOW_ORIGINS", "http://127.0.0.1:3000,*")
+    monkeypatch.setenv("CODE_EXECUTION_ENDPOINT", "http://127.0.0.1:8194/")
+
+    flask_app.config.from_mapping(DifyConfig().model_dump())  # pyright: ignore
+    config = flask_app.config
+
+    # configs read from pydantic-settings
+    assert config["LOG_LEVEL"] == "INFO"
+    assert config["COMMIT_SHA"] == ""
+    assert config["EDITION"] == "SELF_HOSTED"
+    assert config["API_COMPRESSION_ENABLED"] is False
+    assert config["SENTRY_TRACES_SAMPLE_RATE"] == 1.0
+
+    # value from env file
+    assert config["CONSOLE_API_URL"] == "https://example.com"
+    # fallback to alias choices value as CONSOLE_API_URL
+    assert config["FILES_URL"] == "https://example.com"
+
+    # Test MySQL database configuration
+    assert config["DB_TYPE"] == "mysql"
+    assert config["SQLALCHEMY_DATABASE_URI"] == "mysql+pymysql://root:mysql123@mysql-host:3306/dify_mysql"
+    assert config["SQLALCHEMY_DATABASE_URI_SCHEME"] == "mysql+pymysql"
+    assert config["SQLALCHEMY_ENGINE_OPTIONS"] == {
+        "connect_args": {},  # MySQL doesn't have PostgreSQL-specific options
+        "max_overflow": 10,
+        "pool_pre_ping": False,
+        "pool_recycle": 3600,
+        "pool_size": 30,
+        "pool_use_lifo": False,
+        "pool_reset_on_return": None,
+        "pool_timeout": 30,
+    }
+
+    # Test computed fields for MySQL
+    assert config["DB_HOST"] == "mysql-host"
+    assert config["DB_PORT"] == 3306
+    assert config["DB_USERNAME"] == "root"
+    assert config["DB_PASSWORD"] == "mysql123"
+    assert config["DB_DATABASE"] == "dify_mysql"
+
+    assert config["CONSOLE_WEB_URL"] == "https://example.com"
+    assert config["CONSOLE_CORS_ALLOW_ORIGINS"] == ["https://example.com"]
+    assert config["WEB_API_CORS_ALLOW_ORIGINS"] == ["http://127.0.0.1:3000", "*"]
+
+    assert str(config["CODE_EXECUTION_ENDPOINT"]) == "http://127.0.0.1:8194/"
+    assert str(URL(str(config["CODE_EXECUTION_ENDPOINT"])) / "v1") == "http://127.0.0.1:8194/v1"
+
 def test_inner_api_config_exist(monkeypatch: pytest.MonkeyPatch):
     # Set environment variables using monkeypatch
     monkeypatch.setenv("CONSOLE_API_URL", "https://example.com")
