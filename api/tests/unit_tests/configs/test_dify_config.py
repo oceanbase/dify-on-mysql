@@ -16,11 +16,11 @@ def test_dify_config(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("CONSOLE_API_URL", "https://example.com")
     monkeypatch.setenv("CONSOLE_WEB_URL", "https://example.com")
     monkeypatch.setenv("HTTP_REQUEST_MAX_WRITE_TIMEOUT", "30")  # Custom value for testing
-    monkeypatch.setenv("DB_USERNAME", "postgres")
-    monkeypatch.setenv("DB_PASSWORD", "postgres")
-    monkeypatch.setenv("DB_HOST", "localhost")
-    monkeypatch.setenv("DB_PORT", "5432")
-    monkeypatch.setenv("DB_DATABASE", "dify")
+    monkeypatch.setenv("POSTGRES_USER", "postgres")
+    monkeypatch.setenv("POSTGRES_PASSWORD", "postgres")
+    monkeypatch.setenv("POSTGRES_HOST", "localhost")
+    monkeypatch.setenv("POSTGRES_PORT", "5432")
+    monkeypatch.setenv("POSTGRES_DATABASE", "dify")
     monkeypatch.setenv("HTTP_REQUEST_MAX_READ_TIMEOUT", "300")  # Custom value for testing
 
     # load dotenv file with pydantic-settings
@@ -51,11 +51,11 @@ def test_http_timeout_defaults(monkeypatch: pytest.MonkeyPatch):
     os.environ.clear()
 
     # Set minimal required env vars
-    monkeypatch.setenv("DB_USERNAME", "postgres")
-    monkeypatch.setenv("DB_PASSWORD", "postgres")
-    monkeypatch.setenv("DB_HOST", "localhost")
-    monkeypatch.setenv("DB_PORT", "5432")
-    monkeypatch.setenv("DB_DATABASE", "dify")
+    monkeypatch.setenv("POSTGRES_USER", "postgres")
+    monkeypatch.setenv("POSTGRES_PASSWORD", "postgres")
+    monkeypatch.setenv("POSTGRES_HOST", "localhost")
+    monkeypatch.setenv("POSTGRES_PORT", "5432")
+    monkeypatch.setenv("POSTGRES_DATABASE", "dify")
 
     config = DifyConfig()
 
@@ -75,11 +75,11 @@ def test_flask_configs(monkeypatch: pytest.MonkeyPatch):
     # Set environment variables using monkeypatch
     monkeypatch.setenv("CONSOLE_API_URL", "https://example.com")
     monkeypatch.setenv("CONSOLE_WEB_URL", "https://example.com")
-    monkeypatch.setenv("DB_USERNAME", "postgres")
-    monkeypatch.setenv("DB_PASSWORD", "postgres")
-    monkeypatch.setenv("DB_HOST", "localhost")
-    monkeypatch.setenv("DB_PORT", "5432")
-    monkeypatch.setenv("DB_DATABASE", "dify")
+    monkeypatch.setenv("POSTGRES_USER", "postgres")
+    monkeypatch.setenv("POSTGRES_PASSWORD", "postgres")
+    monkeypatch.setenv("POSTGRES_HOST", "localhost")
+    monkeypatch.setenv("POSTGRES_PORT", "5432")
+    monkeypatch.setenv("POSTGRES_DATABASE", "dify")
     monkeypatch.setenv("WEB_API_CORS_ALLOW_ORIGINS", "http://127.0.0.1:3000,*")
     monkeypatch.setenv("CODE_EXECUTION_ENDPOINT", "http://127.0.0.1:8194/")
 
@@ -124,11 +124,11 @@ def test_inner_api_config_exist(monkeypatch: pytest.MonkeyPatch):
     # Set environment variables using monkeypatch
     monkeypatch.setenv("CONSOLE_API_URL", "https://example.com")
     monkeypatch.setenv("CONSOLE_WEB_URL", "https://example.com")
-    monkeypatch.setenv("DB_USERNAME", "postgres")
-    monkeypatch.setenv("DB_PASSWORD", "postgres")
-    monkeypatch.setenv("DB_HOST", "localhost")
-    monkeypatch.setenv("DB_PORT", "5432")
-    monkeypatch.setenv("DB_DATABASE", "dify")
+    monkeypatch.setenv("POSTGRES_USER", "postgres")
+    monkeypatch.setenv("POSTGRES_PASSWORD", "postgres")
+    monkeypatch.setenv("POSTGRES_HOST", "localhost")
+    monkeypatch.setenv("POSTGRES_PORT", "5432")
+    monkeypatch.setenv("POSTGRES_DATABASE", "dify")
     monkeypatch.setenv("INNER_API_KEY", "test-inner-api-key")
 
     config = DifyConfig()
@@ -140,11 +140,11 @@ def test_inner_api_config_exist(monkeypatch: pytest.MonkeyPatch):
 def test_db_extras_options_merging(monkeypatch: pytest.MonkeyPatch):
     """Test that DB_EXTRAS options are properly merged with default timezone setting"""
     # Set environment variables
-    monkeypatch.setenv("DB_USERNAME", "postgres")
-    monkeypatch.setenv("DB_PASSWORD", "postgres")
-    monkeypatch.setenv("DB_HOST", "localhost")
-    monkeypatch.setenv("DB_PORT", "5432")
-    monkeypatch.setenv("DB_DATABASE", "dify")
+    monkeypatch.setenv("POSTGRES_USER", "postgres")
+    monkeypatch.setenv("POSTGRES_PASSWORD", "postgres")
+    monkeypatch.setenv("POSTGRES_HOST", "localhost")
+    monkeypatch.setenv("POSTGRES_PORT", "5432")
+    monkeypatch.setenv("POSTGRES_DATABASE", "dify")
     monkeypatch.setenv("DB_EXTRAS", "options=-c search_path=myschema")
 
     # Create config
@@ -199,11 +199,11 @@ def test_celery_broker_url_with_special_chars_password(
     # Set up basic required environment variables (following existing pattern)
     monkeypatch.setenv("CONSOLE_API_URL", "https://example.com")
     monkeypatch.setenv("CONSOLE_WEB_URL", "https://example.com")
-    monkeypatch.setenv("DB_USERNAME", "postgres")
-    monkeypatch.setenv("DB_PASSWORD", "postgres")
-    monkeypatch.setenv("DB_HOST", "localhost")
-    monkeypatch.setenv("DB_PORT", "5432")
-    monkeypatch.setenv("DB_DATABASE", "dify")
+    monkeypatch.setenv("POSTGRES_USER", "postgres")
+    monkeypatch.setenv("POSTGRES_PASSWORD", "postgres")
+    monkeypatch.setenv("POSTGRES_HOST", "localhost")
+    monkeypatch.setenv("POSTGRES_PORT", "5432")
+    monkeypatch.setenv("POSTGRES_DATABASE", "dify")
 
     # Set the CELERY_BROKER_URL to test
     monkeypatch.setenv("CELERY_BROKER_URL", broker_url)
