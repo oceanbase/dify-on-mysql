@@ -163,6 +163,31 @@ class DatabaseConfig(BaseSettings):
         default="dify",
     )
 
+    OCEANBASE_HOST: str = Field(
+        description="OceanBase hostname or IP address.",
+        default="localhost",
+    )
+    
+    OCEANBASE_PORT: PositiveInt = Field(
+        description="OceanBase port number.",
+        default=2881,
+    )
+    
+    OCEANBASE_USER: str = Field(
+        description="OceanBase username.",
+        default="root@test",
+    )
+    
+    OCEANBASE_PASSWORD: str = Field(
+        description="OceanBase password.",
+        default="difyai123456",
+    )
+    
+    OCEANBASE_DATABASE: str = Field(
+        description="OceanBase database name.",
+        default="test",
+    )
+
     # Dynamic properties based on DB_TYPE
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -172,7 +197,7 @@ class DatabaseConfig(BaseSettings):
         elif self.DB_TYPE == "mysql":
             return self.MYSQL_HOST
         elif self.DB_TYPE == "oceanbase":
-            return getattr(self, 'OCEANBASE_HOST', 'localhost')
+            return self.OCEANBASE_HOST
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -182,7 +207,7 @@ class DatabaseConfig(BaseSettings):
         elif self.DB_TYPE == "mysql":
             return self.MYSQL_PORT
         elif self.DB_TYPE == "oceanbase":
-            return getattr(self, 'OCEANBASE_PORT', 2881)
+            return self.OCEANBASE_PORT
     
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -192,7 +217,7 @@ class DatabaseConfig(BaseSettings):
         elif self.DB_TYPE == "mysql":
             return self.MYSQL_USER
         elif self.DB_TYPE == "oceanbase":
-            return getattr(self, 'OCEANBASE_USER', 'root@test')
+            return self.OCEANBASE_USER
     
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -202,7 +227,7 @@ class DatabaseConfig(BaseSettings):
         elif self.DB_TYPE == "mysql":
             return self.MYSQL_PASSWORD
         elif self.DB_TYPE == "oceanbase":
-            return getattr(self, 'OCEANBASE_PASSWORD', 'difyai123456')
+            return self.OCEANBASE_PASSWORD
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -212,7 +237,7 @@ class DatabaseConfig(BaseSettings):
         elif self.DB_TYPE == "mysql":
             return self.MYSQL_DATABASE
         elif self.DB_TYPE == "oceanbase":
-            return getattr(self, 'OCEANBASE_DATABASE', 'test')
+            return self.OCEANBASE_DATABASE
 
     DB_CHARSET: str = Field(
         description="Character set for database connection.",
