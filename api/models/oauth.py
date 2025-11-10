@@ -38,7 +38,7 @@ class DatasourceProvider(Base):
     auth_type: Mapped[str] = mapped_column(sa.String(255), nullable=False)
     encrypted_credentials: Mapped[dict] = mapped_column(sa.JSON, nullable=False)
     avatar_url: Mapped[str] = mapped_column(LongText, nullable=True, default="default")
-    is_default: Mapped[bool] = mapped_column(sa.Boolean, nullable=False, server_default=db.text("false"))
+    is_default: Mapped[bool] = mapped_column(sa.Boolean, nullable=False, server_default=sa.text("false"))
     expires_at: Mapped[int] = mapped_column(sa.Integer, nullable=False, server_default="-1")
 
     created_at: Mapped[datetime] = mapped_column(sa.DateTime, nullable=False, server_default=func.current_timestamp())
