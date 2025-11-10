@@ -163,6 +163,7 @@ class DatabaseConfig(BaseSettings):
         default="dify",
     )
 
+    # OceanBase configuration(MySQL-compatible)
     OCEANBASE_HOST: str = Field(
         description="OceanBase hostname or IP address.",
         default="localhost",
