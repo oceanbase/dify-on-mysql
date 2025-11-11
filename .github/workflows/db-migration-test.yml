@@ -3,7 +3,7 @@ name: DB Migration Test
 on:
   push:
     branches:
-      - mysql-migration
+      - mysql-adaptation
 
 concurrency:
   group: db-migration-test-${{ github.ref }}
