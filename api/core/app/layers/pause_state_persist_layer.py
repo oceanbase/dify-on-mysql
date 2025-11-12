@@ -1,5 +1,5 @@
 from sqlalchemy import Engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 from core.workflow.graph_engine.layers.base import GraphEngineLayer
 from core.workflow.graph_events.base import GraphEngineEvent
@@ -9,7 +9,12 @@ from repositories.factory import DifyAPIRepositoryFactory
 
 
 class PauseStatePersistenceLayer(GraphEngineLayer):
-    def __init__(self, session_factory: Engine | sessionmaker, state_owner_user_id: str):
+    def __init__(
+        self,
+        session_factory: Engine | sessionmaker[Session],
+        generate_entity: WorkflowAppGenerateEntity | AdvancedChatAppGenerateEntity,
+        state_owner_user_id: str,
+    ):
         """Create a PauseStatePersistenceLayer.
 
         The `state_owner_user_id` is used when creating state file for pause.
@@ -49,6 +54,18 @@ class PauseStatePersistenceLayer(GraphEngineLayer):
             return
 
         assert self.graph_runtime_state is not None
+
+        entity_wrapper: _GenerateEntityUnion
+        if isinstance(self._generate_entity, WorkflowAppGenerateEntity):
+            entity_wrapper = _WorkflowGenerateEntityWrapper(entity=self._generate_entity)
+        else:
+            entity_wrapper = _AdvancedChatAppGenerateEntityWrapper(entity=self._generate_entity)
+
+        state = WorkflowResumptionContext(
+            serialized_graph_runtime_state=self.graph_runtime_state.dumps(),
+            generate_entity=entity_wrapper,
+        )
+
         workflow_run_id: str | None = self.graph_runtime_state.system_variable.workflow_execution_id
         assert workflow_run_id is not None
         repo = self._get_repo()
