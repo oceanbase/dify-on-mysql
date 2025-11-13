@@ -86,6 +86,10 @@ x-shared-env: &shared-api-worker-env
   OCEANBASE_MEMORY_LIMIT: ${OCEANBASE_MEMORY_LIMIT:-6G}
   OCEANBASE_ENABLE_HYBRID_SEARCH: ${OCEANBASE_ENABLE_HYBRID_SEARCH:-false}
   OCEANBASE_FULLTEXT_PARSER: ${OCEANBASE_FULLTEXT_PARSER:-ik}
+  SEEKDB_CPU_COUNT: ${SEEKDB_CPU_COUNT:-4}
+  SEEKDB_MEMORY_LIMIT: ${SEEKDB_MEMORY_LIMIT:-2G}
+  SEEKDB_LOG_DISK_SIZE: ${SEEKDB_LOG_DISK_SIZE:-2G}
+  SEEKDB_REPORTER: ${SEEKDB_REPORTER:-difyai-seekdb}
   SQLALCHEMY_POOL_SIZE: ${SQLALCHEMY_POOL_SIZE:-30}
   SQLALCHEMY_MAX_OVERFLOW: ${SQLALCHEMY_MAX_OVERFLOW:-10}
   SQLALCHEMY_POOL_RECYCLE: ${SQLALCHEMY_POOL_RECYCLE:-3600}
@@ -657,6 +661,9 @@ services:
       oceanbase:
         condition: service_healthy
         required: false
+      seekdb:
+        condition: service_healthy
+        required: false
       redis:
         condition: service_started
     volumes:
@@ -691,6 +698,9 @@ services:
       oceanbase:
         condition: service_healthy
         required: false
+      seekdb:
+        condition: service_healthy
+        required: false
       redis:
         condition: service_started
     volumes:
@@ -718,6 +728,9 @@ services:
         condition: service_healthy
         required: false
       oceanbase:
+        condition: service_healthy
+        required: false
+      seekdb:
         condition: service_healthy
         required: false
       redis:
@@ -934,6 +947,9 @@ services:
       oceanbase:
         condition: service_healthy
         required: false
+      seekdb:
+        condition: service_healthy
+        required: false
 
   # ssrf_proxy server
   # for more information, please refer to
@@ -1074,13 +1090,40 @@ services:
       test:
         [
           "CMD-SHELL",
-          'obclient -h127.0.0.1 -P2881 -uroot@test -p$${OB_TENANT_PASSWORD} -e "SELECT 1;"',
+          'obclient -h127.0.0.1 -P2881 -uroot@test -p${OCEANBASE_PASSWORD} -e "SELECT 1;"',
         ]
       interval: 10s
       retries: 30
       start_period: 30s
       timeout: 10s
-
+  
+  # SeekDB database
+  seekdb: 
+    image: oceanbase/seekdb:latest
+    container_name: seekdb
+    profiles:
+      - seekdb
+    restart: always
+    volumes:
+      - ./volumes/seekdb:/var/lib/oceanbase
+    environment:
+      ROOT_PASSWORD: ${OCEANBASE_PASSWORD:-difyai123456}
+      CPU_COUNT: ${SEEKDB_CPU_COUNT:-4}
+      MEMORY_LIMIT: ${SEEKDB_MEMORY_LIMIT:-2G}
+      LOG_DISK_SIZE: ${SEEKDB_LOG_DISK_SIZE:-2G}
+      REPORTER: ${SEEKDB_REPORTER:-difyai-seekdb}
+    ports:
+      - "${OCEANBASE_PORT:-2881}:2881"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'mysql -h127.0.0.1 -P2881 -uroot -p${OCEANBASE_PASSWORD} -e "SELECT 1;"',
+        ]
+      interval: 5s
+      retries: 30
+      timeout: 5s
+       
   # Qdrant vector store.
   # (if used, you need to set VECTOR_STORE to qdrant in the api & worker service.)
   qdrant:
