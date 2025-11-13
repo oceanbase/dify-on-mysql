@@ -2,7 +2,7 @@ from typing import Annotated, Literal, Self, TypeAlias
 
 from pydantic import BaseModel, Field
 from sqlalchemy import Engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import sessionmaker
 
 from core.app.entities.app_invoke_entities import AdvancedChatAppGenerateEntity, WorkflowAppGenerateEntity
 from core.workflow.graph_engine.layers.base import GraphEngineLayer
