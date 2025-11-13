@@ -7,8 +7,6 @@ import sqlalchemy as sa
 from sqlalchemy import DateTime, String, func, text
 from sqlalchemy.orm import Mapped, mapped_column
 
-
-
 from libs.uuid_utils import uuidv7
 
 from .base import Base, TypeBase
@@ -70,9 +68,7 @@ class Provider(TypeBase):
     last_used: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, init=False)
     credential_id: Mapped[str | None] = mapped_column(StringUUID, nullable=True, default=None)
 
-    quota_type: Mapped[str | None] = mapped_column(
-        String(40), nullable=True, server_default=text("''"), default=""
-    )
+    quota_type: Mapped[str | None] = mapped_column(String(40), nullable=True, server_default=text("''"), default="")
     quota_limit: Mapped[int | None] = mapped_column(sa.BigInteger, nullable=True, default=None)
     quota_used: Mapped[int] = mapped_column(sa.BigInteger, nullable=False, default=0)
 

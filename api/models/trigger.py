@@ -4,6 +4,7 @@ from collections.abc import Mapping
 from datetime import datetime
 from functools import cached_property
 from typing import Any, cast
+from uuid import uuid4
 
 import sqlalchemy as sa
 from sqlalchemy import DateTime, Index, Integer, String, UniqueConstraint, func
@@ -20,7 +21,6 @@ from models.engine import db
 from models.enums import AppTriggerStatus, AppTriggerType, CreatorUserRole, WorkflowTriggerStatus
 from models.model import Account
 from models.types import EnumText, LongText, StringUUID
-from uuid import uuid4
 
 
 class TriggerSubscription(Base):
