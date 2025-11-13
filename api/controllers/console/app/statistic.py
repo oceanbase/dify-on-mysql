@@ -81,16 +81,19 @@ WHERE
         return jsonify({"data": response_data})
 
 
+parser = (
+    reqparse.RequestParser()
+    .add_argument("start", type=DatetimeString("%Y-%m-%d %H:%M"), location="args", help="Start date (YYYY-MM-DD HH:MM)")
+    .add_argument("end", type=DatetimeString("%Y-%m-%d %H:%M"), location="args", help="End date (YYYY-MM-DD HH:MM)")
+)
+
+
 @console_ns.route("/apps/<uuid:app_id>/statistics/daily-conversations")
 class DailyConversationStatistic(Resource):
     @api.doc("get_daily_conversation_statistics")
     @api.doc(description="Get daily conversation statistics for an application")
     @api.doc(params={"app_id": "Application ID"})
-    @api.expect(
-        api.parser()
-        .add_argument("start", type=str, location="args", help="Start date (YYYY-MM-DD HH:MM)")
-        .add_argument("end", type=str, location="args", help="End date (YYYY-MM-DD HH:MM)")
-    )
+    @api.expect(parser)
     @api.response(
         200,
         "Daily conversation statistics retrieved successfully",
@@ -103,11 +106,6 @@ class DailyConversationStatistic(Resource):
     def get(self, app_model):
         account, _ = current_account_with_tenant()
 
-        parser = (
-            reqparse.RequestParser()
-            .add_argument("start", type=DatetimeString("%Y-%m-%d %H:%M"), location="args")
-            .add_argument("end", type=DatetimeString("%Y-%m-%d %H:%M"), location="args")
-        )
         args = parser.parse_args()
 
         converted_created_at = convert_datetime_to_date("created_at")
@@ -151,11 +149,7 @@ class DailyTerminalsStatistic(Resource):
     @api.doc("get_daily_terminals_statistics")
     @api.doc(description="Get daily terminal/end-user statistics for an application")
     @api.doc(params={"app_id": "Application ID"})
-    @api.expect(
-        api.parser()
-        .add_argument("start", type=str, location="args", help="Start date (YYYY-MM-DD HH:MM)")
-        .add_argument("end", type=str, location="args", help="End date (YYYY-MM-DD HH:MM)")
-    )
+    @api.expect(parser)
     @api.response(
         200,
         "Daily terminal statistics retrieved successfully",
@@ -168,11 +162,6 @@ class DailyTerminalsStatistic(Resource):
     def get(self, app_model):
         account, _ = current_account_with_tenant()
 
-        parser = (
-            reqparse.RequestParser()
-            .add_argument("start", type=DatetimeString("%Y-%m-%d %H:%M"), location="args")
-            .add_argument("end", type=DatetimeString("%Y-%m-%d %H:%M"), location="args")
-        )
         args = parser.parse_args()
 
         converted_created_at = convert_datetime_to_date("created_at")
@@ -217,11 +206,7 @@ class DailyTokenCostStatistic(Resource):
     @api.doc("get_daily_token_cost_statistics")
     @api.doc(description="Get daily token cost statistics for an application")
     @api.doc(params={"app_id": "Application ID"})
-    @api.expect(
-        api.parser()
-        .add_argument("start", type=str, location="args", help="Start date (YYYY-MM-DD HH:MM)")
-        .add_argument("end", type=str, location="args", help="End date (YYYY-MM-DD HH:MM)")
-    )
+    @api.expect(parser)
     @api.response(
         200,
         "Daily token cost statistics retrieved successfully",
@@ -234,11 +219,6 @@ class DailyTokenCostStatistic(Resource):
     def get(self, app_model):
         account, _ = current_account_with_tenant()
 
-        parser = (
-            reqparse.RequestParser()
-            .add_argument("start", type=DatetimeString("%Y-%m-%d %H:%M"), location="args")
-            .add_argument("end", type=DatetimeString("%Y-%m-%d %H:%M"), location="args")
-        )
         args = parser.parse_args()
 
         converted_created_at = convert_datetime_to_date("created_at")
@@ -286,11 +266,7 @@ class AverageSessionInteractionStatistic(Resource):
     @api.doc("get_average_session_interaction_statistics")
     @api.doc(description="Get average session interaction statistics for an application")
     @api.doc(params={"app_id": "Application ID"})
-    @api.expect(
-        api.parser()
-        .add_argument("start", type=str, location="args", help="Start date (YYYY-MM-DD HH:MM)")
-        .add_argument("end", type=str, location="args", help="End date (YYYY-MM-DD HH:MM)")
-    )
+    @api.expect(parser)
     @api.response(
         200,
         "Average session interaction statistics retrieved successfully",
@@ -303,11 +279,6 @@ class AverageSessionInteractionStatistic(Resource):
     def get(self, app_model):
         account, _ = current_account_with_tenant()
 
-        parser = (
-            reqparse.RequestParser()
-            .add_argument("start", type=DatetimeString("%Y-%m-%d %H:%M"), location="args")
-            .add_argument("end", type=DatetimeString("%Y-%m-%d %H:%M"), location="args")
-        )
         args = parser.parse_args()
 
         converted_created_at = convert_datetime_to_date("c.created_at")
@@ -371,11 +342,7 @@ class UserSatisfactionRateStatistic(Resource):
     @api.doc("get_user_satisfaction_rate_statistics")
     @api.doc(description="Get user satisfaction rate statistics for an application")
     @api.doc(params={"app_id": "Application ID"})
-    @api.expect(
-        api.parser()
-        .add_argument("start", type=str, location="args", help="Start date (YYYY-MM-DD HH:MM)")
-        .add_argument("end", type=str, location="args", help="End date (YYYY-MM-DD HH:MM)")
-    )
+    @api.expect(parser)
     @api.response(
         200,
         "User satisfaction rate statistics retrieved successfully",
@@ -388,11 +355,6 @@ class UserSatisfactionRateStatistic(Resource):
     def get(self, app_model):
         account, _ = current_account_with_tenant()
 
-        parser = (
-            reqparse.RequestParser()
-            .add_argument("start", type=DatetimeString("%Y-%m-%d %H:%M"), location="args")
-            .add_argument("end", type=DatetimeString("%Y-%m-%d %H:%M"), location="args")
-        )
         args = parser.parse_args()
 
         converted_created_at = convert_datetime_to_date("m.created_at")
@@ -446,11 +408,7 @@ class AverageResponseTimeStatistic(Resource):
     @api.doc("get_average_response_time_statistics")
     @api.doc(description="Get average response time statistics for an application")
     @api.doc(params={"app_id": "Application ID"})
-    @api.expect(
-        api.parser()
-        .add_argument("start", type=str, location="args", help="Start date (YYYY-MM-DD HH:MM)")
-        .add_argument("end", type=str, location="args", help="End date (YYYY-MM-DD HH:MM)")
-    )
+    @api.expect(parser)
     @api.response(
         200,
         "Average response time statistics retrieved successfully",
@@ -463,11 +421,6 @@ class AverageResponseTimeStatistic(Resource):
     def get(self, app_model):
         account, _ = current_account_with_tenant()
 
-        parser = (
-            reqparse.RequestParser()
-            .add_argument("start", type=DatetimeString("%Y-%m-%d %H:%M"), location="args")
-            .add_argument("end", type=DatetimeString("%Y-%m-%d %H:%M"), location="args")
-        )
         args = parser.parse_args()
 
         converted_created_at = convert_datetime_to_date("created_at")
@@ -512,11 +465,7 @@ class TokensPerSecondStatistic(Resource):
     @api.doc("get_tokens_per_second_statistics")
     @api.doc(description="Get tokens per second statistics for an application")
     @api.doc(params={"app_id": "Application ID"})
-    @api.expect(
-        api.parser()
-        .add_argument("start", type=str, location="args", help="Start date (YYYY-MM-DD HH:MM)")
-        .add_argument("end", type=str, location="args", help="End date (YYYY-MM-DD HH:MM)")
-    )
+    @api.expect(parser)
     @api.response(
         200,
         "Tokens per second statistics retrieved successfully",
@@ -528,12 +477,6 @@ class TokensPerSecondStatistic(Resource):
     @account_initialization_required
     def get(self, app_model):
         account, _ = current_account_with_tenant()
-
-        parser = (
-            reqparse.RequestParser()
-            .add_argument("start", type=DatetimeString("%Y-%m-%d %H:%M"), location="args")
-            .add_argument("end", type=DatetimeString("%Y-%m-%d %H:%M"), location="args")
-        )
         args = parser.parse_args()
 
         converted_created_at = convert_datetime_to_date("created_at")
