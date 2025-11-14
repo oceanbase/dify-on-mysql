@@ -441,7 +441,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          'obclient -h127.0.0.1 -P2881 -uroot@test -p${OOCEANBASE_VECTOR_PASSWORD} -e "SELECT 1;"',
+          'obclient -h127.0.0.1 -P2881 -uroot@test -p${OCEANBASE_VECTOR_PASSWORD} -e "SELECT 1;"',
         ]
       interval: 10s
       retries: 30
