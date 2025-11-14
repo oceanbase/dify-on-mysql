@@ -132,7 +132,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-difyai123456}
-      POSTGRES_DB: ${DB_DATABASE:-dify}
+      POSTGRES_DB: ${POSTGRES_DB:-dify}
       PGDATA: ${PGDATA:-/var/lib/postgresql/data/pgdata}
     command: >
       postgres -c 'max_connections=${POSTGRES_MAX_CONNECTIONS:-100}'
@@ -170,7 +170,7 @@ services:
       - ./middleware.env
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD:-difyai123456}
-      MYSQL_DATABASE: ${DB_DATABASE:-dify}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-dify}
     command: >
       --max_connections=1000
       --innodb_buffer_pool_size=${MYSQL_INNODB_BUFFER_POOL_SIZE:-512M}
@@ -178,8 +178,6 @@ services:
       --innodb_flush_log_at_trx_commit=${MYSQL_INNODB_FLUSH_LOG_AT_TRX_COMMIT:-2}
     volumes:
       - ${MYSQL_HOST_VOLUME:-./volumes/mysql/data}:/var/lib/mysql
-    ports:
-      - "${MYSQL_PORT:-3306}:3306"
     healthcheck:
       test:
         [
