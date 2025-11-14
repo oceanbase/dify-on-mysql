@@ -456,7 +456,7 @@ x-shared-env: &shared-api-worker-env
   POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-${DB_PASSWORD}}
   POSTGRES_DB: ${POSTGRES_DB:-${DB_DATABASE}}
   PGDATA: ${PGDATA:-/var/lib/postgresql/data/pgdata}
-  MYSQL_USER: ${MYSQL_USER:-${DB_USERNAME}}
+  MYSQL_USERNAME: ${MYSQL_USERNAME:-${DB_USERNAME}}
   MYSQL_PASSWORD: ${MYSQL_PASSWORD:-${DB_PASSWORD}}
   MYSQL_DATABASE: ${MYSQL_DATABASE:-${DB_DATABASE}}
   MYSQL_HOST_VOLUME: ${MYSQL_HOST_VOLUME:-./volumes/mysql/data}
@@ -634,7 +634,7 @@ x-shared-env: &shared-api-worker-env
 services:
   # API service
   api:
-    image: dify-api:test
+    image: langgenius/dify-api:1.10.0-rc1
     restart: always
     environment:
       # Use the shared environment variables.
@@ -670,7 +670,7 @@ services:
   # worker service
   # The Celery worker for processing all queues (dataset, workflow, mail, etc.)
   worker:
-    image: dify-api:test
+    image: langgenius/dify-api:1.10.0-rc1
     restart: always
     environment:
       # Use the shared environment variables.
@@ -704,7 +704,7 @@ services:
   # worker_beat service
   # Celery beat for scheduling periodic tasks.
   worker_beat:
-    image: dify-api:test
+    image: langgenius/dify-api:1.10.0-rc1
     restart: always
     environment:
       # Use the shared environment variables.
@@ -868,7 +868,7 @@ services:
 
   # plugin daemon
   plugin_daemon:
-    image: langgenius/dify-plugin-daemon:0.3.3-local
+    image: langgenius/dify-plugin-daemon:0.4.0-local
     restart: always
     environment:
       # Use the shared environment variables.
