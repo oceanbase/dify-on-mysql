@@ -429,19 +429,19 @@ services:
       - ./volumes/oceanbase/init.d:/root/boot/init.d
     environment:
       OB_MEMORY_LIMIT: ${OCEANBASE_MEMORY_LIMIT:-6G}
-      OB_SYS_PASSWORD: ${OCEANBASE_PASSWORD:-difyai123456}
-      OB_TENANT_PASSWORD: ${OCEANBASE_PASSWORD:-difyai123456}
+      OB_SYS_PASSWORD: ${OCEANBASE_VECTOR_PASSWORD:-difyai123456}
+      OB_TENANT_PASSWORD: ${OCEANBASE_VECTOR_PASSWORD:-difyai123456}
       OB_CLUSTER_NAME: ${OCEANBASE_CLUSTER_NAME:-difyai}
       OB_SERVER_IP: 127.0.0.1
       MODE: mini
       LANG: en_US.UTF-8
     ports:
-      - "${OCEANBASE_PORT:-2881}:2881"
+      - "${OCEANBASE_VECTOR_PORT:-2881}:2881"
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          'obclient -h127.0.0.1 -P2881 -uroot@test -p$${OB_TENANT_PASSWORD} -e "SELECT 1;"',
+          'obclient -h127.0.0.1 -P2881 -uroot@test -p${OB_TENANT_PASSWORD} -e "SELECT 1;"',
         ]
       interval: 10s
       retries: 30
