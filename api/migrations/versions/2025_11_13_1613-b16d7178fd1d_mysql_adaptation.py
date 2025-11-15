@@ -25,14 +25,12 @@ def upgrade():
     conn = op.get_bind()
     if _is_pg(conn):
        with op.batch_alter_table('data_source_oauth_bindings', schema=None) as batch_op:
-              batch_op.drop_index(batch_op.f('source_info_idx'), postgresql_using='gin')
               batch_op.alter_column('source_info',
                      existing_type=postgresql.JSONB(astext_type=sa.Text()),
                      type_=sa.JSON(),
                      existing_nullable=False)
 
        with op.batch_alter_table('datasets', schema=None) as batch_op:
-              batch_op.drop_index(batch_op.f('retrieval_model_idx'), postgresql_using='gin')
               batch_op.alter_column('retrieval_model',
                      existing_type=postgresql.JSONB(astext_type=sa.Text()),
                      type_=sa.JSON(),
@@ -65,7 +63,6 @@ def upgrade():
                      existing_nullable=False)
 
        with op.batch_alter_table('documents', schema=None) as batch_op:
-              batch_op.drop_index(batch_op.f('document_metadata_idx'), postgresql_using='gin')
               batch_op.alter_column('doc_metadata',
                      existing_type=postgresql.JSONB(astext_type=sa.Text()),
                      type_=sa.JSON(),
@@ -169,7 +166,6 @@ def downgrade():
                      existing_type=sa.JSON(),
                      type_=postgresql.JSONB(astext_type=sa.Text()),
                      existing_nullable=True)
-              batch_op.create_index(batch_op.f('document_metadata_idx'), ['doc_metadata'], unique=False, postgresql_using='gin')
 
        with op.batch_alter_table('datasource_providers', schema=None) as batch_op:
               batch_op.alter_column('encrypted_credentials',
@@ -202,14 +198,12 @@ def downgrade():
                      existing_type=sa.JSON(),
                      type_=postgresql.JSONB(astext_type=sa.Text()),
                      existing_nullable=True)
-              batch_op.create_index(batch_op.f('retrieval_model_idx'), ['retrieval_model'], unique=False, postgresql_using='gin')
 
        with op.batch_alter_table('data_source_oauth_bindings', schema=None) as batch_op:
               batch_op.alter_column('source_info',
                      existing_type=sa.JSON(),
                      type_=postgresql.JSONB(astext_type=sa.Text()),
                      existing_nullable=False)
-              batch_op.create_index(batch_op.f('source_info_idx'), ['source_info'], unique=False, postgresql_using='gin')
     else:
        with op.batch_alter_table('workflows', schema=None) as batch_op:
               batch_op.alter_column('updated_at',

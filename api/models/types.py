@@ -2,11 +2,14 @@ import enum
 import uuid
 from typing import Any, Generic, TypeVar
 
+import sqlalchemy as sa
 from sqlalchemy import CHAR, TEXT, VARCHAR, LargeBinary, TypeDecorator
 from sqlalchemy.dialects.mysql import LONGBLOB, LONGTEXT
 from sqlalchemy.dialects.postgresql import BYTEA, UUID
 from sqlalchemy.engine.interfaces import Dialect
 from sqlalchemy.sql.type_api import TypeEngine
+
+from configs import dify_config
 
 
 class StringUUID(TypeDecorator[uuid.UUID | str | None]):
@@ -124,3 +127,11 @@ class EnumText(TypeDecorator[_E | None], Generic[_E]):
         if x is None or y is None:
             return x is y
         return x == y
+
+
+def adjusted_json_index(index_name, column_name):
+    index_name = index_name or f"{column_name}_idx"
+    if dify_config.DB_TYPE == "postgresql":
+        return sa.Index(index_name, column_name, postgresql_using="gin")
+    else:
+        return None
