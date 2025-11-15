@@ -110,7 +110,6 @@ class AdjustedJSON(TypeDecorator[dict | list | None]):
         return value
 
 
-
 _E = TypeVar("_E", bound=enum.StrEnum)
 
 
