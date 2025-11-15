@@ -6,7 +6,7 @@ from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, cast
 
-from api.core.callback_handler.index_tool_callback_handler import DatasetDocument
+from core.callback_handler.index_tool_callback_handler import DatasetDocument
 from sqlalchemy import and_, func, literal, or_, select
 from sqlalchemy.orm import sessionmaker
 

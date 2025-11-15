@@ -1068,6 +1068,8 @@ class DatasetRetrieval:
 
             case "≥" | ">=":
                 filters.append(DatasetDocument.doc_metadata[metadata_name].as_float() >= value)
+            case _:
+                pass
 
         return filters
 
