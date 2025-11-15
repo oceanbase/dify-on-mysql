@@ -37,7 +37,7 @@ def upgrade():
         )
     else:
         op.create_table('datasource_oauth_params',
-        sa.Column('id', models.types.StringUUID(), default=lambda: str(uuidv7()), nullable=False),
+        sa.Column('id', models.types.StringUUID(), nullable=False),
         sa.Column('plugin_id', sa.String(length=255), nullable=False),
         sa.Column('provider', sa.String(length=255), nullable=False),
         sa.Column('system_credentials', sa.JSON(), nullable=False),
@@ -59,7 +59,7 @@ def upgrade():
         )
     else:
         op.create_table('datasource_oauth_tenant_params',
-        sa.Column('id', models.types.StringUUID(), default=lambda: str(uuidv7()), nullable=False),
+        sa.Column('id', models.types.StringUUID(), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
         sa.Column('provider', sa.String(length=255), nullable=False),
         sa.Column('plugin_id', sa.String(length=255), nullable=False),
@@ -89,7 +89,7 @@ def upgrade():
         )
     else:
         op.create_table('datasource_providers',
-        sa.Column('id', models.types.StringUUID(), default=lambda: str(uuidv7()), nullable=False),
+        sa.Column('id', models.types.StringUUID(), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
         sa.Column('name', sa.String(length=255), nullable=False),
         sa.Column('provider', sa.String(length=128), nullable=False),
@@ -122,7 +122,7 @@ def upgrade():
         )
     else:
         op.create_table('document_pipeline_execution_logs',
-        sa.Column('id', models.types.StringUUID(), default=lambda: str(uuidv7()), nullable=False),
+        sa.Column('id', models.types.StringUUID(), nullable=False),
         sa.Column('pipeline_id', models.types.StringUUID(), nullable=False),
         sa.Column('document_id', models.types.StringUUID(), nullable=False),
         sa.Column('datasource_type', sa.String(length=255), nullable=False),
@@ -157,7 +157,7 @@ def upgrade():
         )
     else:
         op.create_table('pipeline_built_in_templates',
-        sa.Column('id', models.types.StringUUID(), default=lambda: str(uuidv7()), nullable=False),
+        sa.Column('id', models.types.StringUUID(), nullable=False),
         sa.Column('name', sa.String(length=255), nullable=False),
         sa.Column('description', models.types.LongText(), nullable=False),
         sa.Column('chunk_structure', sa.String(length=255), nullable=False),
@@ -195,7 +195,7 @@ def upgrade():
     else:
         # MySQL: Use compatible syntax
         op.create_table('pipeline_customized_templates',
-        sa.Column('id', models.types.StringUUID(), default=lambda: str(uuidv7()), nullable=False),
+        sa.Column('id', models.types.StringUUID(), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
         sa.Column('name', sa.String(length=255), nullable=False),
         sa.Column('description', models.types.LongText(), nullable=False),
@@ -227,7 +227,7 @@ def upgrade():
         )
     else:
         op.create_table('pipeline_recommended_plugins',
-        sa.Column('id', models.types.StringUUID(), default=lambda: str(uuidv7()), nullable=False),
+        sa.Column('id', models.types.StringUUID(), nullable=False),
         sa.Column('plugin_id', models.types.LongText(), nullable=False),
         sa.Column('provider_name', models.types.LongText(), nullable=False),
         sa.Column('position', sa.Integer(), nullable=False),
@@ -253,7 +253,7 @@ def upgrade():
         )
     else:
         op.create_table('pipelines',
-        sa.Column('id', models.types.StringUUID(), default=lambda: str(uuidv7()), nullable=False),
+        sa.Column('id', models.types.StringUUID(), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
         sa.Column('name', sa.String(length=255), nullable=False),
         sa.Column('description', models.types.LongText(), default=sa.text("''"), nullable=False),
@@ -281,7 +281,7 @@ def upgrade():
         )
     else:
         op.create_table('workflow_draft_variable_files',
-        sa.Column('id', models.types.StringUUID(), default=lambda: str(uuidv7()), nullable=False),
+        sa.Column('id', models.types.StringUUID(), nullable=False),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False, comment='The tenant to which the WorkflowDraftVariableFile belongs, referencing Tenant.id'),
         sa.Column('app_id', models.types.StringUUID(), nullable=False, comment='The application to which the WorkflowDraftVariableFile belongs, referencing App.id'),
@@ -306,7 +306,7 @@ def upgrade():
         )
     else:
         op.create_table('workflow_node_execution_offload',
-        sa.Column('id', models.types.StringUUID(), default=lambda: str(uuidv7()), nullable=False),
+        sa.Column('id', models.types.StringUUID(), nullable=False),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
         sa.Column('app_id', models.types.StringUUID(), nullable=False),
