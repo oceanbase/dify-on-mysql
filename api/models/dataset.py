@@ -29,7 +29,7 @@ from .account import Account
 from .base import Base
 from .engine import db
 from .model import App, Tag, TagBinding, UploadFile
-from .types import BinaryData, LongText, StringUUID
+from .types import BinaryData, LongText, StringUUID, adjusted_json_index
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +45,7 @@ class Dataset(Base):
     __table_args__ = (
         sa.PrimaryKeyConstraint("id", name="dataset_pkey"),
         sa.Index("dataset_tenant_idx", "tenant_id"),
+        adjusted_json_index("retrieval_model_idx", "retrieval_model"),
     )
 
     INDEXING_TECHNIQUE_LIST = ["high_quality", "economy", None]
@@ -347,6 +348,7 @@ class Document(Base):
         sa.Index("document_dataset_id_idx", "dataset_id"),
         sa.Index("document_is_paused_idx", "is_paused"),
         sa.Index("document_tenant_idx", "tenant_id"),
+        adjusted_json_index("document_metadata_idx", "doc_metadata"),
     )
 
     # initial fields
