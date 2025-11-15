@@ -29,7 +29,7 @@ from .account import Account
 from .base import Base
 from .engine import db
 from .model import App, Tag, TagBinding, UploadFile
-from .types import BinaryData, LongText, StringUUID, adjusted_json_index
+from .types import AdjustedJSON, BinaryData, LongText, StringUUID, adjusted_json_index
 
 logger = logging.getLogger(__name__)
 
@@ -70,9 +70,9 @@ class Dataset(Base):
     embedding_model_provider = mapped_column(sa.String(255), nullable=True)
     keyword_number = mapped_column(sa.Integer, nullable=True, server_default=sa.text("10"))
     collection_binding_id = mapped_column(StringUUID, nullable=True)
-    retrieval_model = mapped_column(sa.JSON, nullable=True)
+    retrieval_model = mapped_column(AdjustedJSON, nullable=True)
     built_in_field_enabled = mapped_column(sa.Boolean, nullable=False, server_default=sa.text("false"))
-    icon_info = mapped_column(sa.JSON, nullable=True)
+    icon_info = mapped_column(AdjustedJSON, nullable=True)
     runtime_mode = mapped_column(sa.String(255), nullable=True, server_default=sa.text("'general'"))
     pipeline_id = mapped_column(StringUUID, nullable=True)
     chunk_structure = mapped_column(sa.String(255), nullable=True)
@@ -407,7 +407,7 @@ class Document(Base):
         DateTime, nullable=False, server_default=func.current_timestamp(), onupdate=func.current_timestamp()
     )
     doc_type = mapped_column(String(40), nullable=True)
-    doc_metadata = mapped_column(sa.JSON, nullable=True)
+    doc_metadata = mapped_column(AdjustedJSON, nullable=True)
     doc_form = mapped_column(String(255), nullable=False, server_default=sa.text("'text_model'"))
     doc_language = mapped_column(String(255), nullable=True)
 

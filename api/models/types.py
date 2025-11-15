@@ -5,7 +5,7 @@ from typing import Any, Generic, TypeVar
 import sqlalchemy as sa
 from sqlalchemy import CHAR, TEXT, VARCHAR, LargeBinary, TypeDecorator
 from sqlalchemy.dialects.mysql import LONGBLOB, LONGTEXT
-from sqlalchemy.dialects.postgresql import BYTEA, UUID
+from sqlalchemy.dialects.postgresql import BYTEA, UUID, JSONB
 from sqlalchemy.engine.interfaces import Dialect
 from sqlalchemy.sql.type_api import TypeEngine
 
@@ -83,6 +83,24 @@ class BinaryData(TypeDecorator[bytes | None]):
             return value
         return value
 
+class AdjustedJSON(TypeDecorator[dict | list | None]):
+    impl = sa.JSON
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect: Dialect) -> TypeEngine[Any]:
+        if dialect.name == "postgresql":
+            return dialect.type_descriptor(JSONB())
+        elif dialect.name == "mysql":
+            return dialect.type_descriptor(sa.JSON())
+        else:
+            return dialect.type_descriptor(sa.JSON())
+
+    def process_bind_param(self, value: dict | list | None, dialect: Dialect) -> dict | list | None:
+        return value
+
+    def process_result_value(self, value: dict | list | None, dialect: Dialect) -> dict | list | None:
+        return value
+
 
 _E = TypeVar("_E", bound=enum.StrEnum)
 
@@ -132,6 +150,6 @@ class EnumText(TypeDecorator[_E | None], Generic[_E]):
 def adjusted_json_index(index_name, column_name):
     index_name = index_name or f"{column_name}_idx"
     if dify_config.DB_TYPE == "postgresql":
-        return sa.Index(index_name, column_name, postgresql_using="gin", postgresql_ops={column_name: 'jsonb_path_ops'})
+        return sa.Index(index_name, column_name, postgresql_using="gin")
     else:
         return None
