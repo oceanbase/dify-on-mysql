@@ -6,12 +6,12 @@ from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, cast
 
-from core.callback_handler.index_tool_callback_handler import DatasetDocument
 from sqlalchemy import and_, func, literal, or_, select
 from sqlalchemy.orm import sessionmaker
 
 from core.app.app_config.entities import DatasetRetrieveConfigEntity
 from core.app.entities.app_invoke_entities import ModelConfigWithCredentialsEntity
+from core.callback_handler.index_tool_callback_handler import DatasetDocument
 from core.entities.agent_entities import PlanningStrategy
 from core.entities.model_entities import ModelStatus
 from core.model_manager import ModelInstance, ModelManager
@@ -666,6 +666,9 @@ class KnowledgeRetrievalNode(LLMUsageTrackingMixin, Node):
 
             case "≥" | ">=":
                 filters.append(DatasetDocument.doc_metadata[metadata_name].as_float() >= value)
+
+            case _:
+                pass
 
         return filters
 
