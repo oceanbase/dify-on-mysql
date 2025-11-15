@@ -40,7 +40,7 @@ def upgrade():
         sa.Column('id', models.types.StringUUID(), nullable=False),
         sa.Column('plugin_id', sa.String(length=255), nullable=False),
         sa.Column('provider', sa.String(length=255), nullable=False),
-        sa.Column('system_credentials', sa.JSON(), nullable=False),
+        sa.Column('system_credentials', models.types.AdjustedJSON(astext_type=sa.Text()), nullable=False),
         sa.PrimaryKeyConstraint('id', name='datasource_oauth_config_pkey'),
         sa.UniqueConstraint('plugin_id', 'provider', name='datasource_oauth_config_datasource_id_provider_idx')
         )
@@ -63,7 +63,7 @@ def upgrade():
         sa.Column('tenant_id', models.types.StringUUID(), nullable=False),
         sa.Column('provider', sa.String(length=255), nullable=False),
         sa.Column('plugin_id', sa.String(length=255), nullable=False),
-        sa.Column('client_params', sa.JSON(), nullable=False),
+        sa.Column('client_params', models.types.AdjustedJSON(astext_type=sa.Text()), nullable=False),
         sa.Column('enabled', sa.Boolean(), nullable=False),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
         sa.Column('updated_at', sa.DateTime(), server_default=sa.func.current_timestamp(), nullable=False),
@@ -95,7 +95,7 @@ def upgrade():
         sa.Column('provider', sa.String(length=128), nullable=False),
         sa.Column('plugin_id', sa.String(length=255), nullable=False),
         sa.Column('auth_type', sa.String(length=255), nullable=False),
-        sa.Column('encrypted_credentials', sa.JSON(), nullable=False),
+        sa.Column('encrypted_credentials', models.types.AdjustedJSON(astext_type=sa.Text()), nullable=False),
         sa.Column('avatar_url', models.types.LongText(), nullable=True),
         sa.Column('is_default', sa.Boolean(), server_default=sa.text('false'), nullable=False),
         sa.Column('expires_at', sa.Integer(), server_default='-1', nullable=False),
@@ -327,7 +327,7 @@ def upgrade():
     else:
         with op.batch_alter_table('datasets', schema=None) as batch_op:
             batch_op.add_column(sa.Column('keyword_number', sa.Integer(), server_default=sa.text('10'), nullable=True))
-            batch_op.add_column(sa.Column('icon_info', sa.JSON(), nullable=True))
+            batch_op.add_column(sa.Column('icon_info', models.types.AdjustedJSON(astext_type=sa.Text()), nullable=True))
             batch_op.add_column(sa.Column('runtime_mode', sa.String(length=255), server_default=sa.text("'general'"), nullable=True))
             batch_op.add_column(sa.Column('pipeline_id', models.types.StringUUID(), nullable=True))
             batch_op.add_column(sa.Column('chunk_structure', sa.String(length=255), nullable=True))

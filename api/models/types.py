@@ -5,7 +5,7 @@ from typing import Any, Generic, TypeVar
 import sqlalchemy as sa
 from sqlalchemy import CHAR, TEXT, VARCHAR, LargeBinary, TypeDecorator
 from sqlalchemy.dialects.mysql import LONGBLOB, LONGTEXT
-from sqlalchemy.dialects.postgresql import BYTEA, UUID, JSONB
+from sqlalchemy.dialects.postgresql import BYTEA, JSONB, UUID
 from sqlalchemy.engine.interfaces import Dialect
 from sqlalchemy.sql.type_api import TypeEngine
 
@@ -83,13 +83,21 @@ class BinaryData(TypeDecorator[bytes | None]):
             return value
         return value
 
+
 class AdjustedJSON(TypeDecorator[dict | list | None]):
     impl = sa.JSON
     cache_ok = True
 
+    def __init__(self, astext_type=None):
+        self.astext_type = astext_type
+        super().__init__()
+
     def load_dialect_impl(self, dialect: Dialect) -> TypeEngine[Any]:
         if dialect.name == "postgresql":
-            return dialect.type_descriptor(JSONB())
+            if self.astext_type:
+                return dialect.type_descriptor(JSONB(astext_type=self.astext_type))
+            else:
+                return dialect.type_descriptor(JSONB())
         elif dialect.name == "mysql":
             return dialect.type_descriptor(sa.JSON())
         else:
@@ -100,6 +108,7 @@ class AdjustedJSON(TypeDecorator[dict | list | None]):
 
     def process_result_value(self, value: dict | list | None, dialect: Dialect) -> dict | list | None:
         return value
+
 
 
 _E = TypeVar("_E", bound=enum.StrEnum)
