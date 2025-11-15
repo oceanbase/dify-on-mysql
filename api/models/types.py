@@ -132,6 +132,6 @@ class EnumText(TypeDecorator[_E | None], Generic[_E]):
 def adjusted_json_index(index_name, column_name):
     index_name = index_name or f"{column_name}_idx"
     if dify_config.DB_TYPE == "postgresql":
-        return sa.Index(index_name, column_name, postgresql_using="gin")
+        return sa.Index(index_name, column_name, postgresql_using="gin", postgresql_ops={column_name: 'jsonb_path_ops'})
     else:
         return None
