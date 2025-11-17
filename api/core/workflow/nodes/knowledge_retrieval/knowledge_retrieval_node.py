@@ -10,6 +10,7 @@ from sqlalchemy import Float, and_, func, or_, select, text
 from sqlalchemy import cast as sqlalchemy_cast
 from sqlalchemy.orm import sessionmaker
 
+from configs import dify_config
 from core.app.app_config.entities import DatasetRetrieveConfigEntity
 from core.app.entities.app_invoke_entities import ModelConfigWithCredentialsEntity
 from core.entities.agent_entities import PlanningStrategy
@@ -54,6 +55,7 @@ from core.workflow.nodes.llm.file_saver import FileSaverImpl, LLMFileSaver
 from core.workflow.nodes.llm.node import LLMNode
 from extensions.ext_database import db
 from extensions.ext_redis import redis_client
+from libs.helper import get_array_contains_expression, get_array_not_contains_expression, get_json_extract_expression
 from libs.json_in_md_parser import parse_and_check_json_markdown
 from models.dataset import Dataset, DatasetMetadata, Document, RateLimitLog
 from services.feature_service import FeatureService
@@ -601,51 +603,99 @@ class KnowledgeRetrievalNode(LLMUsageTrackingMixin, Node):
         key_value = f"{metadata_name}_{sequence}_value"
         match condition:
             case "contains":
-                filters.append(
-                    (text(f"documents.doc_metadata ->> :{key} LIKE :{key_value}")).params(
-                        **{key: metadata_name, key_value: f"%{value}%"}
+                if dify_config.SQLALCHEMY_DATABASE_URI_SCHEME == "postgresql":
+                    filters.append(
+                        (text(f"documents.doc_metadata ->> :{key} LIKE :{key_value}")).params(
+                            **{key: metadata_name, key_value: f"%{value}%"}
+                        )
                     )
-                )
+                else:
+                    json_expr = get_json_extract_expression("documents.doc_metadata", metadata_name)
+                    filters.append(
+                        (text(f"{json_expr} LIKE :{key_value}")).params(
+                            **{key_value: f"%{value}%"}
+                        )
+                    )
             case "not contains":
-                filters.append(
-                    (text(f"documents.doc_metadata ->> :{key} NOT LIKE :{key_value}")).params(
-                        **{key: metadata_name, key_value: f"%{value}%"}
+                if dify_config.SQLALCHEMY_DATABASE_URI_SCHEME == "postgresql":
+                    filters.append(
+                        (text(f"documents.doc_metadata ->> :{key} NOT LIKE :{key_value}")).params(
+                            **{key: metadata_name, key_value: f"%{value}%"}
+                        )
                     )
-                )
+                else:
+                    json_expr = get_json_extract_expression("documents.doc_metadata", metadata_name)
+                    filters.append(
+                        (text(f"{json_expr} NOT LIKE :{key_value}")).params(
+                            **{key_value: f"%{value}%"}
+                        )
+                    )
             case "start with":
-                filters.append(
-                    (text(f"documents.doc_metadata ->> :{key} LIKE :{key_value}")).params(
-                        **{key: metadata_name, key_value: f"{value}%"}
+                if dify_config.SQLALCHEMY_DATABASE_URI_SCHEME == "postgresql":
+                    filters.append(
+                        (text(f"documents.doc_metadata ->> :{key} LIKE :{key_value}")).params(
+                            **{key: metadata_name, key_value: f"{value}%"}
+                        )
                     )
-                )
+                else:
+                    json_expr = get_json_extract_expression("documents.doc_metadata", metadata_name)
+                    filters.append(
+                        (text(f"{json_expr} LIKE :{key_value}")).params(
+                            **{key_value: f"{value}%"}
+                        )
+                    )
             case "end with":
-                filters.append(
-                    (text(f"documents.doc_metadata ->> :{key} LIKE :{key_value}")).params(
-                        **{key: metadata_name, key_value: f"%{value}"}
+                if dify_config.SQLALCHEMY_DATABASE_URI_SCHEME == "postgresql":
+                    filters.append(
+                        (text(f"documents.doc_metadata ->> :{key} LIKE :{key_value}")).params(
+                            **{key: metadata_name, key_value: f"%{value}"}
+                        )
                     )
-                )
+                else:
+                    json_expr = get_json_extract_expression("documents.doc_metadata", metadata_name)
+                    filters.append(
+                        (text(f"{json_expr} LIKE :{key_value}")).params(
+                            **{key_value: f"{value}%"}
+                        )
+                    )
             case "in":
                 if isinstance(value, str):
                     escaped_values = [v.strip().replace("'", "''") for v in str(value).split(",")]
                     escaped_value_str = ",".join(escaped_values)
                 else:
                     escaped_value_str = str(value)
-                filters.append(
-                    (text(f"documents.doc_metadata ->> :{key} = any(string_to_array(:{key_value},','))")).params(
-                        **{key: metadata_name, key_value: escaped_value_str}
+                if dify_config.SQLALCHEMY_DATABASE_URI_SCHEME == "postgresql":
+                    filters.append(
+                        (text(f"documents.doc_metadata ->> :{key} = any(string_to_array(:{key_value},','))")).params(
+                            **{key: metadata_name, key_value: escaped_value_str}
+                        )
                     )
-                )
+                else:
+                    array_expr = get_array_contains_expression("documents.doc_metadata", metadata_name, escaped_value_str)
+                    filters.append(
+                        (text(array_expr)).params(
+                            **{key_value: escaped_value_str}
+                        )
+                    )
             case "not in":
                 if isinstance(value, str):
                     escaped_values = [v.strip().replace("'", "''") for v in str(value).split(",")]
                     escaped_value_str = ",".join(escaped_values)
                 else:
                     escaped_value_str = str(value)
-                filters.append(
-                    (text(f"documents.doc_metadata ->> :{key} != all(string_to_array(:{key_value},','))")).params(
-                        **{key: metadata_name, key_value: escaped_value_str}
+                if dify_config.SQLALCHEMY_DATABASE_URI_SCHEME == "postgresql":
+                    filters.append(
+                        (text(f"documents.doc_metadata ->> :{key} != all(string_to_array(:{key_value},','))")).params(
+                            **{key: metadata_name, key_value: escaped_value_str}
+                        )
                     )
-                )
+                else:
+                    array_not_expr = get_array_not_contains_expression("documents.doc_metadata", metadata_name, escaped_value_str)
+                    filters.append(
+                        (text(array_not_expr)).params(
+                            **{key_value: escaped_value_str}
+                        )
+                    )
             case "=" | "is":
                 if isinstance(value, str):
                     filters.append(Document.doc_metadata[metadata_name] == f'"{value}"')

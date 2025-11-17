@@ -146,10 +146,10 @@ class Workflow(Base):
     )
     _environment_variables: Mapped[str] = mapped_column("environment_variables", LongText, nullable=False, default="{}")
     _conversation_variables: Mapped[str] = mapped_column(
-        "conversation_variables", LongText, nullable=False, default="{}"
+        "conversation_variables", LongText, nullable=True, default="{}"
     )
     _rag_pipeline_variables: Mapped[str] = mapped_column(
-        "rag_pipeline_variables", LongText, nullable=False, default="{}"
+        "rag_pipeline_variables", LongText, nullable=True, default="{}"
     )
 
     VERSION_DRAFT = "draft"

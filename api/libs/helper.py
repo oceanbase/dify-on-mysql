@@ -378,3 +378,74 @@ class RateLimiter:
 
         redis_client.zadd(key, {current_time: current_time})
         redis_client.expire(key, self.time_window * 2)
+        
+
+from extensions.ext_database import db
+
+
+def get_json_extract_expression(column_name: str, json_path: str) -> str:
+    """
+    Generate database-specific JSON extraction expression.
+    
+    Args:
+        column_name: The column name containing JSON data
+        json_path: The JSON path to extract (without $.)
+        
+    Returns:
+        Database-specific JSON extraction expression
+    """
+    dialect_name = db.engine.dialect.name
+    
+    if dialect_name == "postgresql":
+        return f"{column_name} ->> '{json_path}'"
+    elif dialect_name == "mysql":
+        return f"JSON_UNQUOTE(JSON_EXTRACT({column_name}, '$.{json_path}'))"
+    else:
+        # Default to MySQL syntax for other databases
+        return f"JSON_UNQUOTE(JSON_EXTRACT({column_name}, '$.{json_path}'))"
+
+
+def get_array_contains_expression(column_name: str, json_path: str, value: str) -> str:
+    """
+    Generate database-specific array contains expression.
+    
+    Args:
+        column_name: The column name containing JSON data
+        json_path: The JSON path to the array (without $.)
+        value: The value to check for in the array
+        
+    Returns:
+        Database-specific array contains expression
+    """
+    dialect_name = db.engine.dialect.name
+    
+    if dialect_name == "postgresql":
+        return f"'{value}' = ANY(string_to_array({column_name} ->> '{json_path}', ','))"
+    elif dialect_name == "mysql":
+        return f"FIND_IN_SET('{value}', {get_json_extract_expression(column_name, json_path)}) > 0"
+    else:
+        # Default to MySQL syntax for other databases
+        return f"FIND_IN_SET('{value}', {get_json_extract_expression(column_name, json_path)}) > 0"
+
+
+def get_array_not_contains_expression(column_name: str, json_path: str, value: str) -> str:
+    """
+    Generate database-specific array NOT contains expression.
+    
+    Args:
+        column_name: The column name containing JSON data
+        json_path: The JSON path to the array (without $.)
+        value: The value to check for NOT in the array
+        
+    Returns:
+        Database-specific array NOT contains expression
+    """
+    dialect_name = db.engine.dialect.name
+    
+    if dialect_name == "postgresql":
+        return f"'{value}' != ALL(string_to_array({column_name} ->> '{json_path}', ','))"
+    elif dialect_name == "mysql":
+        return f"FIND_IN_SET('{value}', {get_json_extract_expression(column_name, json_path)}) = 0"
+    else:
+        # Default to MySQL syntax for other databases
+        return f"FIND_IN_SET('{value}', {get_json_extract_expression(column_name, json_path)}) = 0"
