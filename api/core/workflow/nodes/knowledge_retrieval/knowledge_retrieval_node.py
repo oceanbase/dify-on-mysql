@@ -596,7 +596,7 @@ class KnowledgeRetrievalNode(LLMUsageTrackingMixin, Node):
         if value is None and condition not in ("empty", "not empty"):
             return filters
 
-        json_field = DatasetDocument.doc_metadata[metadata_name].as_string()
+        json_field = Document.doc_metadata[metadata_name].as_string()
 
         match condition:
             case "contains":
@@ -640,31 +640,31 @@ class KnowledgeRetrievalNode(LLMUsageTrackingMixin, Node):
                 if isinstance(value, str):
                     filters.append(json_field == value)
                 elif isinstance(value, (int, float)):
-                    filters.append(DatasetDocument.doc_metadata[metadata_name].as_float() == value)
+                    filters.append(Document.doc_metadata[metadata_name].as_float() == value)
 
             case "is not" | "≠":
                 if isinstance(value, str):
                     filters.append(json_field != value)
                 elif isinstance(value, (int, float)):
-                    filters.append(DatasetDocument.doc_metadata[metadata_name].as_float() != value)
+                    filters.append(Document.doc_metadata[metadata_name].as_float() != value)
 
             case "empty":
-                filters.append(DatasetDocument.doc_metadata[metadata_name].is_(None))
+                filters.append(Document.doc_metadata[metadata_name].is_(None))
 
             case "not empty":
-                filters.append(DatasetDocument.doc_metadata[metadata_name].isnot(None))
+                filters.append(Document.doc_metadata[metadata_name].isnot(None))
 
             case "before" | "<":
-                filters.append(DatasetDocument.doc_metadata[metadata_name].as_float() < value)
+                filters.append(Document.doc_metadata[metadata_name].as_float() < value)
 
             case "after" | ">":
-                filters.append(DatasetDocument.doc_metadata[metadata_name].as_float() > value)
+                filters.append(Document.doc_metadata[metadata_name].as_float() > value)
 
             case "≤" | "<=":
-                filters.append(DatasetDocument.doc_metadata[metadata_name].as_float() <= value)
+                filters.append(Document.doc_metadata[metadata_name].as_float() <= value)
 
             case "≥" | ">=":
-                filters.append(DatasetDocument.doc_metadata[metadata_name].as_float() >= value)
+                filters.append(Document.doc_metadata[metadata_name].as_float() >= value)
 
             case _:
                 pass
