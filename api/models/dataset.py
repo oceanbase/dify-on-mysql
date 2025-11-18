@@ -951,9 +951,7 @@ class DatasetKeywordTable(TypeBase):
         sa.Index("dataset_keyword_table_dataset_id_idx", "dataset_id"),
     )
 
-    id: Mapped[str] = mapped_column(
-        StringUUID, primary_key=True, default=lambda: str(uuid4()), init=False
-    )
+    id: Mapped[str] = mapped_column(StringUUID, primary_key=True, default=lambda: str(uuid4()), init=False)
     dataset_id: Mapped[str] = mapped_column(StringUUID, nullable=False, unique=True)
     keyword_table: Mapped[str] = mapped_column(LongText, nullable=False)
     data_source_type: Mapped[str] = mapped_column(
@@ -1059,9 +1057,7 @@ class Whitelist(TypeBase):
         sa.PrimaryKeyConstraint("id", name="whitelists_pkey"),
         sa.Index("whitelists_tenant_idx", "tenant_id"),
     )
-    id: Mapped[str] = mapped_column(
-        StringUUID, primary_key=True, default=lambda: str(uuid4()), init=False
-    )
+    id: Mapped[str] = mapped_column(StringUUID, primary_key=True, default=lambda: str(uuid4()), init=False)
     tenant_id: Mapped[str | None] = mapped_column(StringUUID, nullable=True)
     category: Mapped[str] = mapped_column(String(255), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
@@ -1078,9 +1074,7 @@ class DatasetPermission(TypeBase):
         sa.Index("idx_dataset_permissions_tenant_id", "tenant_id"),
     )
 
-    id: Mapped[str] = mapped_column(
-        StringUUID, default=lambda: str(uuid4()), primary_key=True, init=False
-    )
+    id: Mapped[str] = mapped_column(StringUUID, default=lambda: str(uuid4()), primary_key=True, init=False)
     dataset_id: Mapped[str] = mapped_column(StringUUID, nullable=False)
     account_id: Mapped[str] = mapped_column(StringUUID, nullable=False)
     tenant_id: Mapped[str] = mapped_column(StringUUID, nullable=False)
@@ -1100,9 +1094,7 @@ class ExternalKnowledgeApis(TypeBase):
         sa.Index("external_knowledge_apis_name_idx", "name"),
     )
 
-    id: Mapped[str] = mapped_column(
-        StringUUID, nullable=False, default=lambda: str(uuid4()), init=False
-    )
+    id: Mapped[str] = mapped_column(StringUUID, nullable=False, default=lambda: str(uuid4()), init=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(String(255), nullable=False)
     tenant_id: Mapped[str] = mapped_column(StringUUID, nullable=False)
